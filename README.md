@@ -1,15 +1,98 @@
 # OpenHorizon.cc
 
-Project description coming soon.
+AI-Powered Project Management for Erasmus+ and EU-funded projects.
 
-## Setup
+## 🚀 Features
+
+- **AI-Assisted Planning** - Intelligent project timelines and resource allocation
+- **Compliance Automation** - Automatic EU guideline checks
+- **Multi-Partner Coordination** - Seamless cross-country collaboration
+- **Budget Management** - Track expenses and forecast costs
+- **Impact Reporting** - Generate comprehensive reports and KPIs
+- **Document Generation** - Auto-generate proposals and evaluations
+
+## 🛠️ Tech Stack
+
+- **Framework:** Next.js 15 with App Router
+- **Language:** TypeScript
+- **Styling:** Tailwind CSS
+- **Deployment:** Google Cloud Run (serverless)
+
+## 📦 Getting Started
+
+### Prerequisites
+
+- Node.js 20+
+- npm or yarn
+
+### Installation
 
 ```bash
+# Install dependencies
 npm install
-```
 
-## Development
-
-```bash
+# Run development server
 npm run dev
 ```
+
+Open [http://localhost:3000](http://localhost:3000) to view the site.
+
+### Build for Production
+
+```bash
+# Build the application
+npm run build
+
+# Start production server
+npm start
+```
+
+## 🐳 Docker Deployment
+
+```bash
+# Build Docker image
+docker build -t openhorizon .
+
+# Run container
+docker run -p 3000:3000 openhorizon
+```
+
+## ☁️ Cloud Run Deployment
+
+```bash
+# Deploy to Google Cloud Run
+gcloud run deploy openhorizon \
+  --source . \
+  --region=europe-west1 \
+  --allow-unauthenticated
+```
+
+## 📄 Project Structure
+
+```
+openhorizon.cc/
+├── app/                  # Next.js app directory
+│   ├── globals.css      # Global styles
+│   ├── layout.tsx       # Root layout
+│   └── page.tsx         # Homepage
+├── components/          # React components
+│   ├── Hero.tsx         # Hero section with email capture
+│   ├── Features.tsx     # Features grid
+│   ├── HowItWorks.tsx   # Process steps
+│   └── Footer.tsx       # Footer with EU compliance
+├── public/              # Static assets
+└── package.json         # Dependencies
+```
+
+## 🇪🇺 EU Compliance
+
+This project is co-funded by the European Union's Erasmus+ programme. All communications include required EU funding acknowledgments and comply with GDPR regulations.
+
+## 📧 Contact
+
+For inquiries: info@openhorizon.cc
+
+---
+
+**Co-funded by the European Union**  
+Views and opinions expressed are those of the author(s) only and do not necessarily reflect those of the European Union or EACEA.
