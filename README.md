@@ -1,15 +1,17 @@
-# OpenHorizon.cc
+# Open Horizon
 
-AI-Powered Project Management for Erasmus+ and EU-funded projects.
+Empowering Youth & Organisations Through Erasmus+
 
-## 🚀 Features
+Swedish nonprofit association creating meaningful international opportunities for young people and organisations through Erasmus+ projects.
 
-- **AI-Assisted Planning** - Intelligent project timelines and resource allocation
-- **Compliance Automation** - Automatic EU guideline checks
-- **Multi-Partner Coordination** - Seamless cross-country collaboration
-- **Budget Management** - Track expenses and forecast costs
-- **Impact Reporting** - Generate comprehensive reports and KPIs
-- **Document Generation** - Auto-generate proposals and evaluations
+## 🌍 What We Do
+
+- **Youth Exchanges & Activities** - International mobility activities for ages 13-30
+- **Youth Participation Projects** - Civic, social, and political engagement opportunities
+- **Youth Worker Mobility & Training** - Professional development and networking
+- **Inclusive Support & Accessibility** - Tailored support for diverse needs
+- **Project Development Support** - Expert assistance for Erasmus+ applications
+- **Reporting & Compliance** - Complete documentation aligned with EU standards
 
 ## 🛠️ Tech Stack
 

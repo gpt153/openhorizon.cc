@@ -2,18 +2,18 @@ export default function HowItWorks() {
   const steps = [
     {
       number: '1',
-      title: 'Create Your Project',
-      description: 'Set up your Erasmus+ project with AI-guided templates and best practices.',
+      title: 'Inclusive by Design',
+      description: 'We build programs that accommodate diverse backgrounds, abilities, and access needs with tailored participant support.',
     },
     {
       number: '2',
-      title: 'Collaborate & Track',
-      description: 'Invite partners, assign tasks, and monitor progress with automated compliance checks.',
+      title: 'Quality & Compliance',
+      description: 'All projects align with Erasmus+ standards and priorities for youth learning mobility and organisational capacity building.',
     },
     {
       number: '3',
-      title: 'Report & Succeed',
-      description: 'Generate impact reports, financial statements, and final evaluations effortlessly.',
+      title: 'Full Support',
+      description: 'We guide you through every step - from preparation and needs assessment to implementation and reporting.',
     },
   ];
 
@@ -22,10 +22,10 @@ export default function HowItWorks() {
       <div className="mx-auto max-w-7xl">
         <div className="mx-auto max-w-2xl text-center mb-16">
           <h2 className="text-3xl font-bold tracking-tight text-primary sm:text-4xl">
-            Simple, powerful workflow
+            Why Choose Open Horizon?
           </h2>
           <p className="mt-6 text-lg leading-8 text-gray-600">
-            Get started in minutes, not weeks
+            Experience, quality, and commitment to inclusion
           </p>
         </div>
 
@@ -60,10 +60,10 @@ export default function HowItWorks() {
             href="#hero"
             className="inline-block rounded-lg bg-cta px-8 py-4 text-lg font-semibold text-white shadow-lg transition-all hover:bg-cta/90 hover:scale-105 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cta"
           >
-            Join the Waitlist
+            Get in Touch
           </a>
           <p className="mt-4 text-sm text-gray-500">
-            Limited spots available for early access
+            Whether you're a young person, youth worker, or organisation
           </p>
         </div>
       </div>

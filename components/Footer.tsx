@@ -29,10 +29,10 @@ export default function Footer() {
         <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
           {/* About */}
           <div>
-            <h3 className="text-lg font-semibold mb-4">OpenHorizon</h3>
+            <h3 className="text-lg font-semibold mb-4">Open Horizon</h3>
             <p className="text-sm text-gray-300 leading-relaxed">
-              AI-powered project management platform designed specifically for Erasmus+ 
-              and EU-funded projects.
+              Swedish nonprofit association creating meaningful international opportunities
+              for young people and organisations through Erasmus+ projects.
             </p>
           </div>
 
@@ -42,17 +42,22 @@ export default function Footer() {
             <ul className="space-y-2 text-sm text-gray-300">
               <li>
                 <a href="#features" className="hover:text-white transition-colors">
-                  Features
+                  What We Do
                 </a>
               </li>
               <li>
                 <a href="#how-it-works" className="hover:text-white transition-colors">
-                  How It Works
+                  Why Choose Us
+                </a>
+              </li>
+              <li>
+                <a href="https://erasmus-plus.ec.europa.eu/" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">
+                  Erasmus+ Programme
                 </a>
               </li>
               <li>
                 <a href="mailto:info@openhorizon.cc" className="hover:text-white transition-colors">
-                  Contact
+                  Contact Us
                 </a>
               </li>
             </ul>
@@ -84,7 +89,7 @@ export default function Footer() {
         {/* Copyright */}
         <div className="mt-8 pt-8 border-t border-white/10">
           <p className="text-center text-xs text-gray-400">
-            © {currentYear} OpenHorizon.cc. All rights reserved.
+            © {currentYear} Open Horizon. Swedish nonprofit association. All rights reserved.
           </p>
         </div>
       </div>

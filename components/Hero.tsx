@@ -24,15 +24,15 @@ export default function Hero() {
       <div className="mx-auto max-w-4xl text-center">
         {/* Hero Headline */}
         <h1 className="text-4xl font-bold tracking-tight text-primary sm:text-5xl lg:text-6xl">
-          AI-Powered Project Management
+          Empowering Youth & Organisations
           <br />
-          <span className="text-accent">for Erasmus+</span>
+          <span className="text-accent">Through Erasmus+</span>
         </h1>
-        
+
         {/* Subheadline */}
         <p className="mt-6 text-lg leading-8 text-gray-600 sm:text-xl">
-          Streamline planning, compliance, and collaboration for EU-funded projects
-          with intelligent automation and insights.
+          A Swedish nonprofit creating meaningful international opportunities for young people
+          through youth exchanges, training, and inclusive participation projects.
         </p>
 
         {/* Email Capture Form */}
@@ -47,7 +47,7 @@ export default function Hero() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="Enter your email"
+                placeholder="Your email address"
                 required
                 className="flex-1 rounded-lg border border-gray-300 px-4 py-3 text-base focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
                 disabled={status === 'loading'}
@@ -57,17 +57,17 @@ export default function Hero() {
                 disabled={status === 'loading'}
                 className="rounded-lg bg-cta px-6 py-3 text-base font-semibold text-white shadow-sm transition-all hover:bg-cta/90 hover:scale-105 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cta disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {status === 'loading' ? 'Joining...' : 'Join Waitlist'}
+                {status === 'loading' ? 'Sending...' : 'Get in Touch'}
               </button>
             </form>
           )}
-          
+
           {status === 'error' && (
             <p className="text-sm text-red-600">{message}</p>
           )}
-          
+
           <p className="text-sm text-gray-500">
-            Join 100+ project coordinators planning for 2025
+            Join our community of youth workers and organisations
           </p>
         </div>
       </div>

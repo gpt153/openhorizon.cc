@@ -1,34 +1,34 @@
 export default function Features() {
   const features = [
     {
-      title: 'AI-Assisted Planning',
-      description: 'Intelligent project timelines, resource allocation, and risk assessment powered by advanced AI.',
-      icon: '🎯',
+      title: 'Youth Exchanges & Activities',
+      description: 'International mobility activities for ages 13-30. Structured learning experiences with workshops, cultural activities, and teamwork across different countries.',
+      icon: '🌍',
     },
     {
-      title: 'Compliance Automation',
-      description: 'Automatic checks against EU guidelines and regulations. Never miss a compliance requirement.',
+      title: 'Youth Participation Projects',
+      description: 'Opportunities for young people to engage in civic, social, and political life through active programs and dialogues that amplify youth voices.',
+      icon: '🗣️',
+    },
+    {
+      title: 'Youth Worker Mobility & Training',
+      description: 'Professional development for youth workers through training courses, study visits, job-shadowing, and networking initiatives.',
+      icon: '📚',
+    },
+    {
+      title: 'Inclusive Support & Accessibility',
+      description: 'Tailored support for participants with social, economic, geographic, or accessibility barriers. Individual support plans ensure full participation.',
+      icon: '♿',
+    },
+    {
+      title: 'Project Development Support',
+      description: 'Professional assistance in identifying opportunities, developing competitive applications, and planning implementation for your Erasmus+ projects.',
+      icon: '📋',
+    },
+    {
+      title: 'Reporting & Compliance',
+      description: 'Complete project reports, documentation, evaluation summaries, and dissemination measures aligned with Erasmus+ requirements.',
       icon: '✓',
-    },
-    {
-      title: 'Multi-Partner Coordination',
-      description: 'Seamless collaboration across countries and organizations with real-time updates.',
-      icon: '🤝',
-    },
-    {
-      title: 'Budget Management',
-      description: 'Track expenses, forecast costs, and ensure budget compliance across all project phases.',
-      icon: '💶',
-    },
-    {
-      title: 'Impact Reporting',
-      description: 'Generate comprehensive impact reports and KPI dashboards for stakeholders.',
-      icon: '📊',
-    },
-    {
-      title: 'Document Generation',
-      description: 'Auto-generate proposals, progress reports, and final evaluations with AI assistance.',
-      icon: '📝',
     },
   ];
 
@@ -37,10 +37,10 @@ export default function Features() {
       <div className="mx-auto max-w-7xl">
         <div className="mx-auto max-w-2xl text-center">
           <h2 className="text-3xl font-bold tracking-tight text-primary sm:text-4xl">
-            Everything you need for successful Erasmus+ projects
+            What We Do
           </h2>
           <p className="mt-6 text-lg leading-8 text-gray-600">
-            Powerful features designed specifically for EU project coordinators
+            Creating meaningful international opportunities through Erasmus+ programs
           </p>
         </div>
         

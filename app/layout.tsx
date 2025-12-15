@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "OpenHorizon - AI-Powered Erasmus+ Project Management",
-  description: "Streamline planning, compliance, and collaboration for EU-funded projects with intelligent automation",
-  keywords: ["Erasmus+", "project management", "AI", "EU funding", "collaboration"],
+  title: "Open Horizon - Empowering Youth Through Erasmus+",
+  description: "Swedish nonprofit creating meaningful international opportunities for young people through Erasmus+ youth exchanges, training, and inclusive participation projects",
+  keywords: ["Erasmus+", "youth exchange", "youth mobility", "youth worker training", "Sweden", "nonprofit", "inclusion", "youth participation"],
 };
 
 export default function RootLayout({
