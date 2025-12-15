@@ -96,3 +96,4 @@ For inquiries: info@openhorizon.cc
 
 **Co-funded by the European Union**  
 Views and opinions expressed are those of the author(s) only and do not necessarily reflect those of the European Union or EACEA.
+# OpenHorizon.cc - CI/CD Pipeline Active
