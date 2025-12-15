@@ -63,7 +63,7 @@ export default function HowItWorks() {
             Get in Touch
           </a>
           <p className="mt-4 text-sm text-gray-500">
-            Whether you're a young person, youth worker, or organisation
+            Whether you&apos;re a young person, youth worker, or organisation
           </p>
         </div>
       </div>
