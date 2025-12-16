@@ -1,0 +1,151 @@
+// Prisma schema for Open Horizon Project Companion
+// Multi-tenant SaaS with organization-based tenancy
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  // extensions = [pgvector(map: "vector")] // Will enable when we add RAG features
+}
+
+// ============================================================================
+// TENANCY & USER MANAGEMENT
+// ============================================================================
+
+model Organization {
+  id               String   @id @default(uuid()) @db.Uuid
+  name             String
+  slug             String   @unique
+  subscriptionTier SubscriptionTier @default(FREE)
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  projects         Project[]
+  userMemberships  UserOrganizationMembership[]
+  generationSessions ProjectGenerationSession[]
+
+  @@map("organizations")
+}
+
+enum SubscriptionTier {
+  FREE
+  BASIC
+  PRO
+}
+
+model UserOrganizationMembership {
+  id             String       @id @default(uuid()) @db.Uuid
+  userId         String       @map("user_id") // Clerk user ID
+  organizationId String       @map("organization_id") @db.Uuid
+  role           UserRole
+  createdAt      DateTime     @default(now()) @map("created_at")
+
+  // Relations
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, organizationId])
+  @@index([userId])
+  @@index([organizationId])
+  @@map("user_organization_memberships")
+}
+
+enum UserRole {
+  OWNER
+  ADMIN
+  STAFF
+  PARTNER
+  PARTICIPANT
+  GUARDIAN
+}
+
+// ============================================================================
+// PROJECTS
+// ============================================================================
+
+model Project {
+  id                      String        @id @default(uuid()) @db.Uuid
+  tenantId                String        @map("tenant_id") @db.Uuid
+  createdByUserId         String        @map("created_by_user_id")
+
+  title                   String
+  tagline                 String?
+  status                  ProjectStatus @default(DRAFT)
+
+  // Project DNA (JSON) - defines all characteristics
+  projectDna              Json          @map("project_dna")
+
+  // Generated content from AI
+  objectives              Json?
+  targetGroupDescription  String?       @map("target_group_description") @db.Text
+  activityOutline         Json?         @map("activity_outline")
+  learningOutcomes        Json?         @map("learning_outcomes")
+  inclusionPlanOverview   String?       @map("inclusion_plan_overview") @db.Text
+  partnerProfile          String?       @map("partner_profile") @db.Text
+  estimatedBudgetRange    Json?         @map("estimated_budget_range")
+  sustainabilityNarrative String?       @map("sustainability_narrative") @db.Text
+  impactNarrative         String?       @map("impact_narrative") @db.Text
+
+  // Erasmus+ metadata
+  erasmusAction           String        @map("erasmus_action")
+  durationDays            Int           @map("duration_days")
+  participantCount        Int           @map("participant_count")
+
+  createdAt               DateTime      @default(now()) @map("created_at")
+  updatedAt               DateTime      @updatedAt @map("updated_at")
+
+  // Relations
+  organization            Organization  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  generationSessions      ProjectGenerationSession[]
+
+  @@index([tenantId, status])
+  @@index([tenantId, createdByUserId])
+  @@map("projects")
+}
+
+enum ProjectStatus {
+  DRAFT
+  CONCEPT
+  PLANNING
+  APPLICATION_DRAFT
+  SUBMITTED
+  APPROVED
+  IN_PROGRESS
+  COMPLETED
+}
+
+// ============================================================================
+// AI GENERATION TRACKING
+// ============================================================================
+
+model ProjectGenerationSession {
+  id                String              @id @default(uuid()) @db.Uuid
+  tenantId          String              @map("tenant_id") @db.Uuid
+  projectId         String?             @map("project_id") @db.Uuid
+  userId            String              @map("user_id")
+
+  sessionData       Json                @map("session_data")
+  aiModel           String              @map("ai_model")
+  generationStatus  GenerationStatus    @map("generation_status") @default(IN_PROGRESS)
+
+  createdAt         DateTime            @default(now()) @map("created_at")
+  updatedAt         DateTime            @updatedAt @map("updated_at")
+
+  // Relations
+  organization      Organization        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  project           Project?            @relation(fields: [projectId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, userId])
+  @@index([projectId])
+  @@map("project_generation_sessions")
+}
+
+enum GenerationStatus {
+  IN_PROGRESS
+  COMPLETED
+  FAILED
+}
