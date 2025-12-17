@@ -30,12 +30,15 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
   const [editedTagline, setEditedTagline] = useState('')
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
 
+  // tRPC utils - must be declared before mutations that use it
+  const utils = trpc.useUtils()
+
   // Programme queries and mutations
   const { data: programme } = trpc.programmes.getByProjectId.useQuery({ projectId: id })
   const generateProgrammeMutation = trpc.programmes.generateFromConcept.useMutation({
     onSuccess: () => {
-      toast.success('Programme generation started! This may take 1-2 minutes.')
-      // Refetch programme to show loading state
+      toast.success('Programme generated successfully!')
+      // Refetch programme to show the new data
       utils.programmes.getByProjectId.invalidate({ projectId: id })
     },
     onError: (error) => {
@@ -49,8 +52,6 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
       document.title = `${project.title} | Open Horizon`
     }
   }, [project])
-
-  const utils = trpc.useUtils()
   const updateMutation = trpc.projects.updateProject.useMutation({
     onSuccess: () => {
       utils.projects.getById.invalidate({ id })
