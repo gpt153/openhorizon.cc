@@ -10,7 +10,9 @@ steps:
       - 'europe-west1-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/openhorizon:$COMMIT_SHA'
       - '-t'
       - 'europe-west1-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/openhorizon:latest'
-      - '.'
+      - '-f'
+      - 'app/Dockerfile'
+      - 'app'
     id: 'build-image'
 
   # Step 2: Push the Docker image to Artifact Registry
