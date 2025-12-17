@@ -1,6 +1,6 @@
 'use client'
 
-import { use } from 'react'
+import { use, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -29,6 +29,13 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
   const [editedTitle, setEditedTitle] = useState('')
   const [editedTagline, setEditedTagline] = useState('')
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+
+  // Update page title when project loads
+  useEffect(() => {
+    if (project) {
+      document.title = `${project.title} | Open Horizon`
+    }
+  }, [project])
 
   const utils = trpc.useUtils()
   const updateMutation = trpc.projects.updateProject.useMutation({
