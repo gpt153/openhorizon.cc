@@ -30,7 +30,7 @@ export default function ProjectsPage() {
         </div>
 
         <Button asChild>
-          <Link href="/dashboard/projects/new">
+          <Link href="/projects/new">
             <Plus className="mr-2 h-4 w-4" />
             New Project
           </Link>

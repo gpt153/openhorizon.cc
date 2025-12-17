@@ -28,7 +28,7 @@ export function ProjectCard({ project }: { project: Project }) {
   }
 
   return (
-    <Link href={`/dashboard/projects/${project.id}`}>
+    <Link href={`/projects/${project.id}`}>
       <Card className="transition-shadow hover:shadow-md">
         <CardHeader>
           <div className="flex items-start justify-between gap-4">

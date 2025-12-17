@@ -17,7 +17,7 @@ export function EmptyState() {
       </p>
 
       <Button asChild className="mt-6">
-        <Link href="/dashboard/projects/new">Create Your First Project</Link>
+        <Link href="/projects/new">Create Your First Project</Link>
       </Button>
     </div>
   )

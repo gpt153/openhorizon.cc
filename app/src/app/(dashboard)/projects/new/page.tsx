@@ -42,7 +42,7 @@ export default function NewProjectPage() {
 
   // Redirect when generation completes
   if (generationStatus?.status === 'COMPLETED' && generationStatus.project) {
-    router.push(`/dashboard/projects/${generationStatus.project.id}`)
+    router.push(`/projects/${generationStatus.project.id}`)
     return null
   }
 

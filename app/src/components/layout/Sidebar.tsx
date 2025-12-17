@@ -6,9 +6,9 @@ import { cn } from '@/lib/utils'
 import { FolderKanban, Settings, Home } from 'lucide-react'
 
 const navigation = [
-  { name: 'Dashboard', href: '/dashboard', icon: Home },
-  { name: 'Projects', href: '/dashboard/projects', icon: FolderKanban },
-  { name: 'Settings', href: '/dashboard/settings', icon: Settings },
+  { name: 'Dashboard', href: '/', icon: Home },
+  { name: 'Projects', href: '/projects', icon: FolderKanban },
+  { name: 'Settings', href: '/settings', icon: Settings },
 ]
 
 export function Sidebar() {
@@ -18,7 +18,7 @@ export function Sidebar() {
     <div className="flex h-full w-64 flex-col border-r bg-zinc-50 dark:bg-zinc-900">
       {/* Logo */}
       <div className="flex h-16 items-center border-b px-6">
-        <Link href="/dashboard" className="flex items-center gap-2">
+        <Link href="/" className="flex items-center gap-2">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600">
             <span className="text-sm font-bold text-white">OH</span>
           </div>
