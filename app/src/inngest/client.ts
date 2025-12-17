@@ -23,4 +23,11 @@ export type Events = {
       userId: string
     }
   }
+  'programme.generate-from-concept': {
+    data: {
+      projectId: string
+      tenantId: string
+      userId: string
+    }
+  }
 }

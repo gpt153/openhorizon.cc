@@ -28,6 +28,7 @@ model Organization {
   projects         Project[]
   userMemberships  UserOrganizationMembership[]
   generationSessions ProjectGenerationSession[]
+  programmes       Programme[]
 
   @@map("organizations")
 }
@@ -101,6 +102,7 @@ model Project {
   // Relations
   organization            Organization  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   generationSessions      ProjectGenerationSession[]
+  programmes              Programme[]
 
   @@index([tenantId, status])
   @@index([tenantId, createdByUserId])
@@ -148,4 +150,115 @@ enum GenerationStatus {
   IN_PROGRESS
   COMPLETED
   FAILED
+}
+
+// ============================================================================
+// PROGRAMME BUILDER
+// ============================================================================
+
+model Programme {
+  id                    String          @id @default(uuid()) @db.Uuid
+  projectId             String          @map("project_id") @db.Uuid
+  tenantId              String          @map("tenant_id") @db.Uuid
+
+  version               Int             @default(1)
+  status                ProgrammeStatus @default(DRAFT)
+
+  generatedFromConcept  Json            @map("generated_from_concept")
+  aiModel               String          @default("gpt-4-turbo-preview") @map("ai_model")
+
+  createdAt             DateTime        @default(now()) @map("created_at")
+  updatedAt             DateTime        @updatedAt @map("updated_at")
+
+  // Relations
+  project               Project         @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  organization          Organization    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  days                  ProgrammeDay[]
+
+  @@index([projectId])
+  @@index([tenantId])
+  @@map("programmes")
+}
+
+enum ProgrammeStatus {
+  DRAFT
+  FINAL
+  ARCHIVED
+}
+
+model ProgrammeDay {
+  id              String            @id @default(uuid()) @db.Uuid
+  programmeId     String            @map("programme_id") @db.Uuid
+
+  dayNumber       Int               @map("day_number")
+  date            DateTime?         @db.Date
+  theme           String?           @db.VarChar(200)
+
+  morningFocus    String?           @map("morning_focus") @db.VarChar(500)
+  afternoonFocus  String?           @map("afternoon_focus") @db.VarChar(500)
+  eveningFocus    String?           @map("evening_focus") @db.VarChar(500)
+
+  createdAt       DateTime          @default(now()) @map("created_at")
+  updatedAt       DateTime          @updatedAt @map("updated_at")
+
+  // Relations
+  programme       Programme         @relation(fields: [programmeId], references: [id], onDelete: Cascade)
+  sessions        ProgrammeSession[]
+
+  @@unique([programmeId, dayNumber])
+  @@index([programmeId])
+  @@map("programme_days")
+}
+
+model ProgrammeSession {
+  id                  String        @id @default(uuid()) @db.Uuid
+  programmeDayId      String        @map("programme_day_id") @db.Uuid
+
+  startTime           DateTime      @map("start_time") @db.Time
+  endTime             DateTime      @map("end_time") @db.Time
+
+  title               String        @db.VarChar(200)
+  description         String?       @db.Text
+  activityType        ActivityType? @map("activity_type")
+
+  learningObjectives  String[]      @map("learning_objectives")
+  methodology         String?       @db.VarChar(100)
+
+  materialsNeeded     String[]      @map("materials_needed")
+  preparationNotes    String?       @map("preparation_notes") @db.Text
+  spaceRequirements   String?       @map("space_requirements") @db.VarChar(200)
+  groupSize           String?       @map("group_size") @db.VarChar(50)
+
+  accessibilityNotes  String?       @map("accessibility_notes") @db.Text
+  languageLevel       String?       @map("language_level") @db.VarChar(20)
+
+  orderIndex          Int           @map("order_index")
+  isOptional          Boolean       @default(false) @map("is_optional")
+
+  createdAt           DateTime      @default(now()) @map("created_at")
+  updatedAt           DateTime      @updatedAt @map("updated_at")
+
+  // Relations
+  day                 ProgrammeDay  @relation(fields: [programmeDayId], references: [id], onDelete: Cascade)
+
+  @@index([programmeDayId])
+  @@index([startTime])
+  @@map("programme_sessions")
+}
+
+enum ActivityType {
+  ICEBREAKER
+  WORKSHOP
+  REFLECTION
+  ENERGIZER
+  FREE_TIME
+  MEAL
+  PRESENTATION
+  GROUP_WORK
+  OUTDOOR
+  CULTURAL
+  INTERCULTURAL
+  CREATIVE
+  SPORTS
+  DISCUSSION
 }

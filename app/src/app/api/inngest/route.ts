@@ -1,6 +1,7 @@
 import { serve } from 'inngest/next'
 import { inngest } from '@/inngest/client'
 import { generateProjectFromIdea } from '@/inngest/functions/generate-project'
+import { generateProgramme } from '@/inngest/functions/generate-programme'
 
 /**
  * Inngest API Route
@@ -15,5 +16,6 @@ export const { GET, POST, PUT } = serve({
   client: inngest,
   functions: [
     generateProjectFromIdea,
+    generateProgramme,
   ],
 })
