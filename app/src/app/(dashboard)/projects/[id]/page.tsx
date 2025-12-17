@@ -6,13 +6,73 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { trpc } from '@/lib/trpc/client'
-import { Loader2, ArrowLeft, Calendar, Users, Coins, AlertCircle } from 'lucide-react'
+import { Loader2, ArrowLeft, Calendar, Users, Coins, AlertCircle, Pencil, Trash2, Download } from 'lucide-react'
+import { toast } from 'sonner'
+import { useState } from 'react'
 
 export default function ProjectDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
   const router = useRouter()
   const { data: project, isLoading, error } = trpc.projects.getById.useQuery({ id })
+  const [isEditingTitle, setIsEditingTitle] = useState(false)
+  const [editedTitle, setEditedTitle] = useState('')
+  const [editedTagline, setEditedTagline] = useState('')
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+
+  const utils = trpc.useUtils()
+  const updateMutation = trpc.projects.updateProject.useMutation({
+    onSuccess: () => {
+      utils.projects.getById.invalidate({ id })
+      toast.success('Project updated successfully')
+      setIsEditingTitle(false)
+    },
+    onError: (error) => {
+      toast.error(`Failed to update project: ${error.message}`)
+    },
+  })
+
+  const deleteMutation = trpc.projects.deleteProject.useMutation({
+    onSuccess: () => {
+      toast.success('Project deleted successfully')
+      router.push('/projects')
+    },
+    onError: (error) => {
+      toast.error(`Failed to delete project: ${error.message}`)
+    },
+  })
+
+  const handleEditTitle = () => {
+    if (project) {
+      setEditedTitle(project.title)
+      setEditedTagline(project.tagline || '')
+      setIsEditingTitle(true)
+    }
+  }
+
+  const handleSaveTitle = () => {
+    updateMutation.mutate({
+      id,
+      data: {
+        title: editedTitle,
+        tagline: editedTagline,
+      },
+    })
+  }
+
+  const handleDelete = () => {
+    deleteMutation.mutate({ id })
+  }
 
   if (isLoading) {
     return (
@@ -70,14 +130,112 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
           Back to Projects
         </Button>
 
-        <div className="flex items-start justify-between">
-          <div>
-            <h1 className="text-3xl font-bold">{project.title}</h1>
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex-1">
+            <div className="flex items-center gap-3">
+              <h1 className="text-3xl font-bold">{project.title}</h1>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleEditTitle}
+                className="h-8 w-8 p-0"
+              >
+                <Pencil className="h-4 w-4" />
+              </Button>
+            </div>
             <p className="mt-2 text-lg text-zinc-600 dark:text-zinc-400">{project.tagline}</p>
           </div>
-          <Badge>{project.status}</Badge>
+          <div className="flex items-center gap-2">
+            <Badge>{project.status}</Badge>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => toast.info('Export feature coming soon!')}
+            >
+              <Download className="mr-2 h-4 w-4" />
+              Export
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowDeleteDialog(true)}
+              className="text-red-600 hover:text-red-700"
+            >
+              <Trash2 className="mr-2 h-4 w-4" />
+              Delete
+            </Button>
+          </div>
         </div>
       </div>
+
+      {/* Edit Title Dialog */}
+      <Dialog open={isEditingTitle} onOpenChange={setIsEditingTitle}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Project Details</DialogTitle>
+            <DialogDescription>
+              Update your project title and tagline
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div>
+              <Label htmlFor="title">Title</Label>
+              <Input
+                id="title"
+                value={editedTitle}
+                onChange={(e) => setEditedTitle(e.target.value)}
+                className="mt-2"
+              />
+            </div>
+            <div>
+              <Label htmlFor="tagline">Tagline</Label>
+              <Input
+                id="tagline"
+                value={editedTagline}
+                onChange={(e) => setEditedTagline(e.target.value)}
+                className="mt-2"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsEditingTitle(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSaveTitle}
+              disabled={updateMutation.isPending || !editedTitle.trim()}
+            >
+              {updateMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Project</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete "{project.title}"? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDelete}
+              disabled={deleteMutation.isPending}
+            >
+              {deleteMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Delete Project
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Overview */}
       <Card className="mb-6">
