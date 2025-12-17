@@ -1,6 +1,11 @@
 import { z } from 'zod'
 import { router, orgProcedure } from '../trpc'
-import { inngest } from '@/inngest/client'
+import {
+  extractProgrammeRequirements,
+  generateDailyStructure,
+  generateDaySessions,
+} from '@/lib/ai/chains/programme-generation'
+import type { ActivityType } from '@prisma/client'
 
 export const programmesRouter = router({
   // Generate programme from project concept
@@ -35,17 +40,81 @@ export const programmesRouter = router({
         throw new Error('Programme already exists. Archive it first to regenerate.')
       }
 
-      // Trigger background generation
-      await inngest.send({
-        name: 'programme.generate-from-concept',
+      // Generate programme synchronously (MVP - no background job)
+      console.log('🔍 Extracting programme requirements...')
+      const requirements = extractProgrammeRequirements(project as any)
+
+      console.log('🏗️  Generating daily structure...')
+      const dailyStructure = await generateDailyStructure(requirements)
+
+      console.log('📅 Generating sessions for all days...')
+      const allSessions: Array<{ dayNumber: number; sessions: any[] }> = []
+      for (const day of dailyStructure) {
+        const daySessions = await generateDaySessions(day, requirements)
+        allSessions.push({ dayNumber: day.day_number, sessions: daySessions })
+      }
+
+      console.log('💾 Saving programme to database...')
+      const programme = await ctx.prisma.programme.create({
         data: {
           projectId: input.projectId,
           tenantId: ctx.orgId,
-          userId: ctx.userId,
+          version: 1,
+          status: 'DRAFT',
+          generatedFromConcept: {
+            projectTitle: project.title,
+            durationDays: project.durationDays,
+            generatedAt: new Date().toISOString(),
+          } as any,
+          aiModel: 'gpt-4-turbo-preview',
+
+          days: {
+            create: dailyStructure.map((day, dayIndex) => {
+              const daySessions = allSessions.find(
+                (s) => s.dayNumber === day.day_number
+              )?.sessions || []
+
+              return {
+                dayNumber: day.day_number,
+                theme: day.theme,
+                morningFocus: day.morning_focus,
+                afternoonFocus: day.afternoon_focus,
+                eveningFocus: day.evening_focus,
+
+                sessions: {
+                  create: daySessions.map((session, sessionIndex) => ({
+                    startTime: parseTimeString(session.start_time),
+                    endTime: parseTimeString(session.end_time),
+                    title: session.title,
+                    description: session.description,
+                    activityType: normalizeActivityType(session.activity_type),
+                    learningObjectives: session.learning_objectives,
+                    methodology: session.methodology,
+                    materialsNeeded: session.materials_needed,
+                    preparationNotes: session.preparation_notes,
+                    spaceRequirements: session.space_requirements,
+                    groupSize: session.group_size,
+                    accessibilityNotes: session.accessibility_notes,
+                    languageLevel: session.language_level,
+                    orderIndex: sessionIndex,
+                    isOptional: false,
+                  })),
+                },
+              }
+            }),
+          },
+        },
+        include: {
+          days: {
+            include: {
+              sessions: true,
+            },
+          },
         },
       })
 
-      return { success: true, message: 'Programme generation started' }
+      console.log(`✅ Programme generated successfully: ${programme.id}`)
+      return { success: true, message: 'Programme generated successfully', programmeId: programme.id }
     }),
 
   // Get programme by project ID
@@ -161,4 +230,30 @@ function parseTimeString(timeStr: string): Date {
   const date = new Date()
   date.setHours(hours, minutes, 0, 0)
   return date
+}
+
+/**
+ * Normalize activity type string to enum value
+ */
+function normalizeActivityType(type: string): ActivityType | undefined {
+  const normalized = type.toUpperCase().replace(/[\s-]/g, '_')
+
+  const validTypes: ActivityType[] = [
+    'ICEBREAKER',
+    'WORKSHOP',
+    'REFLECTION',
+    'ENERGIZER',
+    'FREE_TIME',
+    'MEAL',
+    'PRESENTATION',
+    'GROUP_WORK',
+    'OUTDOOR',
+    'CULTURAL',
+    'INTERCULTURAL',
+    'CREATIVE',
+    'SPORTS',
+    'DISCUSSION',
+  ]
+
+  return validTypes.find((t) => t === normalized)
 }
