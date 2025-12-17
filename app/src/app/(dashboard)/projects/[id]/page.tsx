@@ -17,7 +17,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { trpc } from '@/lib/trpc/client'
-import { Loader2, ArrowLeft, Calendar, Users, Coins, AlertCircle, Pencil, Trash2, Download } from 'lucide-react'
+import { Loader2, ArrowLeft, Calendar, Users, Coins, AlertCircle, Pencil, Trash2, Download, Sparkles, CalendarDays } from 'lucide-react'
 import { toast } from 'sonner'
 import { useState } from 'react'
 
@@ -29,6 +29,19 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
   const [editedTitle, setEditedTitle] = useState('')
   const [editedTagline, setEditedTagline] = useState('')
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+
+  // Programme queries and mutations
+  const { data: programme } = trpc.programmes.getByProjectId.useQuery({ projectId: id })
+  const generateProgrammeMutation = trpc.programmes.generateFromConcept.useMutation({
+    onSuccess: () => {
+      toast.success('Programme generation started! This may take 1-2 minutes.')
+      // Refetch programme to show loading state
+      utils.programmes.getByProjectId.invalidate({ projectId: id })
+    },
+    onError: (error) => {
+      toast.error(`Failed to generate programme: ${error.message}`)
+    },
+  })
 
   // Update page title when project loads
   useEffect(() => {
@@ -79,6 +92,14 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
 
   const handleDelete = () => {
     deleteMutation.mutate({ id })
+  }
+
+  const handleGenerateProgramme = () => {
+    generateProgrammeMutation.mutate({ projectId: id })
+  }
+
+  const handleViewProgramme = () => {
+    router.push(`/projects/${id}/programme`)
   }
 
   if (isLoading) {
@@ -154,6 +175,30 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
           </div>
           <div className="flex items-center gap-2">
             <Badge>{project.status}</Badge>
+            {programme ? (
+              <Button
+                variant="default"
+                size="sm"
+                onClick={handleViewProgramme}
+              >
+                <CalendarDays className="mr-2 h-4 w-4" />
+                View Programme
+              </Button>
+            ) : (
+              <Button
+                variant="default"
+                size="sm"
+                onClick={handleGenerateProgramme}
+                disabled={generateProgrammeMutation.isPending}
+              >
+                {generateProgrammeMutation.isPending ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Sparkles className="mr-2 h-4 w-4" />
+                )}
+                Build Programme
+              </Button>
+            )}
             <Button
               variant="outline"
               size="sm"
