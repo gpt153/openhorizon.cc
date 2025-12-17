@@ -4,7 +4,7 @@
 -- Insert dummy organization (idempotent - only inserts if not exists)
 INSERT INTO organizations (id, name, slug, "subscriptionTier", created_at, updated_at)
 VALUES (
-    'dev-org-001'::uuid,
+    '00000000-0000-0000-0000-000000000001'::uuid,
     'Development Organization',
     'dev-org',
     'FREE',
@@ -14,4 +14,4 @@ VALUES (
 ON CONFLICT (id) DO NOTHING;
 
 -- Verify the organization exists
-SELECT id, name, slug, "subscriptionTier" FROM organizations WHERE id = 'dev-org-001'::uuid;
+SELECT id, name, slug, "subscriptionTier" FROM organizations WHERE id = '00000000-0000-0000-0000-000000000001'::uuid;
