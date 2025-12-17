@@ -1,17 +1,13 @@
-import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'
+// AUTH COMPLETELY DISABLED FOR MVP TESTING
+// Clerk middleware removed to avoid key validation errors
 
-const isPublicRoute = createRouteMatcher([
-  '/',
-  '/sign-in(.*)',
-  '/sign-up(.*)',
-  '/api/trpc(.*)', // tRPC handles its own auth
-])
+import { NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
 
-export default clerkMiddleware(async (auth, request) => {
-  if (!isPublicRoute(request)) {
-    await auth.protect()
-  }
-})
+export function middleware(request: NextRequest) {
+  // No-op middleware - all routes accessible without authentication
+  return NextResponse.next()
+}
 
 export const config = {
   matcher: [
