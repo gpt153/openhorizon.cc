@@ -7,30 +7,51 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { trpc } from '@/lib/trpc/client'
-import { Loader2, ArrowLeft, Calendar, Users, Coins } from 'lucide-react'
+import { Loader2, ArrowLeft, Calendar, Users, Coins, AlertCircle } from 'lucide-react'
 
 export default function ProjectDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
   const router = useRouter()
-  const { data: project, isLoading } = trpc.projects.getById.useQuery({ id })
+  const { data: project, isLoading, error } = trpc.projects.getById.useQuery({ id })
 
   if (isLoading) {
     return (
-      <div className="flex h-full items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-zinc-400" />
+      <div className="flex min-h-[600px] items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="mx-auto h-12 w-12 animate-spin text-blue-600" />
+          <p className="mt-4 text-sm text-zinc-600">Loading project...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="flex min-h-[600px] items-center justify-center">
+        <Card className="max-w-md p-8 text-center">
+          <AlertCircle className="mx-auto h-12 w-12 text-red-500" />
+          <h2 className="mt-4 text-xl font-semibold">Error loading project</h2>
+          <p className="mt-2 text-sm text-zinc-600">{error.message}</p>
+          <Button onClick={() => router.back()} className="mt-6">
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Go Back
+          </Button>
+        </Card>
       </div>
     )
   }
 
   if (!project) {
     return (
-      <div className="flex h-full items-center justify-center">
-        <div className="text-center">
+      <div className="flex min-h-[600px] items-center justify-center">
+        <Card className="max-w-md p-8 text-center">
           <h2 className="text-2xl font-bold">Project not found</h2>
-          <Button onClick={() => router.back()} className="mt-4">
+          <p className="mt-2 text-sm text-zinc-600">The project you're looking for doesn't exist.</p>
+          <Button onClick={() => router.back()} className="mt-6">
+            <ArrowLeft className="mr-2 h-4 w-4" />
             Go Back
           </Button>
-        </div>
+        </Card>
       </div>
     )
   }

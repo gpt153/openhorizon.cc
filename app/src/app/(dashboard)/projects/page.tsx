@@ -3,20 +3,13 @@
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { ProjectCard } from '@/components/projects/ProjectCard'
+import { ProjectCardSkeleton } from '@/components/projects/ProjectCardSkeleton'
 import { EmptyState } from '@/components/projects/EmptyState'
 import { trpc } from '@/lib/trpc/client'
-import { Plus, Loader2 } from 'lucide-react'
+import { Plus } from 'lucide-react'
 
 export default function ProjectsPage() {
   const { data: projects, isLoading } = trpc.projects.list.useQuery()
-
-  if (isLoading) {
-    return (
-      <div className="flex h-full items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-zinc-400" />
-      </div>
-    )
-  }
 
   return (
     <div>
@@ -38,7 +31,13 @@ export default function ProjectsPage() {
       </div>
 
       {/* Projects Grid */}
-      {!projects || projects.length === 0 ? (
+      {isLoading ? (
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <ProjectCardSkeleton key={i} />
+          ))}
+        </div>
+      ) : !projects || projects.length === 0 ? (
         <EmptyState />
       ) : (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">

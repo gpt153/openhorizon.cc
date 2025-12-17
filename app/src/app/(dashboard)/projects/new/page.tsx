@@ -13,6 +13,7 @@ import { Progress } from '@/components/ui/progress'
 import { trpc } from '@/lib/trpc/client'
 import { Loader2, ArrowLeft, ArrowRight, Sparkles } from 'lucide-react'
 import { useProjectWizard } from '@/hooks/useProjectWizard'
+import { toast } from 'sonner'
 
 export default function NewProjectPage() {
   const router = useRouter()
@@ -32,23 +33,53 @@ export default function NewProjectPage() {
   const handleSubmit = async () => {
     try {
       setIsGenerating(true)
+      toast.info('Starting project generation...')
       const result = await generateMutation.mutateAsync(formData as any)
       setSessionId(result.sessionId)
     } catch (error) {
       console.error('Generation failed:', error)
+      toast.error('Failed to generate project. Please try again.')
       setIsGenerating(false)
     }
   }
 
   // Redirect when generation completes
   if (generationStatus?.status === 'COMPLETED' && generationStatus.project) {
+    toast.success('Project generated successfully!')
     router.push(`/projects/${generationStatus.project.id}`)
     return null
   }
 
+  // Show error if generation failed
+  if (generationStatus?.status === 'FAILED') {
+    toast.error('Project generation failed. Please try again.')
+    setIsGenerating(false)
+    setSessionId(null)
+  }
+
   const steps = ['Basics', 'Participants', 'Duration', 'Partners', 'Details']
   const isLastStep = currentStep === steps.length - 1
-  const canGoNext = currentStep < steps.length - 1
+
+  // Validation for each step
+  const isStepValid = () => {
+    switch (currentStep) {
+      case 0: // Basics
+        return formData.theme && formData.theme.trim().length > 0
+      case 1: // Participants
+        return formData.age_group && formData.target_profile
+      case 2: // Duration
+        return formData.activity_intensity && formData.green_ambition
+      case 3: // Partners
+        return formData.partner_status && formData.partner_experience
+      case 4: // Details
+        return formData.primary_languages && formData.digital_comfort && formData.budget_flexibility
+      default:
+        return true
+    }
+  }
+
+  const canGoNext = currentStep < steps.length - 1 && isStepValid()
+  const canSubmit = isStepValid()
 
   if (isGenerating || sessionId) {
     return (
@@ -364,7 +395,10 @@ export default function NewProjectPage() {
           </Button>
 
           {isLastStep ? (
-            <Button onClick={handleSubmit} disabled={generateMutation.isPending}>
+            <Button
+              onClick={handleSubmit}
+              disabled={generateMutation.isPending || !canSubmit}
+            >
               {generateMutation.isPending ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -378,7 +412,16 @@ export default function NewProjectPage() {
               )}
             </Button>
           ) : (
-            <Button onClick={goNext} disabled={!canGoNext}>
+            <Button
+              onClick={() => {
+                if (canGoNext) {
+                  goNext()
+                } else {
+                  toast.error('Please fill in all required fields')
+                }
+              }}
+              disabled={!canGoNext}
+            >
               Next
               <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
