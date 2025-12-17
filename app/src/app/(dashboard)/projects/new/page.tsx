@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -43,19 +43,17 @@ export default function NewProjectPage() {
     }
   }
 
-  // Redirect when generation completes
-  if (generationStatus?.status === 'COMPLETED' && generationStatus.project) {
-    toast.success('Project generated successfully!')
-    router.push(`/projects/${generationStatus.project.id}`)
-    return null
-  }
-
-  // Show error if generation failed
-  if (generationStatus?.status === 'FAILED') {
-    toast.error('Project generation failed. Please try again.')
-    setIsGenerating(false)
-    setSessionId(null)
-  }
+  // Handle generation status changes
+  useEffect(() => {
+    if (generationStatus?.status === 'COMPLETED' && generationStatus.project) {
+      toast.success('Project generated successfully!')
+      router.push(`/projects/${generationStatus.project.id}`)
+    } else if (generationStatus?.status === 'FAILED') {
+      toast.error('Project generation failed. Please try again.')
+      setIsGenerating(false)
+      setSessionId(null)
+    }
+  }, [generationStatus, router])
 
   const steps = ['Basics', 'Participants', 'Duration', 'Partners', 'Details']
   const isLastStep = currentStep === steps.length - 1
