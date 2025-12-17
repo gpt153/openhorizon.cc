@@ -40,7 +40,7 @@ export const generateProgramme = inngest.createFunction(
     // Step 2: Extract programme requirements from project DNA
     const requirements = await step.run('extract-requirements', async () => {
       console.log('🔍 Extracting programme requirements...')
-      return extractProgrammeRequirements(project)
+      return extractProgrammeRequirements(project as any)
     })
 
     // Step 3: Generate daily themes and structure
