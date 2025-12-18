@@ -243,7 +243,13 @@ function parseTimeString(timeStr: string | undefined): Date {
 /**
  * Normalize activity type string to enum value
  */
-function normalizeActivityType(type: string): ActivityType | undefined {
+function normalizeActivityType(type: string | undefined): ActivityType | undefined {
+  // Handle missing activity type with default
+  if (!type || typeof type !== 'string') {
+    console.warn(`Invalid activity type: ${type}, using default WORKSHOP`)
+    return 'WORKSHOP'
+  }
+
   const normalized = type.toUpperCase().replace(/[\s-]/g, '_')
 
   const validTypes: ActivityType[] = [
@@ -263,5 +269,8 @@ function normalizeActivityType(type: string): ActivityType | undefined {
     'DISCUSSION',
   ]
 
-  return validTypes.find((t) => t === normalized)
+  const found = validTypes.find((t) => t === normalized)
+
+  // Return WORKSHOP as default if no match found
+  return found || 'WORKSHOP'
 }
