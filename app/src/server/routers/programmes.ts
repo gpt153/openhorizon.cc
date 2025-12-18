@@ -225,10 +225,18 @@ export const programmesRouter = router({
 /**
  * Parse time string (e.g., "09:00") to DateTime for Prisma
  */
-function parseTimeString(timeStr: string): Date {
+function parseTimeString(timeStr: string | undefined): Date {
+  // Handle missing or invalid time strings with default 09:00
+  if (!timeStr || typeof timeStr !== 'string' || !timeStr.includes(':')) {
+    console.warn(`Invalid time string: ${timeStr}, using default 09:00`)
+    const date = new Date()
+    date.setHours(9, 0, 0, 0)
+    return date
+  }
+
   const [hours, minutes] = timeStr.split(':').map(Number)
   const date = new Date()
-  date.setHours(hours, minutes, 0, 0)
+  date.setHours(hours || 9, minutes || 0, 0, 0)
   return date
 }
 
