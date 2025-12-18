@@ -147,7 +147,28 @@ INCLUSION CONSIDERATIONS:
 - Respect cultural and religious needs
 - Create safe, non-competitive environment
 
-Generate sessions as a JSON array with all fields filled.`
+OUTPUT FORMAT:
+Return ONLY a valid JSON array of session objects. Each session MUST include ALL of these fields:
+
+[
+  {
+    "title": "Session title here",
+    "description": "2-3 sentence description of the activity",
+    "activity_type": "workshop",
+    "start_time": "09:00",
+    "end_time": "10:30",
+    "learning_objectives": ["Objective 1", "Objective 2"],
+    "methodology": "Group work and discussion",
+    "materials_needed": ["Flip charts", "Markers", "Post-its"],
+    "preparation_notes": "Prepare room setup and materials",
+    "space_requirements": "Indoor classroom",
+    "group_size": "Small groups of 4-5",
+    "accessibility_notes": "Provide visual and written instructions",
+    "language_level": "Intermediate"
+  }
+]
+
+CRITICAL: Return ONLY the JSON array, no additional text or explanation.`
 }
 
 /**

@@ -128,10 +128,27 @@ export async function generateDaySessions(
 
   try {
     const parsed = JSON.parse(jsonText)
-    console.log(`✅ Generated ${parsed.length} sessions for Day ${day.day_number}`)
-    return parsed
+
+    // Validate that sessions have required fields
+    const validSessions = parsed.filter((session: any) => {
+      const hasRequiredFields = session.title && session.description && session.start_time && session.end_time
+      if (!hasRequiredFields) {
+        console.warn(`⚠️  Skipping invalid session on Day ${day.day_number}:`, JSON.stringify(session))
+      }
+      return hasRequiredFields
+    })
+
+    if (validSessions.length === 0) {
+      console.error('No valid sessions generated for Day', day.day_number)
+      console.error('Raw AI response:', content)
+      throw new Error(`No valid sessions generated for Day ${day.day_number}`)
+    }
+
+    console.log(`✅ Generated ${validSessions.length} sessions for Day ${day.day_number}`)
+    return validSessions
   } catch (error) {
     console.error('Failed to parse sessions JSON:', jsonText)
+    console.error('Raw content:', content)
     throw new Error(`Failed to parse AI response for Day ${day.day_number} sessions`)
   }
 }
