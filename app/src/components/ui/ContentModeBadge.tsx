@@ -7,13 +7,11 @@ import { AlertCircle } from 'lucide-react'
 
 interface ContentModeBadgeProps {
   formalValue?: string | null
-  inline?: boolean
   className?: string
 }
 
 export function ContentModeBadge({
   formalValue,
-  inline = false,
   className = ''
 }: ContentModeBadgeProps) {
   const { isFormal } = useContentModeStore()

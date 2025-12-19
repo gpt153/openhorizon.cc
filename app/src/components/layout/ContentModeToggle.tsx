@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge'
 import { FileText, ScrollText } from 'lucide-react'
 
 export function ContentModeToggle() {
-  const { mode, toggleMode, isWorking } = useContentModeStore()
+  const { toggleMode, isWorking } = useContentModeStore()
 
   return (
     <div className="flex items-center gap-3">

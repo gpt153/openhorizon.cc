@@ -1,6 +1,22 @@
 import { useContentModeStore } from '@/lib/stores/contentModeStore'
 
 /**
+ * Helper function to get the appropriate field value based on mode
+ * Falls back to working mode if formal version is not available
+ */
+export function getContentFieldValue(
+  mode: 'working' | 'formal',
+  workingValue: string | null | undefined,
+  formalValue: string | null | undefined
+): string {
+  if (mode === 'formal' && formalValue) {
+    return formalValue
+  }
+
+  return workingValue || ''
+}
+
+/**
  * Hook to get the appropriate field value based on current content mode
  * Falls back to working mode if formal version is not available
  */
@@ -9,12 +25,7 @@ export function useContentField(
   formalValue: string | null | undefined
 ): string {
   const { mode } = useContentModeStore()
-
-  if (mode === 'formal' && formalValue) {
-    return formalValue
-  }
-
-  return workingValue || ''
+  return getContentFieldValue(mode, workingValue, formalValue)
 }
 
 /**

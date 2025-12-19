@@ -20,8 +20,8 @@ import { trpc } from '@/lib/trpc/client'
 import { Loader2, ArrowLeft, Calendar, Users, Coins, AlertCircle, Pencil, Trash2, Download, Sparkles, CalendarDays } from 'lucide-react'
 import { toast } from 'sonner'
 import { useState } from 'react'
-import { useContentField } from '@/lib/hooks/useContentField'
 import { ContentModeBadge } from '@/components/ui/ContentModeBadge'
+import { ContentFieldDisplay } from '@/components/ui/ContentFieldDisplay'
 
 export default function ProjectDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
@@ -354,7 +354,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
         </CardHeader>
         <CardContent>
           <p className="whitespace-pre-wrap">
-            {useContentField(project.targetGroupDescription, project.targetGroupDescriptionFormal)}
+            <ContentFieldDisplay workingValue={project.targetGroupDescription} formalValue={project.targetGroupDescriptionFormal} />
           </p>
         </CardContent>
       </Card>
@@ -409,7 +409,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
         </CardHeader>
         <CardContent>
           <p className="whitespace-pre-wrap">
-            {useContentField(project.inclusionPlanOverview, project.inclusionPlanOverviewFormal)}
+            <ContentFieldDisplay workingValue={project.inclusionPlanOverview} formalValue={project.inclusionPlanOverviewFormal} />
           </p>
         </CardContent>
       </Card>
@@ -424,7 +424,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
         </CardHeader>
         <CardContent>
           <p className="whitespace-pre-wrap">
-            {useContentField(project.partnerProfile, project.partnerProfileFormal)}
+            <ContentFieldDisplay workingValue={project.partnerProfile} formalValue={project.partnerProfileFormal} />
           </p>
         </CardContent>
       </Card>
@@ -440,7 +440,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
           </CardHeader>
           <CardContent>
             <p className="whitespace-pre-wrap text-sm">
-              {useContentField(project.sustainabilityNarrative, project.sustainabilityNarrativeFormal)}
+              <ContentFieldDisplay workingValue={project.sustainabilityNarrative} formalValue={project.sustainabilityNarrativeFormal} />
             </p>
           </CardContent>
         </Card>
@@ -454,7 +454,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
           </CardHeader>
           <CardContent>
             <p className="whitespace-pre-wrap text-sm">
-              {useContentField(project.impactNarrative, project.impactNarrativeFormal)}
+              <ContentFieldDisplay workingValue={project.impactNarrative} formalValue={project.impactNarrativeFormal} />
             </p>
           </CardContent>
         </Card>
