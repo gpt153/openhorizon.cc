@@ -180,6 +180,10 @@ export interface DailyStructureOutput {
   morning_focus: string
   afternoon_focus: string
   evening_focus: string
+  // Formal mode equivalents
+  morning_focus_formal: string
+  afternoon_focus_formal: string
+  evening_focus_formal: string
   key_learning_outcomes: string[]
 }
 
@@ -190,6 +194,10 @@ export interface SessionOutput {
   title: string
   description: string
   activity_type: string
+  // Formal mode equivalents
+  title_formal: string
+  description_formal: string
+  preparation_notes_formal: string
   start_time: string // "09:00"
   end_time: string // "10:30"
   learning_objectives: string[]

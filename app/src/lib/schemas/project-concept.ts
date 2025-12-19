@@ -39,13 +39,18 @@ export const ProjectConceptSchema = z.object({
   title: z.string().min(5).max(200),
   tagline: z.string().min(10).max(300),
 
-  // Generated Content
+  // Generated Content (Working Mode)
   objectives: z.array(ObjectiveSchema).min(3).max(5),
   targetGroupDescription: z.string().min(100).max(2000),
   activityOutline: z.array(ActivityDaySchema).min(5).max(21),
   learningOutcomes: z.array(LearningOutcomeSchema).min(5).max(10),
   inclusionPlanOverview: z.string().min(100).max(2000),
   partnerProfile: z.string().min(100).max(2000),
+
+  // Formal Mode Equivalents (Application-ready language)
+  targetGroupDescriptionFormal: z.string().min(100).max(2000),
+  inclusionPlanOverviewFormal: z.string().min(100).max(2000),
+  partnerProfileFormal: z.string().min(100).max(2000),
 
   // Budget
   estimatedBudgetRange: z.object({
@@ -55,9 +60,13 @@ export const ProjectConceptSchema = z.object({
     breakdown: BudgetBreakdownSchema,
   }),
 
-  // Narratives
+  // Narratives (Working Mode)
   sustainabilityNarrative: z.string().min(80).max(1000),
   impactNarrative: z.string().min(80).max(1000),
+
+  // Narratives (Formal Mode)
+  sustainabilityNarrativeFormal: z.string().min(80).max(1000),
+  impactNarrativeFormal: z.string().min(80).max(1000),
 })
 
 export type ProjectConcept = z.infer<typeof ProjectConceptSchema>
