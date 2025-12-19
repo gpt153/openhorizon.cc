@@ -77,21 +77,32 @@ export const programmesRouter = router({
               return {
                 dayNumber: day.day_number,
                 theme: day.theme,
+                // Working mode
                 morningFocus: day.morning_focus,
                 afternoonFocus: day.afternoon_focus,
                 eveningFocus: day.evening_focus,
+                // Formal mode
+                morningFocusFormal: day.morning_focus_formal,
+                afternoonFocusFormal: day.afternoon_focus_formal,
+                eveningFocusFormal: day.evening_focus_formal,
 
                 sessions: {
                   create: daySessions.map((session, sessionIndex) => ({
                     startTime: parseTimeString(session.start_time),
                     endTime: parseTimeString(session.end_time),
+                    // Working mode
                     title: session.title,
                     description: session.description,
+                    preparationNotes: session.preparation_notes,
+                    // Formal mode
+                    titleFormal: session.title_formal,
+                    descriptionFormal: session.description_formal,
+                    preparationNotesFormal: session.preparation_notes_formal,
+                    // Other fields
                     activityType: normalizeActivityType(session.activity_type),
                     learningObjectives: session.learning_objectives,
                     methodology: session.methodology,
                     materialsNeeded: session.materials_needed,
-                    preparationNotes: session.preparation_notes,
                     spaceRequirements: session.space_requirements,
                     groupSize: session.group_size,
                     accessibilityNotes: session.accessibility_notes,
@@ -158,6 +169,10 @@ export const programmesRouter = router({
           learningObjectives: z.array(z.string()).optional(),
           materialsNeeded: z.array(z.string()).optional(),
           preparationNotes: z.string().optional(),
+          // Formal mode fields
+          titleFormal: z.string().optional(),
+          descriptionFormal: z.string().optional(),
+          preparationNotesFormal: z.string().optional(),
         }),
       })
     )

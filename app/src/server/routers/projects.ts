@@ -2,6 +2,7 @@ import { router, orgProcedure } from '../trpc'
 import { z } from 'zod'
 import { UserIdeaInputsSchema } from '@/lib/schemas/project-wizard'
 import { generateProjectFromIdea, getGenerationStatus } from '../services/project-generator'
+import { formalizeProjectFields } from '@/lib/ai/chains/content-formalization'
 
 export const projectsRouter = router({
   // Get all projects for the current organization
@@ -69,6 +70,12 @@ export const projectsRouter = router({
           partnerProfile: z.string().optional(),
           sustainabilityNarrative: z.string().optional(),
           impactNarrative: z.string().optional(),
+          // Formal mode fields
+          targetGroupDescriptionFormal: z.string().optional(),
+          inclusionPlanOverviewFormal: z.string().optional(),
+          partnerProfileFormal: z.string().optional(),
+          sustainabilityNarrativeFormal: z.string().optional(),
+          impactNarrativeFormal: z.string().optional(),
           status: z.enum(['DRAFT', 'CONCEPT', 'PLANNING', 'APPLICATION_DRAFT', 'SUBMITTED', 'APPROVED', 'IN_PROGRESS', 'COMPLETED']).optional(),
         }),
       })
@@ -105,5 +112,39 @@ export const projectsRouter = router({
       }
 
       return { success: true }
+    }),
+
+  // Formalize project content (working -> formal mode)
+  formalizeProject: orgProcedure
+    .input(z.object({ id: z.string().uuid() }))
+    .mutation(async ({ ctx, input }) => {
+      // Fetch project with authorization check
+      const project = await ctx.prisma.project.findFirst({
+        where: {
+          id: input.id,
+          tenantId: ctx.orgId,
+        },
+      })
+
+      if (!project) {
+        throw new Error('Project not found or unauthorized')
+      }
+
+      // Formalize all working mode fields
+      const formalized = await formalizeProjectFields({
+        targetGroupDescription: project.targetGroupDescription || undefined,
+        inclusionPlanOverview: project.inclusionPlanOverview || undefined,
+        partnerProfile: project.partnerProfile || undefined,
+        sustainabilityNarrative: project.sustainabilityNarrative || undefined,
+        impactNarrative: project.impactNarrative || undefined,
+      })
+
+      // Update project with formal versions
+      await ctx.prisma.project.update({
+        where: { id: input.id },
+        data: formalized,
+      })
+
+      return { success: true, fieldsFormalized: Object.keys(formalized).length }
     }),
 })

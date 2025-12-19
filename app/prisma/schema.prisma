@@ -91,6 +91,13 @@ model Project {
   sustainabilityNarrative String?       @map("sustainability_narrative") @db.Text
   impactNarrative         String?       @map("impact_narrative") @db.Text
 
+  // Formal mode equivalents (application-ready language)
+  targetGroupDescriptionFormal  String?  @map("target_group_description_formal") @db.Text
+  inclusionPlanOverviewFormal   String?  @map("inclusion_plan_overview_formal") @db.Text
+  partnerProfileFormal          String?  @map("partner_profile_formal") @db.Text
+  sustainabilityNarrativeFormal String?  @map("sustainability_narrative_formal") @db.Text
+  impactNarrativeFormal         String?  @map("impact_narrative_formal") @db.Text
+
   // Erasmus+ metadata
   erasmusAction           String        @map("erasmus_action")
   durationDays            Int           @map("duration_days")
@@ -198,6 +205,11 @@ model ProgrammeDay {
   afternoonFocus  String?           @map("afternoon_focus") @db.VarChar(500)
   eveningFocus    String?           @map("evening_focus") @db.VarChar(500)
 
+  // Formal mode equivalents
+  morningFocusFormal    String?  @map("morning_focus_formal") @db.VarChar(500)
+  afternoonFocusFormal  String?  @map("afternoon_focus_formal") @db.VarChar(500)
+  eveningFocusFormal    String?  @map("evening_focus_formal") @db.VarChar(500)
+
   createdAt       DateTime          @default(now()) @map("created_at")
   updatedAt       DateTime          @updatedAt @map("updated_at")
 
@@ -221,11 +233,16 @@ model ProgrammeSession {
   description         String?       @db.Text
   activityType        ActivityType? @map("activity_type")
 
+  // Formal mode equivalents
+  titleFormal             String?  @map("title_formal") @db.VarChar(200)
+  descriptionFormal       String?  @map("description_formal") @db.Text
+
   learningObjectives  String[]      @map("learning_objectives")
   methodology         String?       @db.VarChar(100)
 
   materialsNeeded     String[]      @map("materials_needed")
   preparationNotes    String?       @map("preparation_notes") @db.Text
+  preparationNotesFormal  String?   @map("preparation_notes_formal") @db.Text
   spaceRequirements   String?       @map("space_requirements") @db.VarChar(200)
   groupSize           String?       @map("group_size") @db.VarChar(50)
 

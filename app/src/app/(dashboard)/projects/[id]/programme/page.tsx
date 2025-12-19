@@ -18,6 +18,8 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { trpc } from '@/lib/trpc/client'
+import { ContentModeBadge } from '@/components/ui/ContentModeBadge'
+import { ContentFieldDisplay } from '@/components/ui/ContentFieldDisplay'
 import {
   Loader2,
   ArrowLeft,
@@ -200,20 +202,35 @@ export default function ProgrammePage({ params }: { params: Promise<{ id: string
                 <div className="grid gap-4 md:grid-cols-3">
                   {day.morningFocus && (
                     <div>
-                      <p className="text-sm font-medium text-zinc-500">Morning Focus</p>
-                      <p className="mt-1 text-sm">{day.morningFocus}</p>
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-medium text-zinc-500">Morning Focus</p>
+                        <ContentModeBadge formalValue={day.morningFocusFormal} />
+                      </div>
+                      <p className="mt-1 text-sm">
+                        <ContentFieldDisplay workingValue={day.morningFocus} formalValue={day.morningFocusFormal} />
+                      </p>
                     </div>
                   )}
                   {day.afternoonFocus && (
                     <div>
-                      <p className="text-sm font-medium text-zinc-500">Afternoon Focus</p>
-                      <p className="mt-1 text-sm">{day.afternoonFocus}</p>
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-medium text-zinc-500">Afternoon Focus</p>
+                        <ContentModeBadge formalValue={day.afternoonFocusFormal} />
+                      </div>
+                      <p className="mt-1 text-sm">
+                        <ContentFieldDisplay workingValue={day.afternoonFocus} formalValue={day.afternoonFocusFormal} />
+                      </p>
                     </div>
                   )}
                   {day.eveningFocus && (
                     <div>
-                      <p className="text-sm font-medium text-zinc-500">Evening Focus</p>
-                      <p className="mt-1 text-sm">{day.eveningFocus}</p>
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-medium text-zinc-500">Evening Focus</p>
+                        <ContentModeBadge formalValue={day.eveningFocusFormal} />
+                      </div>
+                      <p className="mt-1 text-sm">
+                        <ContentFieldDisplay workingValue={day.eveningFocus} formalValue={day.eveningFocusFormal} />
+                      </p>
                     </div>
                   )}
                 </div>
@@ -248,7 +265,10 @@ export default function ProgrammePage({ params }: { params: Promise<{ id: string
                             </Badge>
                           )}
                         </div>
-                        <CardTitle className="mt-2">{session.title}</CardTitle>
+                        <div className="mt-2 flex items-center gap-2">
+                          <CardTitle><ContentFieldDisplay workingValue={session.title} formalValue={session.titleFormal} /></CardTitle>
+                          <ContentModeBadge formalValue={session.titleFormal} />
+                        </div>
                       </div>
                       <Button
                         variant="ghost"
@@ -261,7 +281,12 @@ export default function ProgrammePage({ params }: { params: Promise<{ id: string
                   </CardHeader>
                   <CardContent className="space-y-4">
                     {session.description && (
-                      <p className="text-sm text-zinc-700">{session.description}</p>
+                      <div>
+                        <p className="text-sm text-zinc-700">
+                          <ContentFieldDisplay workingValue={session.description} formalValue={session.descriptionFormal} />
+                        </p>
+                        <ContentModeBadge formalValue={session.descriptionFormal} />
+                      </div>
                     )}
 
                     <div className="grid gap-4 md:grid-cols-2">
@@ -317,8 +342,13 @@ export default function ProgrammePage({ params }: { params: Promise<{ id: string
 
                     {session.preparationNotes && (
                       <div className="mt-4 rounded-lg bg-blue-50 p-3 text-sm">
-                        <p className="font-medium text-blue-900">Facilitator Notes</p>
-                        <p className="mt-1 text-blue-800">{session.preparationNotes}</p>
+                        <div className="flex items-center justify-between">
+                          <p className="font-medium text-blue-900">Facilitator Notes</p>
+                          <ContentModeBadge formalValue={session.preparationNotesFormal} />
+                        </div>
+                        <p className="mt-1 text-blue-800">
+                          <ContentFieldDisplay workingValue={session.preparationNotes} formalValue={session.preparationNotesFormal} />
+                        </p>
                       </div>
                     )}
                   </CardContent>
