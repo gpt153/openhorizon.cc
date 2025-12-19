@@ -20,6 +20,8 @@ import { trpc } from '@/lib/trpc/client'
 import { Loader2, ArrowLeft, Calendar, Users, Coins, AlertCircle, Pencil, Trash2, Download, Sparkles, CalendarDays } from 'lucide-react'
 import { toast } from 'sonner'
 import { useState } from 'react'
+import { useContentField } from '@/lib/hooks/useContentField'
+import { ContentModeBadge } from '@/components/ui/ContentModeBadge'
 
 export default function ProjectDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
@@ -345,13 +347,17 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
       {/* Target Group */}
       <Card className="mb-6">
         <CardHeader>
-          <CardTitle>Target Group</CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle>Target Group</CardTitle>
+            <ContentModeBadge formalValue={project.targetGroupDescriptionFormal} />
+          </div>
         </CardHeader>
         <CardContent>
-          <p className="whitespace-pre-wrap">{project.targetGroupDescription}</p>
+          <p className="whitespace-pre-wrap">
+            {useContentField(project.targetGroupDescription, project.targetGroupDescriptionFormal)}
+          </p>
         </CardContent>
       </Card>
-
       {/* Activity Outline */}
       <Card className="mb-6">
         <CardHeader>
@@ -396,20 +402,30 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
       {/* Inclusion Plan */}
       <Card className="mb-6">
         <CardHeader>
-          <CardTitle>Inclusion & Accessibility</CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle>Inclusion & Accessibility</CardTitle>
+            <ContentModeBadge formalValue={project.inclusionPlanOverviewFormal} />
+          </div>
         </CardHeader>
         <CardContent>
-          <p className="whitespace-pre-wrap">{project.inclusionPlanOverview}</p>
+          <p className="whitespace-pre-wrap">
+            {useContentField(project.inclusionPlanOverview, project.inclusionPlanOverviewFormal)}
+          </p>
         </CardContent>
       </Card>
 
       {/* Partner Profile */}
       <Card className="mb-6">
         <CardHeader>
-          <CardTitle>Partner Profile</CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle>Partner Profile</CardTitle>
+            <ContentModeBadge formalValue={project.partnerProfileFormal} />
+          </div>
         </CardHeader>
         <CardContent>
-          <p className="whitespace-pre-wrap">{project.partnerProfile}</p>
+          <p className="whitespace-pre-wrap">
+            {useContentField(project.partnerProfile, project.partnerProfileFormal)}
+          </p>
         </CardContent>
       </Card>
 
@@ -417,19 +433,29 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
       <div className="grid gap-6 md:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle>Sustainability</CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle>Sustainability</CardTitle>
+              <ContentModeBadge formalValue={project.sustainabilityNarrativeFormal} />
+            </div>
           </CardHeader>
           <CardContent>
-            <p className="whitespace-pre-wrap text-sm">{project.sustainabilityNarrative}</p>
+            <p className="whitespace-pre-wrap text-sm">
+              {useContentField(project.sustainabilityNarrative, project.sustainabilityNarrativeFormal)}
+            </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle>Impact</CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle>Impact</CardTitle>
+              <ContentModeBadge formalValue={project.impactNarrativeFormal} />
+            </div>
           </CardHeader>
           <CardContent>
-            <p className="whitespace-pre-wrap text-sm">{project.impactNarrative}</p>
+            <p className="whitespace-pre-wrap text-sm">
+              {useContentField(project.impactNarrative, project.impactNarrativeFormal)}
+            </p>
           </CardContent>
         </Card>
       </div>

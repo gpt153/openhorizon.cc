@@ -1,3 +1,7 @@
+'use client'
+
+import { ContentModeToggle } from './ContentModeToggle'
+
 export function Header() {
   return (
     <header className="flex h-16 items-center justify-between border-b bg-white px-6 dark:bg-zinc-950">
@@ -6,6 +10,7 @@ export function Header() {
       </div>
 
       <div className="flex items-center gap-4">
+        <ContentModeToggle />
         <span className="text-sm text-zinc-500">Auth Disabled - Development Mode</span>
       </div>
     </header>
