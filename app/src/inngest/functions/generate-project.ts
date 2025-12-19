@@ -70,7 +70,7 @@ export const generateProjectFromIdea = inngest.createFunction(
           // Project DNA
           projectDna: projectDna as any, // Prisma Json type
 
-          // Generated content
+          // Generated content (working mode)
           objectives: concept.objectives as any,
           targetGroupDescription: concept.targetGroupDescription,
           activityOutline: concept.activityOutline as any,
@@ -80,6 +80,13 @@ export const generateProjectFromIdea = inngest.createFunction(
           estimatedBudgetRange: concept.estimatedBudgetRange as any,
           sustainabilityNarrative: concept.sustainabilityNarrative,
           impactNarrative: concept.impactNarrative,
+
+          // Generated content (formal mode)
+          targetGroupDescriptionFormal: concept.targetGroupDescriptionFormal,
+          inclusionPlanOverviewFormal: concept.inclusionPlanOverviewFormal,
+          partnerProfileFormal: concept.partnerProfileFormal,
+          sustainabilityNarrativeFormal: concept.sustainabilityNarrativeFormal,
+          impactNarrativeFormal: concept.impactNarrativeFormal,
 
           // Erasmus+ metadata
           erasmusAction: 'KA1-Youth-Exchange',
