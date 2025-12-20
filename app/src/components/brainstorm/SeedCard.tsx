@@ -23,7 +23,10 @@ export default function SeedCard({
   const currentVersion = seed.currentVersion as any
 
   return (
-    <Card className="group relative flex flex-col transition-shadow hover:shadow-lg">
+    <Card
+      className="group relative flex flex-col transition-shadow hover:shadow-lg cursor-pointer"
+      onClick={showActions ? undefined : onElaborate}
+    >
       <CardHeader>
         <div className="flex items-start justify-between gap-4">
           <CardTitle className="text-lg leading-tight">{seed.title}</CardTitle>
@@ -56,15 +59,39 @@ export default function SeedCard({
 
       {showActions && (
         <CardFooter className="gap-2 pt-4">
-          <Button variant="outline" size="sm" onClick={onDismiss} className="flex-1">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={(e) => {
+              e.stopPropagation()
+              onDismiss()
+            }}
+            className="flex-1"
+          >
             <Trash2 className="mr-2 h-4 w-4" />
             Pass
           </Button>
-          <Button variant="default" size="sm" onClick={onSave} className="flex-1">
+          <Button
+            variant="default"
+            size="sm"
+            onClick={(e) => {
+              e.stopPropagation()
+              onSave()
+            }}
+            className="flex-1"
+          >
             <Heart className="mr-2 h-4 w-4" />
             Save
           </Button>
-          <Button variant="secondary" size="sm" onClick={onElaborate} className="flex-1">
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={(e) => {
+              e.stopPropagation()
+              onElaborate()
+            }}
+            className="flex-1"
+          >
             <MessageSquare className="mr-2 h-4 w-4" />
             Elaborate
           </Button>
