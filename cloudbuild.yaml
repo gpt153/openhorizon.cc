@@ -28,7 +28,7 @@ steps:
     args:
       - 'run'
       - 'deploy'
-      - 'openhorizon'
+      - 'openhorizon-app'
       - '--image=europe-west1-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/openhorizon:$COMMIT_SHA'
       - '--region=europe-west1'
       - '--platform=managed'
