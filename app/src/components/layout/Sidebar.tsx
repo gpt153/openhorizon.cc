@@ -3,11 +3,13 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
-import { FolderKanban, Settings, Home } from 'lucide-react'
+import { FolderKanban, Settings, Home, Sparkles, Sprout } from 'lucide-react'
 
 const navigation = [
   { name: 'Dashboard', href: '/', icon: Home },
   { name: 'Projects', href: '/projects', icon: FolderKanban },
+  { name: 'Brainstorm', href: '/brainstorm', icon: Sparkles },
+  { name: 'Seed Garden', href: '/seeds', icon: Sprout },
   { name: 'Settings', href: '/settings', icon: Settings },
 ]
 

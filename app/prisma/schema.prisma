@@ -7,8 +7,8 @@ generator client {
 }
 
 datasource db {
-  provider   = "postgresql"
-  url        = env("DATABASE_URL")
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
   // extensions = [pgvector(map: "vector")] // Will enable when we add RAG features
 }
 
@@ -17,18 +17,21 @@ datasource db {
 // ============================================================================
 
 model Organization {
-  id               String   @id @default(uuid()) @db.Uuid
+  id               String           @id @default(uuid()) @db.Uuid
   name             String
-  slug             String   @unique
+  slug             String           @unique
   subscriptionTier SubscriptionTier @default(FREE)
-  createdAt        DateTime @default(now()) @map("created_at")
-  updatedAt        DateTime @updatedAt @map("updated_at")
+  createdAt        DateTime         @default(now()) @map("created_at")
+  updatedAt        DateTime         @updatedAt @map("updated_at")
 
   // Relations
-  projects         Project[]
-  userMemberships  UserOrganizationMembership[]
+  projects           Project[]
+  userMemberships    UserOrganizationMembership[]
   generationSessions ProjectGenerationSession[]
-  programmes       Programme[]
+  programmes         Programme[]
+  brainstormSessions BrainstormSession[]
+  seeds              Seed[]
+  seedElaborations   SeedElaboration[]
 
   @@map("organizations")
 }
@@ -40,14 +43,14 @@ enum SubscriptionTier {
 }
 
 model UserOrganizationMembership {
-  id             String       @id @default(uuid()) @db.Uuid
-  userId         String       @map("user_id") // Clerk user ID
-  organizationId String       @map("organization_id") @db.Uuid
+  id             String   @id @default(uuid()) @db.Uuid
+  userId         String   @map("user_id") // Clerk user ID
+  organizationId String   @map("organization_id") @db.Uuid
   role           UserRole
-  createdAt      DateTime     @default(now()) @map("created_at")
+  createdAt      DateTime @default(now()) @map("created_at")
 
   // Relations
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   @@unique([userId, organizationId])
   @@index([userId])
@@ -69,47 +72,47 @@ enum UserRole {
 // ============================================================================
 
 model Project {
-  id                      String        @id @default(uuid()) @db.Uuid
-  tenantId                String        @map("tenant_id") @db.Uuid
-  createdByUserId         String        @map("created_by_user_id")
+  id              String @id @default(uuid()) @db.Uuid
+  tenantId        String @map("tenant_id") @db.Uuid
+  createdByUserId String @map("created_by_user_id")
 
-  title                   String
-  tagline                 String?
-  status                  ProjectStatus @default(DRAFT)
+  title   String
+  tagline String?
+  status  ProjectStatus @default(DRAFT)
 
   // Project DNA (JSON) - defines all characteristics
-  projectDna              Json          @map("project_dna")
+  projectDna Json @map("project_dna")
 
   // Generated content from AI
   objectives              Json?
-  targetGroupDescription  String?       @map("target_group_description") @db.Text
-  activityOutline         Json?         @map("activity_outline")
-  learningOutcomes        Json?         @map("learning_outcomes")
-  inclusionPlanOverview   String?       @map("inclusion_plan_overview") @db.Text
-  partnerProfile          String?       @map("partner_profile") @db.Text
-  estimatedBudgetRange    Json?         @map("estimated_budget_range")
-  sustainabilityNarrative String?       @map("sustainability_narrative") @db.Text
-  impactNarrative         String?       @map("impact_narrative") @db.Text
+  targetGroupDescription  String? @map("target_group_description") @db.Text
+  activityOutline         Json?   @map("activity_outline")
+  learningOutcomes        Json?   @map("learning_outcomes")
+  inclusionPlanOverview   String? @map("inclusion_plan_overview") @db.Text
+  partnerProfile          String? @map("partner_profile") @db.Text
+  estimatedBudgetRange    Json?   @map("estimated_budget_range")
+  sustainabilityNarrative String? @map("sustainability_narrative") @db.Text
+  impactNarrative         String? @map("impact_narrative") @db.Text
 
   // Formal mode equivalents (application-ready language)
-  targetGroupDescriptionFormal  String?  @map("target_group_description_formal") @db.Text
-  inclusionPlanOverviewFormal   String?  @map("inclusion_plan_overview_formal") @db.Text
-  partnerProfileFormal          String?  @map("partner_profile_formal") @db.Text
-  sustainabilityNarrativeFormal String?  @map("sustainability_narrative_formal") @db.Text
-  impactNarrativeFormal         String?  @map("impact_narrative_formal") @db.Text
+  targetGroupDescriptionFormal  String? @map("target_group_description_formal") @db.Text
+  inclusionPlanOverviewFormal   String? @map("inclusion_plan_overview_formal") @db.Text
+  partnerProfileFormal          String? @map("partner_profile_formal") @db.Text
+  sustainabilityNarrativeFormal String? @map("sustainability_narrative_formal") @db.Text
+  impactNarrativeFormal         String? @map("impact_narrative_formal") @db.Text
 
   // Erasmus+ metadata
-  erasmusAction           String        @map("erasmus_action")
-  durationDays            Int           @map("duration_days")
-  participantCount        Int           @map("participant_count")
+  erasmusAction    String @map("erasmus_action")
+  durationDays     Int    @map("duration_days")
+  participantCount Int    @map("participant_count")
 
-  createdAt               DateTime      @default(now()) @map("created_at")
-  updatedAt               DateTime      @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   // Relations
-  organization            Organization  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  generationSessions      ProjectGenerationSession[]
-  programmes              Programme[]
+  organization       Organization               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  generationSessions ProjectGenerationSession[]
+  programmes         Programme[]
 
   @@index([tenantId, status])
   @@index([tenantId, createdByUserId])
@@ -132,21 +135,21 @@ enum ProjectStatus {
 // ============================================================================
 
 model ProjectGenerationSession {
-  id                String              @id @default(uuid()) @db.Uuid
-  tenantId          String              @map("tenant_id") @db.Uuid
-  projectId         String?             @map("project_id") @db.Uuid
-  userId            String              @map("user_id")
+  id        String  @id @default(uuid()) @db.Uuid
+  tenantId  String  @map("tenant_id") @db.Uuid
+  projectId String? @map("project_id") @db.Uuid
+  userId    String  @map("user_id")
 
-  sessionData       Json                @map("session_data")
-  aiModel           String              @map("ai_model")
-  generationStatus  GenerationStatus    @map("generation_status") @default(IN_PROGRESS)
+  sessionData      Json             @map("session_data")
+  aiModel          String           @map("ai_model")
+  generationStatus GenerationStatus @default(IN_PROGRESS) @map("generation_status")
 
-  createdAt         DateTime            @default(now()) @map("created_at")
-  updatedAt         DateTime            @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   // Relations
-  organization      Organization        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  project           Project?            @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  organization Organization @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  project      Project?     @relation(fields: [projectId], references: [id], onDelete: SetNull)
 
   @@index([tenantId, userId])
   @@index([projectId])
@@ -164,23 +167,23 @@ enum GenerationStatus {
 // ============================================================================
 
 model Programme {
-  id                    String          @id @default(uuid()) @db.Uuid
-  projectId             String          @map("project_id") @db.Uuid
-  tenantId              String          @map("tenant_id") @db.Uuid
+  id        String @id @default(uuid()) @db.Uuid
+  projectId String @map("project_id") @db.Uuid
+  tenantId  String @map("tenant_id") @db.Uuid
 
-  version               Int             @default(1)
-  status                ProgrammeStatus @default(DRAFT)
+  version Int             @default(1)
+  status  ProgrammeStatus @default(DRAFT)
 
-  generatedFromConcept  Json            @map("generated_from_concept")
-  aiModel               String          @default("gpt-4-turbo-preview") @map("ai_model")
+  generatedFromConcept Json   @map("generated_from_concept")
+  aiModel              String @default("gpt-4-turbo-preview") @map("ai_model")
 
-  createdAt             DateTime        @default(now()) @map("created_at")
-  updatedAt             DateTime        @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   // Relations
-  project               Project         @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  organization          Organization    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  days                  ProgrammeDay[]
+  project      Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  organization Organization   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  days         ProgrammeDay[]
 
   @@index([projectId])
   @@index([tenantId])
@@ -194,28 +197,28 @@ enum ProgrammeStatus {
 }
 
 model ProgrammeDay {
-  id              String            @id @default(uuid()) @db.Uuid
-  programmeId     String            @map("programme_id") @db.Uuid
+  id          String @id @default(uuid()) @db.Uuid
+  programmeId String @map("programme_id") @db.Uuid
 
-  dayNumber       Int               @map("day_number")
-  date            DateTime?         @db.Date
-  theme           String?           @db.VarChar(200)
+  dayNumber Int       @map("day_number")
+  date      DateTime? @db.Date
+  theme     String?   @db.VarChar(200)
 
-  morningFocus    String?           @map("morning_focus") @db.VarChar(500)
-  afternoonFocus  String?           @map("afternoon_focus") @db.VarChar(500)
-  eveningFocus    String?           @map("evening_focus") @db.VarChar(500)
+  morningFocus   String? @map("morning_focus") @db.VarChar(500)
+  afternoonFocus String? @map("afternoon_focus") @db.VarChar(500)
+  eveningFocus   String? @map("evening_focus") @db.VarChar(500)
 
   // Formal mode equivalents
-  morningFocusFormal    String?  @map("morning_focus_formal") @db.VarChar(500)
-  afternoonFocusFormal  String?  @map("afternoon_focus_formal") @db.VarChar(500)
-  eveningFocusFormal    String?  @map("evening_focus_formal") @db.VarChar(500)
+  morningFocusFormal   String? @map("morning_focus_formal") @db.VarChar(500)
+  afternoonFocusFormal String? @map("afternoon_focus_formal") @db.VarChar(500)
+  eveningFocusFormal   String? @map("evening_focus_formal") @db.VarChar(500)
 
-  createdAt       DateTime          @default(now()) @map("created_at")
-  updatedAt       DateTime          @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   // Relations
-  programme       Programme         @relation(fields: [programmeId], references: [id], onDelete: Cascade)
-  sessions        ProgrammeSession[]
+  programme Programme          @relation(fields: [programmeId], references: [id], onDelete: Cascade)
+  sessions  ProgrammeSession[]
 
   @@unique([programmeId, dayNumber])
   @@index([programmeId])
@@ -223,40 +226,40 @@ model ProgrammeDay {
 }
 
 model ProgrammeSession {
-  id                  String        @id @default(uuid()) @db.Uuid
-  programmeDayId      String        @map("programme_day_id") @db.Uuid
+  id             String @id @default(uuid()) @db.Uuid
+  programmeDayId String @map("programme_day_id") @db.Uuid
 
-  startTime           DateTime      @map("start_time") @db.Time
-  endTime             DateTime      @map("end_time") @db.Time
+  startTime DateTime @map("start_time") @db.Time
+  endTime   DateTime @map("end_time") @db.Time
 
-  title               String        @db.VarChar(200)
-  description         String?       @db.Text
-  activityType        ActivityType? @map("activity_type")
+  title        String        @db.VarChar(200)
+  description  String?       @db.Text
+  activityType ActivityType? @map("activity_type")
 
   // Formal mode equivalents
-  titleFormal             String?  @map("title_formal") @db.VarChar(200)
-  descriptionFormal       String?  @map("description_formal") @db.Text
+  titleFormal       String? @map("title_formal") @db.VarChar(200)
+  descriptionFormal String? @map("description_formal") @db.Text
 
-  learningObjectives  String[]      @map("learning_objectives")
-  methodology         String?       @db.VarChar(100)
+  learningObjectives String[] @map("learning_objectives")
+  methodology        String?  @db.VarChar(100)
 
-  materialsNeeded     String[]      @map("materials_needed")
-  preparationNotes    String?       @map("preparation_notes") @db.Text
-  preparationNotesFormal  String?   @map("preparation_notes_formal") @db.Text
-  spaceRequirements   String?       @map("space_requirements") @db.VarChar(200)
-  groupSize           String?       @map("group_size") @db.VarChar(50)
+  materialsNeeded        String[] @map("materials_needed")
+  preparationNotes       String?  @map("preparation_notes") @db.Text
+  preparationNotesFormal String?  @map("preparation_notes_formal") @db.Text
+  spaceRequirements      String?  @map("space_requirements") @db.VarChar(200)
+  groupSize              String?  @map("group_size") @db.VarChar(50)
 
-  accessibilityNotes  String?       @map("accessibility_notes") @db.Text
-  languageLevel       String?       @map("language_level") @db.VarChar(20)
+  accessibilityNotes String? @map("accessibility_notes") @db.Text
+  languageLevel      String? @map("language_level") @db.VarChar(20)
 
-  orderIndex          Int           @map("order_index")
-  isOptional          Boolean       @default(false) @map("is_optional")
+  orderIndex Int     @map("order_index")
+  isOptional Boolean @default(false) @map("is_optional")
 
-  createdAt           DateTime      @default(now()) @map("created_at")
-  updatedAt           DateTime      @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   // Relations
-  day                 ProgrammeDay  @relation(fields: [programmeDayId], references: [id], onDelete: Cascade)
+  day ProgrammeDay @relation(fields: [programmeDayId], references: [id], onDelete: Cascade)
 
   @@index([programmeDayId])
   @@index([startTime])
@@ -278,4 +281,81 @@ enum ActivityType {
   CREATIVE
   SPORTS
   DISCUSSION
+}
+
+// ============================================================================
+// BRAINSTORMING PLAYGROUND
+// ============================================================================
+
+model BrainstormSession {
+  id       String @id @default(uuid()) @db.Uuid
+  tenantId String @map("tenant_id") @db.Uuid
+  userId   String @map("user_id")
+
+  prompt         String @db.Text
+  creativityTemp Float  @default(0.9) @map("creativity_temperature")
+  seedCount      Int    @default(10) @map("seed_count")
+
+  generationStatus GenerationStatus @default(IN_PROGRESS) @map("generation_status")
+  aiModel          String           @default("gpt-4-turbo-preview") @map("ai_model")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  organization Organization @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  seeds        Seed[]
+
+  @@index([tenantId, userId])
+  @@map("brainstorm_sessions")
+}
+
+model Seed {
+  id        String @id @default(uuid()) @db.Uuid
+  sessionId String @map("session_id") @db.Uuid
+  tenantId  String @map("tenant_id") @db.Uuid
+  userId    String @map("user_id")
+
+  title              String @db.VarChar(200)
+  description        String @db.Text
+  approvalLikelihood Float  @default(0.5) @map("approval_likelihood") // 0.0-1.0
+
+  isSaved     Boolean @default(false) @map("is_saved")
+  isDismissed Boolean @default(false) @map("is_dismissed")
+
+  // Elaboration tracking
+  elaborationCount Int   @default(0) @map("elaboration_count")
+  currentVersion   Json? @map("current_version") // Latest elaborated version
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  session      BrainstormSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  organization Organization      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  elaborations SeedElaboration[]
+
+  @@index([tenantId, userId, isSaved])
+  @@index([sessionId])
+  @@map("seeds")
+}
+
+model SeedElaboration {
+  id       String @id @default(uuid()) @db.Uuid
+  seedId   String @map("seed_id") @db.Uuid
+  tenantId String @map("tenant_id") @db.Uuid
+
+  conversationHistory Json @map("conversation_history") // Array of messages
+  currentSeedState    Json @map("current_seed_state") // Current elaborated seed
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  seed         Seed         @relation(fields: [seedId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([seedId]) // One elaboration session per seed
+  @@index([tenantId])
+  @@map("seed_elaborations")
 }
