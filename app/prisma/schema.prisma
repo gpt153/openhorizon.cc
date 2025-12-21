@@ -316,9 +316,15 @@ model Seed {
   tenantId  String @map("tenant_id") @db.Uuid
   userId    String @map("user_id")
 
+  // Working mode (original - informal, authentic language)
   title              String @db.VarChar(200)
   description        String @db.Text
   approvalLikelihood Float  @default(0.5) @map("approval_likelihood") // 0.0-1.0
+
+  // Formal mode (application-ready Erasmus+ language)
+  titleFormal              String? @db.VarChar(200) @map("title_formal")
+  descriptionFormal        String? @db.Text @map("description_formal")
+  approvalLikelihoodFormal Float?  @map("approval_likelihood_formal")
 
   isSaved     Boolean @default(false) @map("is_saved")
   isDismissed Boolean @default(false) @map("is_dismissed")

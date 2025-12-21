@@ -18,9 +18,17 @@ export const ApplySuggestionInputSchema = z.object({
 })
 
 export const GeneratedSeedSchema = z.object({
+  // Working mode (informal, authentic)
   title: z.string().min(5).max(200),
   description: z.string().min(50).max(2000),
   approvalLikelihood: z.number().min(0.0).max(1.0),
+
+  // Formal mode (application-ready)
+  titleFormal: z.string().min(5).max(200),
+  descriptionFormal: z.string().min(50).max(2000),
+  approvalLikelihoodFormal: z.number().min(0.0).max(1.0),
+
+  // Shared fields
   suggestedTags: z.array(z.string()).optional(),
   estimatedDuration: z.number().int().min(5).max(21).optional(),
   estimatedParticipants: z.number().int().min(16).max(60).optional(),
@@ -42,6 +50,7 @@ export const ElaborationResponseSchema = z.object({
   suggestions: z.array(SeedSuggestionSchema),
   updatedSeed: GeneratedSeedSchema,
   updatedApprovalLikelihood: z.number().min(0.0).max(1.0),
+  updatedApprovalLikelihoodFormal: z.number().min(0.0).max(1.0),
 })
 
 // Type inference

@@ -1,9 +1,14 @@
+'use client'
+
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Heart, Trash2, MessageSquare } from 'lucide-react'
 import type { Seed } from '@prisma/client'
 import ApprovalLikelihoodMeter from './ApprovalLikelihoodMeter'
+import { useContentField } from '@/lib/hooks/useContentField'
+import { ContentModeBadge } from '@/components/ui/ContentModeBadge'
+import { useContentModeStore } from '@/lib/stores/contentModeStore'
 
 interface SeedCardProps {
   seed: Seed
@@ -21,6 +26,16 @@ export default function SeedCard({
   showActions = true,
 }: SeedCardProps) {
   const currentVersion = seed.currentVersion as any
+  const { mode } = useContentModeStore()
+
+  // Use content field hook for working/formal mode switching
+  const displayTitle = useContentField(seed.title, seed.titleFormal)
+  const displayDescription = useContentField(seed.description, seed.descriptionFormal)
+
+  // Select approval likelihood based on mode
+  const displayLikelihood = mode === 'formal' && seed.approvalLikelihoodFormal !== null
+    ? seed.approvalLikelihoodFormal
+    : seed.approvalLikelihood
 
   return (
     <Card
@@ -29,14 +44,19 @@ export default function SeedCard({
     >
       <CardHeader>
         <div className="flex items-start justify-between gap-4">
-          <CardTitle className="text-lg leading-tight">{seed.title}</CardTitle>
-          <ApprovalLikelihoodMeter value={seed.approvalLikelihood} size="sm" />
+          <div className="flex-1">
+            <div className="flex items-center gap-2">
+              <CardTitle className="text-lg leading-tight">{displayTitle}</CardTitle>
+            </div>
+            <ContentModeBadge formalValue={seed.titleFormal} />
+          </div>
+          <ApprovalLikelihoodMeter value={displayLikelihood} size="sm" />
         </div>
       </CardHeader>
 
       <CardContent className="flex-1">
         <CardDescription className="line-clamp-4 text-sm leading-relaxed">
-          {seed.description}
+          {displayDescription}
         </CardDescription>
 
         {currentVersion?.suggestedTags && currentVersion.suggestedTags.length > 0 && (

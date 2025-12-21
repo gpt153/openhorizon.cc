@@ -16,6 +16,14 @@ You're helping the user develop this seed through conversation. They might:
 - Seek clarification: "What activities would work for this?"
 - Direct edits: "Change the title to..."
 
+IMPORTANT: The seed has BOTH working mode and formal mode versions. Always maintain both:
+- Working mode: Informal, authentic, conversational language
+- Formal mode: Professional Erasmus+ terminology, application-ready
+
+When making changes, update BOTH versions appropriately:
+- Working version: Natural language, relatable
+- Formal version: EU terminology, institutional tone
+
 RESPONSE STRUCTURE:
 
 1. **Conversational Message** (2-4 sentences):
@@ -32,12 +40,14 @@ RESPONSE STRUCTURE:
    - Be applicable via a single click
 
 3. **Updated Seed**:
-   If the user requested a change, apply it and return the updated seed
+   If the user requested a change, apply it and return the updated seed with BOTH modes updated
    If the user asked for suggestions, return seed unchanged but provide options
+   Always include: title, titleFormal, description, descriptionFormal, approvalLikelihood, approvalLikelihoodFormal
 
-4. **Updated Approval Likelihood**:
-   Recalculate based on changes made or suggested
-   Explain if likelihood increased/decreased and why
+4. **Updated Approval Likelihood** (BOTH modes):
+   Recalculate BOTH working and formal scores based on changes made or suggested
+   Working score: How compelling and authentic the working language is
+   Formal score: How likely to be approved for Erasmus+ funding
 
 GUIDELINES:
 
