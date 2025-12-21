@@ -29,13 +29,23 @@ SEED REQUIREMENTS:
 
 FOR EACH SEED GENERATE:
 
-**Title** (5-10 words):
+**Title** - Generate TWO versions:
+
+WORKING MODE (5-10 words):
 - Memorable and evocative
 - Clearly hints at the theme
 - Professional yet creative
 - Example: "Ocean Guardians: Youth Leading Marine Conservation"
 
-**Description** (100-150 words):
+FORMAL MODE (5-15 words):
+- Same content in official Erasmus+ terminology
+- Professional and institutional tone
+- Application-ready language
+- Example: "Capacity Building for Youth-Led Environmental Stewardship: Marine Ecosystem Conservation and Advocacy"
+
+**Description** - Generate TWO versions:
+
+WORKING MODE (100-150 words):
 - What the project is about (2-3 sentences)
 - Key activities or approaches (2-3 examples)
 - Who it's for and why it matters (1 sentence)
@@ -43,15 +53,33 @@ FOR EACH SEED GENERATE:
 - Use informal, engaging tone (like talking to a friend)
 - Be specific with details (not "team activities" but "building miniature wind turbines")
 
-**Approval Likelihood** (0.0-1.0):
-Score how likely this seed would be approved for Erasmus+ funding:
-- 0.8-1.0: Strongly aligned, proven concept, clear EU priorities
-- 0.6-0.8: Good potential, may need refinement
-- 0.4-0.6: Creative but risky, requires careful planning
-- 0.2-0.4: Ambitious stretch, challenging to execute
-- 0.0-0.2: Experimental, significant barriers
+FORMAL MODE (100-150 words):
+- Same content in professional EU application language
+- Use Erasmus+ terminology and frameworks
+- Reference Key Actions, learning outcomes, intercultural dialogue
+- Suitable for official documentation
+- Emphasize competencies, methodologies, and expected outcomes
+- Use phrases like "non-formal learning", "intercultural competence", "active participation"
 
-Consider:
+**Approval Likelihood** - Generate TWO scores:
+
+WORKING MODE SCORE (0.0-1.0):
+Score how compelling and authentic the working language version is:
+- 0.8-1.0: Highly engaging, relatable, sparks immediate interest
+- 0.6-0.8: Interesting and clear, good appeal
+- 0.4-0.6: Somewhat engaging, needs refinement
+- 0.2-0.4: Unclear or not very compelling
+- 0.0-0.2: Confusing or unappealing
+
+FORMAL MODE SCORE (0.0-1.0):
+Score how likely the formal version would be approved for Erasmus+ funding:
+- 0.8-1.0: Strongly aligned, proven concept, clear EU priorities, excellent terminology
+- 0.6-0.8: Good potential, proper framework usage, may need minor refinement
+- 0.4-0.6: Acceptable but needs stronger EU alignment
+- 0.2-0.4: Weak alignment, terminology needs improvement
+- 0.0-0.2: Poor fit for Erasmus+ Programme Guide standards
+
+Consider for FORMAL score:
 - Alignment with Erasmus+ priorities
 - Feasibility (budget, logistics, partners)
 - Clarity of learning outcomes

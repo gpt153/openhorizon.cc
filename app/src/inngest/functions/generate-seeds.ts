@@ -51,10 +51,16 @@ export const generateSeedsJob = inngest.createFunction(
         sessionId: session.id,
         tenantId,
         userId,
+        // Working mode
         title: seed.title,
         description: seed.description,
         approvalLikelihood: seed.approvalLikelihood,
-        currentVersion: seed as any, // Store full seed as JSON
+        // Formal mode
+        titleFormal: seed.titleFormal,
+        descriptionFormal: seed.descriptionFormal,
+        approvalLikelihoodFormal: seed.approvalLikelihoodFormal,
+        // Store full seed as JSON
+        currentVersion: seed as any,
       }))
 
       await prisma.seed.createMany({

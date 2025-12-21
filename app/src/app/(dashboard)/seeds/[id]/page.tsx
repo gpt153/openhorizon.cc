@@ -10,6 +10,9 @@ import { Loader2, Send, ArrowRight, Sparkles } from 'lucide-react'
 import { toast } from 'sonner'
 import ApprovalLikelihoodMeter from '@/components/brainstorm/ApprovalLikelihoodMeter'
 import type { ElaborationMessage } from '@/lib/types/brainstorm'
+import { useContentField } from '@/lib/hooks/useContentField'
+import { ContentModeBadge } from '@/components/ui/ContentModeBadge'
+import { useContentModeStore } from '@/lib/stores/contentModeStore'
 
 export default function SeedElaborationPage() {
   const router = useRouter()
@@ -29,6 +32,22 @@ export default function SeedElaborationPage() {
 
   const currentVersion = seed?.currentVersion as any
   const conversationHistory = (seed?.elaborations?.[0]?.conversationHistory || []) as unknown as ElaborationMessage[]
+  const { mode } = useContentModeStore()
+
+  // Use content field hook for working/formal mode switching
+  const displayTitle = useContentField(
+    currentVersion?.title || seed?.title,
+    currentVersion?.titleFormal || seed?.titleFormal
+  )
+  const displayDescription = useContentField(
+    currentVersion?.description || seed?.description,
+    currentVersion?.descriptionFormal || seed?.descriptionFormal
+  )
+
+  // Select approval likelihood based on mode
+  const displayLikelihood = mode === 'formal' && seed?.approvalLikelihoodFormal !== null
+    ? seed?.approvalLikelihoodFormal
+    : seed?.approvalLikelihood
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -74,20 +93,23 @@ export default function SeedElaborationPage() {
         <Card className="lg:sticky lg:top-6 lg:h-fit">
           <CardHeader>
             <div className="flex items-start justify-between">
-              <CardTitle className="text-xl">Live Preview</CardTitle>
-              <ApprovalLikelihoodMeter value={seed.approvalLikelihood} size="md" showLabel />
+              <div className="flex-1">
+                <CardTitle className="text-xl">Live Preview</CardTitle>
+                <ContentModeBadge formalValue={seed.titleFormal} />
+              </div>
+              <ApprovalLikelihoodMeter value={displayLikelihood || 0.5} size="md" showLabel />
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
               <label className="text-sm font-medium text-zinc-700">Title</label>
-              <p className="mt-1 text-lg font-semibold">{currentVersion?.title || seed.title}</p>
+              <p className="mt-1 text-lg font-semibold">{displayTitle}</p>
             </div>
 
             <div>
               <label className="text-sm font-medium text-zinc-700">Description</label>
               <p className="mt-1 text-sm leading-relaxed text-zinc-600">
-                {currentVersion?.description || seed.description}
+                {displayDescription}
               </p>
             </div>
 

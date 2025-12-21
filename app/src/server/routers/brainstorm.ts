@@ -177,12 +177,19 @@ export const brainstormRouter = router({
         },
       })
 
-      // Update seed
+      // Update seed with both working and formal versions
       await ctx.prisma.seed.update({
         where: { id: seed.id },
         data: {
           currentVersion: response.updatedSeed as any,
+          // Working mode
+          title: response.updatedSeed.title,
+          description: response.updatedSeed.description,
           approvalLikelihood: response.updatedApprovalLikelihood,
+          // Formal mode
+          titleFormal: response.updatedSeed.titleFormal,
+          descriptionFormal: response.updatedSeed.descriptionFormal,
+          approvalLikelihoodFormal: response.updatedApprovalLikelihoodFormal,
           elaborationCount: { increment: 1 },
         },
       })
