@@ -58,24 +58,24 @@ export function validateSeedQuality(seed: GeneratedSeed): ValidationIssue[] {
     })
   }
 
-  // Check 3: Working version should feel casual (presence of "you", "we", contractions)
-  const casualIndicators = /\b(you'll|we'll|you're|we're|don't|can't|won't|it's|that's)\b/i
-  if (!casualIndicators.test(seed.description)) {
+  // Check 3: Working version should avoid recruitment/sales language
+  const salesLanguage = /\b(join us|your chance|don't miss|exciting opportunity|transform your|discover how)\b/i
+  if (salesLanguage.test(seed.description)) {
     issues.push({
       severity: 'warning',
       field: 'description',
-      message: 'Working version lacks casual language (no contractions or second person)',
+      message: 'Working version contains sales/recruitment language - should be factual planner language',
       seedTitle: seed.title,
     })
   }
 
-  // Check 4: Working version should use second person
-  const hasSecondPerson = /\b(you|your|you'll|you're)\b/i.test(seed.description)
-  if (!hasSecondPerson) {
+  // Check 4: Working version should focus on concrete activities
+  const hasConcreteActivities = /\b(mornings?:|afternoons?:|evenings?:|day \d+|build|play|film|cook|hike|create|make)\b/i.test(seed.description)
+  if (!hasConcreteActivities) {
     issues.push({
-      severity: 'error',
+      severity: 'warning',
       field: 'description',
-      message: 'Working version missing second person ("you") - sounds too formal',
+      message: 'Working version lacks concrete activity descriptions (mornings/afternoons structure recommended)',
       seedTitle: seed.title,
     })
   }

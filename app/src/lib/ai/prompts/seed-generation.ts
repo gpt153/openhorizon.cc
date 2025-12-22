@@ -34,30 +34,33 @@ PART 1: WORKING MODE (Casual Brainstorming Language)
 ═══════════════════════════════════════════════════════════════════════════════
 
 TONE FOR WORKING MODE:
-Write like you're texting a friend about an exciting opportunity. Use "you" and "we". Be specific and visual. Use contractions. Make them FEEL the experience. This is for brainstorming and getting excited about possibilities - NOT for formal applications.
+Write for the PROJECT PLANNER, not for recruiting participants. This is internal brainstorming language - quick, practical, focused on the actual activities and possibilities. Think "project sketch" not "sales pitch". Be concrete about what participants will actually DO (play on the beach, build solar ovens, edit videos, etc.) with just enough detail to grasp the idea and the fun factor.
 
 **Title** (5-10 words):
-- Catchy and memorable
-- Hints at the theme clearly
-- Sounds exciting and inviting
-- Example: "Ocean Guardians: Youth Leading Marine Conservation"
+- Clear and descriptive of the core activity
+- Hints at what participants will actually do
+- Casual but not salesy
+- Example: "Beach Cleanup + Marine Biology Learning Week"
 
 **Description** (100-150 words):
-Write in CASUAL, CONVERSATIONAL language as if you're telling a friend about this opportunity.
+Write in PLAIN, PRACTICAL language as if you're sketching out a project idea for yourself or a colleague.
+
+AUDIENCE: You're writing for the project planner/organizer, NOT recruiting participants.
 
 STYLE RULES:
-✓ Use "you'll", "we'll", "don't", "it's" (contractions)
-✓ Use second person: "you'll learn", "you'll spend mornings..."
-✓ Paint a picture - make it visual and concrete
-✓ Include specific, tangible activities
-✓ Make it sound FUN and exciting
-✓ Use parenthetical asides (like this!)
-✗ NO formal terminology
-✗ NO phrases like "participants will develop competencies"
-✗ NO third person ("participants", "the project")
+✓ Focus on concrete activities: "mornings: beach cleanup and counting species" not "you'll become environmental stewards"
+✓ List what participants actually DO: "play jetskis, snowboard, film videos, cook together"
+✓ Be specific and visual: "build miniature wind turbines" not "learn about renewable energy"
+✓ Keep it practical and grounded - what ACTUALLY happens
+✓ Use casual language but stay factual
+✓ Contractions are fine but not required
+✗ NO recruitment language ("join us for...", "this is your chance to...")
+✗ NO inspiring calls to action or motivational language
+✗ NO focus on learning outcomes or participant benefits
+✗ NO sales pitch or hype
 
 WORKING MODE DESCRIPTION EXAMPLE:
-"Imagine spending a week in the mountains learning to film documentaries about climate change. You'll team up with youth from 5 different countries, hike to melting glaciers to capture real footage, interview local farmers about how weather patterns are shifting, and edit it all into a short film that you'll actually publish online. No filmmaking experience needed—just bring curiosity and a willingness to get your boots muddy. By the end, you'll know how to tell stories that make people care about the planet, and you'll have made friends who are just as passionate about it as you are."
+"Week in the Alps filming climate change documentary. Mornings: hike to glaciers, interview local farmers about weather changes, shoot b-roll of melting ice. Afternoons: video editing workshops, learn basic camera techniques. Evenings: watch each other's footage, give feedback. By day 6 they'll have a 5-minute short film ready to publish. Mix of outdoor filming and indoor editing. Works with 5 countries, ages 18-25, no film experience needed."
 
 ═══════════════════════════════════════════════════════════════════════════════
 PART 2: FORMAL MODE (Erasmus+ Application Language)
