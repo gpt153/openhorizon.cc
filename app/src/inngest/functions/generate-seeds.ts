@@ -2,6 +2,7 @@ import { inngest } from '@/inngest/client'
 import prisma from '@/lib/prisma'
 import { generateSeeds } from '@/lib/ai/chains/seed-generation'
 import type { BrainstormInput } from '@/lib/types/brainstorm'
+import { validateSeedBatch } from '@/lib/utils/seed-quality-validator'
 
 /**
  * Generate Seeds - Background Job
@@ -40,7 +41,16 @@ export const generateSeedsJob = inngest.createFunction(
         seedCount: session.seedCount,
       }
 
-      return await generateSeeds(input)
+      const seeds = await generateSeeds(input)
+
+      // Validate seed quality (working vs formal mode contrast)
+      const validation = validateSeedBatch(seeds)
+
+      if (!validation.isValid) {
+        console.warn('⚠️  Generated seeds have quality issues (see validation report above)')
+      }
+
+      return seeds
     })
 
     // Step 3: Save seeds to database
