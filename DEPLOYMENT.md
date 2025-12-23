@@ -1,10 +1,21 @@
 # Deployment Guide - Google Cloud Run
 
+## Architecture Overview
+
+This project uses a **monorepo structure** with two separate Cloud Run services:
+
+| Service | Domain | Purpose | Build Config |
+|---------|--------|---------|--------------|
+| `openhorizon-landing` | openhorizon.cc | Marketing landing page | cloudbuild-landing.yaml |
+| `openhorizon-app` | app.openhorizon.cc | Full application | cloudbuild-app.yaml |
+
 ## Prerequisites
 
 1. Google Cloud account with billing enabled
 2. `gcloud` CLI installed and authenticated
-3. DNS CNAME record configured: `app.openhorizon.cc` → `ghs.googlehosted.com`
+3. DNS CNAME records configured:
+   - `openhorizon.cc` → `ghs.googlehosted.com`
+   - `app.openhorizon.cc` → `ghs.googlehosted.com`
 
 ## One-Time Setup
 
@@ -60,11 +71,28 @@ NEXT_PUBLIC_APP_URL="https://app.openhorizon.cc"
 
 ### Method 1: Using gcloud (Recommended)
 
+**Deploy Landing Page:**
+```bash
+cd landing
+
+gcloud run deploy openhorizon-landing \
+  --source . \
+  --region=$REGION \
+  --allow-unauthenticated \
+  --platform=managed \
+  --memory=512Mi \
+  --cpu=1 \
+  --timeout=60 \
+  --max-instances=10 \
+  --min-instances=0 \
+  --env-vars-file=../env-landing.yaml
+```
+
+**Deploy Application:**
 ```bash
 cd app
 
-# Build and deploy in one command
-gcloud run deploy open-horizon-app \
+gcloud run deploy openhorizon-app \
   --source . \
   --region=$REGION \
   --allow-unauthenticated \
@@ -74,8 +102,7 @@ gcloud run deploy open-horizon-app \
   --timeout=300 \
   --max-instances=10 \
   --min-instances=0 \
-  --set-env-vars="NODE_ENV=production,NEXT_TELEMETRY_DISABLED=1" \
-  --env-vars-file=../.env.production
+  --env-vars-file=../env-app.yaml
 ```
 
 ### Method 2: Build Docker Image Separately
@@ -99,17 +126,32 @@ gcloud run deploy open-horizon-app \
   --cpu=1
 ```
 
-## Map Custom Domain
+## Map Custom Domains
+
+**IMPORTANT**: The root domain hosts the landing page, subdomain hosts the application.
 
 ```bash
-# Add domain mapping
+# Map landing page to root domain
 gcloud run domain-mappings create \
-  --service=open-horizon-app \
+  --service=openhorizon-landing \
+  --domain=openhorizon.cc \
+  --region=$REGION
+
+# Map application to subdomain
+gcloud run domain-mappings create \
+  --service=openhorizon-app \
   --domain=app.openhorizon.cc \
   --region=$REGION
 
 # Verify domain ownership (follow prompts)
 ```
+
+Or use the provided script:
+```bash
+./deploy-domain-mappings.sh
+```
+
+See `DEPLOY_INSTRUCTIONS.md` for detailed deployment steps.
 
 ## Configure Clerk Production Domain
 

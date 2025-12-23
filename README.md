@@ -20,71 +20,141 @@ Swedish nonprofit association creating meaningful international opportunities fo
 - **Styling:** Tailwind CSS
 - **Deployment:** Google Cloud Run (serverless)
 
+## 📦 Project Structure
+
+This is a **monorepo** containing two Next.js applications:
+
+```
+openhorizon.cc/
+├── landing/              # Marketing landing page → openhorizon.cc
+│   ├── src/app/         # Landing page routes
+│   ├── Dockerfile       # Landing page container
+│   └── package.json     # Landing dependencies
+├── app/                  # Full application → app.openhorizon.cc
+│   ├── src/             # Application source code
+│   ├── prisma/          # Database schema
+│   ├── Dockerfile       # App container
+│   └── package.json     # App dependencies
+├── cloudbuild-landing.yaml  # Deploy landing page
+├── cloudbuild-app.yaml      # Deploy application
+└── package.json            # Monorepo workspace root
+```
+
+### Domain Structure
+
+- **openhorizon.cc** (root) → Marketing landing page for customers/partners
+- **app.openhorizon.cc** (subdomain) → Full application
+
 ## 📦 Getting Started
 
 ### Prerequisites
 
 - Node.js 20+
-- npm or yarn
+- npm
 
 ### Installation
 
 ```bash
-# Install dependencies
+# Install all dependencies (both landing and app)
 npm install
 
-# Run development server
-npm run dev
+# Or install individually
+cd landing && npm install
+cd ../app && npm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) to view the site.
+### Development
+
+```bash
+# Run landing page (port 3000)
+npm run dev:landing
+
+# Run application (port 3001)
+npm run dev:app
+
+# Or run individually
+cd landing && npm run dev
+cd app && npm run dev
+```
+
+**Landing page**: [http://localhost:3000](http://localhost:3000)
+**Application**: [http://localhost:3001](http://localhost:3001)
 
 ### Build for Production
 
 ```bash
-# Build the application
-npm run build
+# Build landing page
+npm run build:landing
 
-# Start production server
-npm start
+# Build application
+npm run build:app
+
+# Or build individually
+cd landing && npm run build
+cd app && npm run build
 ```
 
 ## 🐳 Docker Deployment
 
 ```bash
-# Build Docker image
-docker build -t openhorizon .
+# Build landing page
+docker build -t openhorizon-landing -f landing/Dockerfile landing
 
-# Run container
-docker run -p 3000:3000 openhorizon
+# Build application
+docker build -t openhorizon-app -f app/Dockerfile app
+
+# Run containers
+docker run -p 3000:3000 openhorizon-landing
+docker run -p 3001:3000 openhorizon-app
 ```
 
 ## ☁️ Cloud Run Deployment
 
+**Automatic Deployment** via Cloud Build triggers:
+- Push to `main` with changes to `landing/**` → Deploys landing page
+- Push to `main` with changes to `app/**` → Deploys application
+
+**Manual Deployment**:
+
 ```bash
-# Deploy to Google Cloud Run
-gcloud run deploy openhorizon \
-  --source . \
+# Deploy landing page
+gcloud run deploy openhorizon-landing \
+  --source landing \
   --region=europe-west1 \
-  --allow-unauthenticated
+  --allow-unauthenticated \
+  --env-vars-file=env-landing.yaml
+
+# Deploy application
+gcloud run deploy openhorizon-app \
+  --source app \
+  --region=europe-west1 \
+  --allow-unauthenticated \
+  --env-vars-file=env-app.yaml
 ```
 
-## 📄 Project Structure
+See `DEPLOY_INSTRUCTIONS.md` for complete deployment guide.
 
-```
-openhorizon.cc/
-├── app/                  # Next.js app directory
-│   ├── globals.css      # Global styles
-│   ├── layout.tsx       # Root layout
-│   └── page.tsx         # Homepage
-├── components/          # React components
-│   ├── Hero.tsx         # Hero section with email capture
-│   ├── Features.tsx     # Features grid
-│   ├── HowItWorks.tsx   # Process steps
-│   └── Footer.tsx       # Footer with EU compliance
-├── public/              # Static assets
-└── package.json         # Dependencies
-```
+## 📁 Detailed Structure
+
+### Landing Page (`landing/`)
+- **Purpose**: Marketing site for customers and partners
+- **URL**: https://openhorizon.cc
+- **Features**:
+  - Hero section with CTAs
+  - Features grid
+  - How It Works section
+  - EU compliance footer
+  - Links to application
+
+### Application (`app/`)
+- **Purpose**: Full Erasmus+ project management platform
+- **URL**: https://app.openhorizon.cc
+- **Features**:
+  - User authentication (Clerk)
+  - Project creation and management
+  - Database (Supabase + Prisma)
+  - Background jobs (Inngest)
+  - AI-powered features (OpenAI)
 
 ## 🇪🇺 EU Compliance
 
