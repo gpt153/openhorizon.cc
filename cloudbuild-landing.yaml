@@ -1,0 +1,50 @@
+# Cloud Build configuration for landing page deployment to Cloud Run
+# Triggers on push to main branch when landing/ folder changes
+
+steps:
+  # Step 1: Build the Docker image
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '-t'
+      - 'europe-west1-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/openhorizon-landing:$COMMIT_SHA'
+      - '-t'
+      - 'europe-west1-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/openhorizon-landing:latest'
+      - '-f'
+      - 'landing/Dockerfile'
+      - 'landing'
+    id: 'build-landing-image'
+
+  # Step 2: Push the Docker image to Artifact Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - 'europe-west1-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/openhorizon-landing:$COMMIT_SHA'
+    id: 'push-landing-image'
+
+  # Step 3: Deploy to Cloud Run
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args:
+      - 'run'
+      - 'deploy'
+      - 'openhorizon-landing'
+      - '--image=europe-west1-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/openhorizon-landing:$COMMIT_SHA'
+      - '--region=europe-west1'
+      - '--platform=managed'
+      - '--allow-unauthenticated'
+      - '--env-vars-file=env-landing.yaml'
+    id: 'deploy-landing'
+
+# Store images in Artifact Registry
+images:
+  - 'europe-west1-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/openhorizon-landing:$COMMIT_SHA'
+  - 'europe-west1-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/openhorizon-landing:latest'
+
+# Build options
+options:
+  machineType: 'E2_HIGHCPU_8'  # Faster builds
+  logging: CLOUD_LOGGING_ONLY
+
+# Timeout for entire build (10 minutes)
+timeout: '600s'

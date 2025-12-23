@@ -33,7 +33,7 @@ steps:
       - '--region=europe-west1'
       - '--platform=managed'
       - '--allow-unauthenticated'
-      - '--env-vars-file=env.yaml'
+      - '--env-vars-file=env-app.yaml'
     id: 'deploy-cloud-run'
 
 # Store images in Artifact Registry
