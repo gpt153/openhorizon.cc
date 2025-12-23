@@ -1,8 +1,16 @@
 {
-  "name": "openhorizon",
+  "name": "openhorizon-monorepo",
   "version": "0.1.0",
   "private": true,
+  "workspaces": [
+    "landing",
+    "app"
+  ],
   "scripts": {
+    "dev:landing": "npm run dev --workspace=landing",
+    "dev:app": "npm run dev --workspace=app",
+    "build:landing": "npm run build --workspace=landing",
+    "build:app": "npm run build --workspace=app",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
