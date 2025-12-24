@@ -9,7 +9,7 @@
 
 set -e
 
-PROJECT_ID="open-horizon-prod"
+PROJECT_ID="openhorizon-cc"
 REGION="europe-west1"
 
 echo "=== Fixing Domain Mappings for OpenHorizon ==="
@@ -17,12 +17,12 @@ echo
 
 # Step 1: Check current domain mappings
 echo "Current domain mappings:"
-gcloud run domain-mappings list --region=$REGION --project=$PROJECT_ID || true
+gcloud beta run domain-mappings list --region=$REGION --project=$PROJECT_ID || true
 echo
 
 # Step 2: Remove incorrect mapping (if exists)
 echo "Removing incorrect mapping from root domain..."
-gcloud run domain-mappings delete \
+gcloud beta run domain-mappings delete \
   --domain=openhorizon.cc \
   --region=$REGION \
   --project=$PROJECT_ID \
@@ -31,7 +31,7 @@ echo
 
 # Step 3: Map landing page to root domain
 echo "Mapping landing page to openhorizon.cc..."
-gcloud run domain-mappings create \
+gcloud beta run domain-mappings create \
   --service=openhorizon-landing \
   --domain=openhorizon.cc \
   --region=$REGION \
@@ -40,7 +40,7 @@ echo
 
 # Step 4: Map application to subdomain
 echo "Mapping application to app.openhorizon.cc..."
-gcloud run domain-mappings create \
+gcloud beta run domain-mappings create \
   --service=openhorizon-app \
   --domain=app.openhorizon.cc \
   --region=$REGION \
@@ -49,7 +49,7 @@ echo
 
 # Step 5: Verify mappings
 echo "=== Final Domain Mappings ==="
-gcloud run domain-mappings list --region=$REGION --project=$PROJECT_ID
+gcloud beta run domain-mappings list --region=$REGION --project=$PROJECT_ID
 echo
 
 echo "=== DNS Records Required ==="
