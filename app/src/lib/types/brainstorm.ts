@@ -20,9 +20,15 @@ export interface ApplySuggestionInput {
 
 // Output types
 export interface GeneratedSeed {
+  // Working mode (informal, authentic)
   title: string
   description: string
   approvalLikelihood: number // 0.0-1.0
+  // Formal mode (application-ready)
+  titleFormal: string
+  descriptionFormal: string
+  approvalLikelihoodFormal: number // 0.0-1.0
+  // Shared fields
   suggestedTags?: string[]
   estimatedDuration?: number // days
   estimatedParticipants?: number
@@ -40,6 +46,7 @@ export interface ElaborationResponse {
   suggestions: SeedSuggestion[]
   updatedSeed: GeneratedSeed
   updatedApprovalLikelihood: number
+  updatedApprovalLikelihoodFormal: number
 }
 
 export interface SeedSuggestion {
