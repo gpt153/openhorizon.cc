@@ -87,14 +87,13 @@ npm run lint
 # 4. Run type checking (if TypeScript)
 npx tsc --noEmit
 
-# 5. Run tests (if tests exist)
-npm test
+# 5. Run Playwright E2E tests (CRITICAL)
+cd app
+npx playwright test
+# Must pass - validates actual UI/UX works
 
 # 6. Stop dev server
 kill $DEV_PID
-
-# 7. Playwright E2E tests run in GitHub Actions (not local)
-# See .github/workflows/playwright.yml
 ```
 
 **Success Criteria:**
