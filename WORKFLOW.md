@@ -18,7 +18,7 @@ Feature Branch → Staging → Production
 |--------|---------|-------------|-------------|
 | `feature-*` | Feature development | Local dev only | No |
 | `staging` | Integration testing | Cloud Run staging (optional) | No |
-| `main` | Production | openhorizon.cc + app.openhorizon.cc | Manual |
+| `main` | Production | openhorizon.cc + app.openhorizon.cc | **✅ Yes** |
 
 ## Complete Workflow
 
@@ -148,18 +148,42 @@ gcloud run deploy openhorizon-landing-staging \
 - App: `https://staging---openhorizon-app-<hash>.run.app`
 - Landing: `https://staging---openhorizon-landing-<hash>.run.app`
 
-### 7. Promote to Production
+### 7. Promote to Production (AUTOMATIC)
 
 **After staging validation (or if skipping staging):**
 
 1. Create PR: `staging` → `main`
 2. Review changes one last time
-3. Merge to main
+3. **Merge to main** ← This triggers automatic deployment!
 
-4. Deploy to production:
+**What Happens Automatically:**
+
+GitHub Actions workflow triggers on merge to main:
+1. ✅ Builds and deploys landing page to Cloud Run
+2. ✅ Builds and deploys app to Cloud Run
+3. ✅ Verifies both deployments succeeded
+4. ✅ Reports status in Actions tab
+
+**Deployment Status:**
+- Watch deployment: https://github.com/gpt153/openhorizon.cc/actions
+- Landing page: https://openhorizon.cc
+- Application: https://app.openhorizon.cc
+
+**Deployment Settings:**
+- Landing: 512Mi RAM, 1 CPU, 0-10 instances
+- App: 1Gi RAM, 1 CPU, 0-10 instances
+- Region: europe-west1
+- Build: Automatic from source
+
+**Manual Deployment (if needed):**
+
+If you need to deploy without merging (rare):
 
 ```bash
-# Deploy app
+# Trigger workflow manually via GitHub CLI
+gh workflow run deploy-production.yml
+
+# Or deploy manually via gcloud
 cd app
 gcloud run deploy openhorizon-app \
   --source . \
@@ -167,7 +191,6 @@ gcloud run deploy openhorizon-app \
   --project=openhorizon-cc \
   --allow-unauthenticated
 
-# Deploy landing
 cd ../landing
 gcloud run deploy openhorizon-landing \
   --source . \
@@ -175,10 +198,6 @@ gcloud run deploy openhorizon-landing \
   --project=openhorizon-cc \
   --allow-unauthenticated
 ```
-
-**Production URLs:**
-- App: https://app.openhorizon.cc
-- Landing: https://openhorizon.cc
 
 ## SCAR Testing Requirements
 

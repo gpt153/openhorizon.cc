@@ -1,0 +1,89 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:  # Allow manual trigger
+
+jobs:
+  deploy:
+    name: Deploy to Cloud Run
+    runs-on: ubuntu-latest
+
+    # Only run on merged PRs or direct pushes to main
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: openhorizon-cc
+
+      - name: Deploy Landing Page
+        run: |
+          cd landing
+          gcloud run deploy openhorizon-landing \
+            --source . \
+            --region=europe-west1 \
+            --platform=managed \
+            --allow-unauthenticated \
+            --memory=512Mi \
+            --cpu=1 \
+            --timeout=60 \
+            --max-instances=10 \
+            --min-instances=0 \
+            --quiet
+
+      - name: Deploy Application
+        run: |
+          cd app
+          gcloud run deploy openhorizon-app \
+            --source . \
+            --region=europe-west1 \
+            --platform=managed \
+            --allow-unauthenticated \
+            --memory=1Gi \
+            --cpu=1 \
+            --timeout=300 \
+            --max-instances=10 \
+            --min-instances=0 \
+            --quiet
+
+      - name: Verify Deployments
+        run: |
+          echo "✅ Deployment complete!"
+          echo ""
+          echo "Landing Page: https://openhorizon.cc"
+          gcloud run services describe openhorizon-landing \
+            --region=europe-west1 \
+            --format='value(status.url)'
+          echo ""
+          echo "Application: https://app.openhorizon.cc"
+          gcloud run services describe openhorizon-app \
+            --region=europe-west1 \
+            --format='value(status.url)'
+
+      - name: Post deployment status
+        if: always()
+        run: |
+          if [ ${{ job.status }} == 'success' ]; then
+            echo "🚀 Production deployment successful"
+            echo "Landing: https://openhorizon.cc"
+            echo "App: https://app.openhorizon.cc"
+          else
+            echo "❌ Production deployment failed"
+            exit 1
+          fi
