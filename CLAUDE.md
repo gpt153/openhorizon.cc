@@ -153,17 +153,18 @@ npm run build
 # Must complete without errors
 ```
 
-### 4. Tests (if exist)
+### 4. Unit Tests (if exist)
 
 ```bash
-# Run test suite
+# Run unit/integration test suite
 npm test
 # All tests must pass
-
-# Playwright E2E tests (if configured)
-npx playwright test
-# All tests must pass
 ```
+
+**Note:** Playwright E2E tests run in GitHub Actions after PR creation, not during local implementation. This is because:
+- Playwright requires browser binaries not available in SCAR environment
+- E2E tests are slower and run in clean CI environment
+- Local validation focuses on quick feedback (dev server, lint, types, build)
 
 ## Iteration Protocol
 

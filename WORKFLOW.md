@@ -93,8 +93,8 @@ npm test
 # 6. Stop dev server
 kill $DEV_PID
 
-# 7. If Playwright tests exist
-npx playwright test
+# 7. Playwright E2E tests run in GitHub Actions (not local)
+# See .github/workflows/playwright.yml
 ```
 
 **Success Criteria:**
