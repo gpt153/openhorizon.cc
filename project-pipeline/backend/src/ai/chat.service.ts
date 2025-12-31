@@ -151,8 +151,15 @@ export class ChatService {
   private async handleResearchRequest(socket: Socket, data: {
     phaseId: string
     userId: string
+    useRealData?: boolean
   }) {
-    const { phaseId } = data
+    const { phaseId, useRealData = true } = data
+
+    // Emit status update
+    socket.emit('chat:research:status', {
+      status: 'started',
+      message: useRealData ? 'Searching booking sites for real data...' : 'Researching options...'
+    })
 
     // Get phase and project
     const phase = await prisma.phase.findUnique({
@@ -174,18 +181,40 @@ export class ChatService {
     }
 
     const agent = new AccommodationAgent()
+
+    // Progress update for scraping
+    if (useRealData) {
+      socket.emit('chat:research:status', {
+        status: 'scraping',
+        message: 'Fetching data from Booking.com and Hotels.com...'
+      })
+    }
+
     const suggestions = await agent.research({
       project: phase.project,
       phase
+    }, useRealData)
+
+    // Progress update for AI analysis
+    socket.emit('chat:research:status', {
+      status: 'analyzing',
+      message: 'Analyzing and scoring options...'
     })
 
     // Store suggestions
     await agent.storeSuggestions(phaseId, suggestions)
 
-    // Send results
+    // Send final results
     socket.emit('chat:research:result', {
       suggestions,
+      scrapedCount: suggestions.filter(s => s.scraped).length,
+      totalCount: suggestions.length,
       timestamp: new Date()
+    })
+
+    socket.emit('chat:research:status', {
+      status: 'complete',
+      message: `Found ${suggestions.length} accommodation options`
     })
   }
 }
