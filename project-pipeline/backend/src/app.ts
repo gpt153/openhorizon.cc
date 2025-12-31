@@ -7,6 +7,8 @@ import { registerAuthRoutes } from './auth/auth.routes.js'
 import { registerProjectRoutes } from './projects/projects.routes.js'
 import { registerPhaseRoutes } from './phases/phases.routes.js'
 import { registerOpenProjectRoutes } from './integrations/openproject.routes.js'
+import { registerCommunicationsRoutes } from './communications/communications.routes.js'
+import { registerVendorRoutes } from './communications/vendors.routes.js'
 
 const app = Fastify({
   logger: {
@@ -46,7 +48,9 @@ app.get('/', async () => {
       auth: ['/auth/register', '/auth/login', '/auth/me'],
       projects: ['/projects', '/projects/:id'],
       phases: ['/projects/:projectId/phases', '/phases/:id'],
-      integrations: ['/integrations/openproject/test', '/projects/:id/sync/openproject']
+      integrations: ['/integrations/openproject/test', '/projects/:id/sync/openproject'],
+      communications: ['/communications/quote-request', '/communications/compose', '/communications/improve-draft'],
+      vendors: ['/vendors', '/vendors/:id']
     }
   }
 })
@@ -56,6 +60,8 @@ await registerAuthRoutes(app)
 await registerProjectRoutes(app)
 await registerPhaseRoutes(app)
 await registerOpenProjectRoutes(app)
+await registerCommunicationsRoutes(app)
+await registerVendorRoutes(app)
 
 // Error handler
 app.setErrorHandler((error, request, reply) => {
