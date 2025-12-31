@@ -6,7 +6,10 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test": "playwright test",
+    "test:ui": "playwright test --ui",
+    "test:prod": "PLAYWRIGHT_TEST_BASE_URL=https://app.openhorizon.cc playwright test"
   },
   "dependencies": {
     "@clerk/nextjs": "^6.36.3",
@@ -48,6 +51,7 @@
     "zustand": "^5.0.9"
   },
   "devDependencies": {
+    "@playwright/test": "^1.57.0",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
