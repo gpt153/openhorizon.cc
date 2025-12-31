@@ -15,7 +15,12 @@
     "prisma:studio": "prisma studio",
     "seed": "tsx src/utils/seed.ts"
   },
-  "keywords": ["project-management", "ai", "erasmus", "pipeline"],
+  "keywords": [
+    "project-management",
+    "ai",
+    "erasmus",
+    "pipeline"
+  ],
   "author": "",
   "license": "MIT",
   "dependencies": {
@@ -23,15 +28,18 @@
     "@fastify/jwt": "^8.0.1",
     "@fastify/multipart": "^8.3.0",
     "@fastify/websocket": "^10.0.1",
-    "@langchain/anthropic": "^0.3.7",
-    "@langchain/core": "^0.3.19",
-    "@langchain/openai": "^0.3.12",
+    "@langchain/anthropic": "^0.3.34",
+    "@langchain/core": "^0.3.80",
+    "@langchain/openai": "^0.3.17",
     "@prisma/client": "^5.22.0",
+    "axios": "^1.13.2",
     "bcryptjs": "^2.4.3",
     "dotenv": "^16.4.5",
     "fastify": "^5.1.0",
-    "langchain": "^0.3.5",
-    "socket.io": "^4.8.1",
+    "langchain": "^0.3.37",
+    "playwright": "^1.57.0",
+    "socket.io": "^4.8.3",
+    "weaviate-ts-client": "^2.2.0",
     "zod": "^3.23.8"
   },
   "devDependencies": {

@@ -81,8 +81,14 @@ const start = async () => {
       port: env.PORT,
       host: '0.0.0.0'
     })
+
+    // Setup WebSocket on the HTTP server
+    const { setupWebSocket } = await import('./websocket.js')
+    setupWebSocket(app.server)
+
     console.log(`🚀 Server running on http://localhost:${env.PORT}`)
     console.log(`📚 Health check: http://localhost:${env.PORT}/health`)
+    console.log(`🔌 WebSocket ready on ws://localhost:${env.PORT}`)
   } catch (err) {
     app.log.error(err)
     process.exit(1)
