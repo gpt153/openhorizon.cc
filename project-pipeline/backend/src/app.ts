@@ -6,6 +6,7 @@ import { authenticate, requireRole } from './auth/middleware.js'
 import { registerAuthRoutes } from './auth/auth.routes.js'
 import { registerProjectRoutes } from './projects/projects.routes.js'
 import { registerPhaseRoutes } from './phases/phases.routes.js'
+import { registerOpenProjectRoutes } from './integrations/openproject.routes.js'
 
 const app = Fastify({
   logger: {
@@ -44,7 +45,8 @@ app.get('/', async () => {
     endpoints: {
       auth: ['/auth/register', '/auth/login', '/auth/me'],
       projects: ['/projects', '/projects/:id'],
-      phases: ['/projects/:projectId/phases', '/phases/:id']
+      phases: ['/projects/:projectId/phases', '/phases/:id'],
+      integrations: ['/integrations/openproject/test', '/projects/:id/sync/openproject']
     }
   }
 })
@@ -53,6 +55,7 @@ app.get('/', async () => {
 await registerAuthRoutes(app)
 await registerProjectRoutes(app)
 await registerPhaseRoutes(app)
+await registerOpenProjectRoutes(app)
 
 // Error handler
 app.setErrorHandler((error, request, reply) => {
