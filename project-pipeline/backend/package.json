@@ -40,12 +40,14 @@
     "langchain": "^0.3.37",
     "playwright": "^1.57.0",
     "socket.io": "^4.8.3",
+    "uuid": "^13.0.0",
     "weaviate-ts-client": "^2.2.0",
     "zod": "^3.23.8"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
     "@types/node": "^22.10.2",
+    "@types/uuid": "^10.0.0",
     "prisma": "^5.22.0",
     "tsx": "^4.19.2",
     "typescript": "^5.7.2",

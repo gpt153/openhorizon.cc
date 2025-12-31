@@ -9,6 +9,7 @@ import { registerPhaseRoutes } from './phases/phases.routes.js'
 import { registerOpenProjectRoutes } from './integrations/openproject.routes.js'
 import { registerCommunicationsRoutes } from './communications/communications.routes.js'
 import { registerVendorRoutes } from './communications/vendors.routes.js'
+import { registerLearningRoutes } from './ai/learning/learning.routes.js'
 
 const app = Fastify({
   logger: {
@@ -50,7 +51,8 @@ app.get('/', async () => {
       phases: ['/projects/:projectId/phases', '/phases/:id'],
       integrations: ['/integrations/openproject/test', '/projects/:id/sync/openproject'],
       communications: ['/communications/quote-request', '/communications/compose', '/communications/improve-draft'],
-      vendors: ['/vendors', '/vendors/:id']
+      vendors: ['/vendors', '/vendors/:id'],
+      learning: ['/learning/recommendations', '/learning/learn', '/phases/:id/auto-populate']
     }
   }
 })
@@ -62,6 +64,7 @@ await registerPhaseRoutes(app)
 await registerOpenProjectRoutes(app)
 await registerCommunicationsRoutes(app)
 await registerVendorRoutes(app)
+await registerLearningRoutes(app)
 
 // Error handler
 app.setErrorHandler((error, request, reply) => {
