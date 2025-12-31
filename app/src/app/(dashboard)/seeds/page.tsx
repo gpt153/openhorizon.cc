@@ -9,12 +9,35 @@ import SeedCard from '@/components/brainstorm/SeedCard'
 
 export default function SeedGardenPage() {
   const router = useRouter()
-  const { data: seeds, isLoading } = trpc.brainstorm.listSavedSeeds.useQuery()
+  const { data: seeds, isLoading, error } = trpc.brainstorm.listSavedSeeds.useQuery(undefined, {
+    retry: 2,
+    retryDelay: 1000,
+  })
 
   if (isLoading) {
     return (
       <div className="flex min-h-[400px] items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-zinc-400" />
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="mx-auto max-w-2xl">
+        <Card className="p-12 text-center border-red-200 bg-red-50">
+          <h2 className="text-2xl font-semibold text-red-900">Unable to Load Seeds</h2>
+          <p className="mt-2 text-red-700">
+            {error.message || 'An error occurred while loading your seeds'}
+          </p>
+          <Button
+            onClick={() => window.location.reload()}
+            className="mt-6"
+            variant="outline"
+          >
+            Try Again
+          </Button>
+        </Card>
       </div>
     )
   }
