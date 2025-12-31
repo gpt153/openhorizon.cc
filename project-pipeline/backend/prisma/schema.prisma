@@ -1,0 +1,292 @@
+// Prisma schema for Project Pipeline Management System
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  password_hash String
+  name          String
+  role          Role      @default(USER)
+  created_at    DateTime  @default(now())
+  updated_at    DateTime  @updatedAt
+
+  projects_created  Project[] @relation("ProjectCreator")
+  assigned_phases   PhaseAssignment[]
+  conversations     AIConversation[]
+  learning_patterns LearningPattern[]
+
+  @@index([email])
+}
+
+enum Role {
+  ADMIN
+  COORDINATOR
+  TEAM_MEMBER
+  VIEWER
+}
+
+model Project {
+  id                 String        @id @default(cuid())
+  name               String
+  type               ProjectType
+  status             ProjectStatus @default(PLANNING)
+  description        String?       @db.Text
+  start_date         DateTime
+  end_date           DateTime
+  budget_total       Decimal       @db.Decimal(12, 2)
+  budget_spent       Decimal       @default(0) @db.Decimal(12, 2)
+  participants_count Int
+  location           String
+  metadata           Json?
+
+  created_by String
+  creator    User     @relation("ProjectCreator", fields: [created_by], references: [id])
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  phases         Phase[]
+  conversations  AIConversation[]
+  communications Communication[]
+
+  @@index([created_by])
+  @@index([status])
+  @@index([start_date])
+}
+
+enum ProjectType {
+  STUDENT_EXCHANGE
+  TRAINING
+  CONFERENCE
+  CUSTOM
+}
+
+enum ProjectStatus {
+  PLANNING
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+model Phase {
+  id               String      @id @default(cuid())
+  project_id       String
+  project          Project     @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  name             String
+  type             PhaseType
+  status           PhaseStatus @default(NOT_STARTED)
+  start_date       DateTime
+  end_date         DateTime
+  deadline         DateTime?
+  budget_allocated Decimal     @db.Decimal(12, 2)
+  budget_spent     Decimal     @default(0) @db.Decimal(12, 2)
+  order            Int
+  dependencies     String[]
+  checklist        Json?
+  editable         Boolean     @default(true)
+  skippable        Boolean     @default(true)
+  created_at       DateTime    @default(now())
+  updated_at       DateTime    @updatedAt
+
+  assignments    PhaseAssignment[]
+  conversations  AIConversation[]
+  communications Communication[]
+  quotes         Quote[]
+
+  @@index([project_id])
+  @@index([status])
+  @@index([type])
+}
+
+enum PhaseType {
+  ACCOMMODATION
+  TRAVEL
+  FOOD
+  ACTIVITIES
+  EVENTS
+  INSURANCE
+  EMERGENCY_PLANNING
+  PERMITS
+  APPLICATION
+  REPORTING
+  CUSTOM
+}
+
+enum PhaseStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  COMPLETED
+  SKIPPED
+  BLOCKED
+}
+
+model PhaseAssignment {
+  id          String   @id @default(cuid())
+  phase_id    String
+  phase       Phase    @relation(fields: [phase_id], references: [id], onDelete: Cascade)
+  user_id     String
+  user        User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  assigned_at DateTime @default(now())
+
+  @@unique([phase_id, user_id])
+  @@index([user_id])
+}
+
+model Vendor {
+  id                      String     @id @default(cuid())
+  name                    String
+  type                    VendorType
+  email                   String?
+  phone                   String?
+  website                 String?
+  location                String?
+  rating                  Decimal?   @db.Decimal(3, 2)
+  response_rate           Decimal?   @db.Decimal(4, 2)
+  avg_response_time_hours Int?
+  successful_bookings     Int        @default(0)
+  total_contacts          Int        @default(0)
+  notes                   String?    @db.Text
+  metadata                Json?
+  created_at              DateTime   @default(now())
+  updated_at              DateTime   @updatedAt
+
+  communications Communication[]
+  quotes         Quote[]
+
+  @@index([type])
+  @@index([rating])
+}
+
+enum VendorType {
+  HOTEL
+  HOSTEL
+  RESTAURANT
+  TRANSPORT
+  ACTIVITY_PROVIDER
+  VENUE
+  INSURANCE
+  OTHER
+}
+
+model Communication {
+  id                   String            @id @default(cuid())
+  project_id           String
+  project              Project           @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  phase_id             String?
+  phase                Phase?            @relation(fields: [phase_id], references: [id], onDelete: Cascade)
+  vendor_id            String?
+  vendor               Vendor?           @relation(fields: [vendor_id], references: [id])
+  type                 CommunicationType
+  direction            Direction
+  subject              String?
+  body                 String            @db.Text
+  status               CommStatus
+  sent_at              DateTime?
+  response_received_at DateTime?
+  follow_up_scheduled  DateTime?
+  parsed_data          Json?
+  created_at           DateTime          @default(now())
+  updated_at           DateTime          @updatedAt
+
+  @@index([project_id])
+  @@index([phase_id])
+  @@index([vendor_id])
+  @@index([status])
+}
+
+enum CommunicationType {
+  EMAIL
+  PHONE
+  OTHER
+}
+
+enum Direction {
+  OUTBOUND
+  INBOUND
+}
+
+enum CommStatus {
+  DRAFT
+  SENT
+  DELIVERED
+  OPENED
+  RESPONDED
+  FAILED
+}
+
+model Quote {
+  id          String      @id @default(cuid())
+  phase_id    String
+  phase       Phase       @relation(fields: [phase_id], references: [id], onDelete: Cascade)
+  vendor_id   String
+  vendor      Vendor      @relation(fields: [vendor_id], references: [id])
+  amount      Decimal     @db.Decimal(12, 2)
+  currency    String      @default("EUR")
+  valid_until DateTime?
+  status      QuoteStatus @default(PENDING)
+  details     Json?
+  notes       String?     @db.Text
+  received_at DateTime    @default(now())
+  updated_at  DateTime    @updatedAt
+
+  @@index([phase_id])
+  @@index([vendor_id])
+  @@index([status])
+}
+
+enum QuoteStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  EXPIRED
+}
+
+model AIConversation {
+  id         String   @id @default(cuid())
+  project_id String
+  project    Project  @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  phase_id   String?
+  phase      Phase?   @relation(fields: [phase_id], references: [id], onDelete: Cascade)
+  user_id    String
+  user       User     @relation(fields: [user_id], references: [id])
+  messages   Json
+  context    Json?
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@index([project_id])
+  @@index([phase_id])
+  @@index([user_id])
+}
+
+model LearningPattern {
+  id           String      @id @default(cuid())
+  user_id      String?
+  user         User?       @relation(fields: [user_id], references: [id])
+  pattern_type PatternType
+  phase_type   PhaseType?
+  pattern_data Json
+  confidence   Decimal     @db.Decimal(4, 3)
+  sample_size  Int
+  created_at   DateTime    @default(now())
+  updated_at   DateTime    @updatedAt
+
+  @@index([user_id])
+  @@index([pattern_type])
+  @@index([phase_type])
+}
+
+enum PatternType {
+  VENDOR_PREFERENCE
+  BUDGET_ALLOCATION
+  TIMELINE_ESTIMATE
+  PHASE_SKIP_FREQUENCY
+  CHECKLIST_ITEM
+}
