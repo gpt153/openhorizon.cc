@@ -1,0 +1,700 @@
+openapi: 3.0.0
+info:
+  title: Project Pipeline Management API
+  description: |
+    AI-powered Erasmus+ project planning and management system.
+
+    Features:
+    - 6 specialized AI agents for different planning domains
+    - Real-time budget tracking and alerts
+    - Automated vendor communications
+    - Learning system that improves with each project
+    - Erasmus+-compliant reporting
+
+  version: 1.0.0
+  contact:
+    name: API Support
+    email: support@projectpipeline.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: http://localhost:3000
+    description: Local development server
+  - url: https://api.projectpipeline.com
+    description: Production server
+
+tags:
+  - name: Authentication
+    description: User authentication and authorization
+  - name: Projects
+    description: Project management
+  - name: Phases
+    description: Phase management within projects
+  - name: Budget
+    description: Budget tracking and management
+  - name: Communications
+    description: Email automation and vendor management
+  - name: Learning
+    description: AI learning and recommendations
+  - name: Reports
+    description: PDF and Excel report generation
+  - name: Vendors
+    description: Vendor directory management
+  - name: OpenProject
+    description: OpenProject integration
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    Error:
+      type: object
+      properties:
+        statusCode:
+          type: integer
+        error:
+          type: string
+        message:
+          type: string
+
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+          format: email
+        name:
+          type: string
+        role:
+          type: string
+          enum: [USER, ADMIN]
+        createdAt:
+          type: string
+          format: date-time
+
+    Project:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        type:
+          type: string
+          enum: [STUDENT_EXCHANGE, TEACHER_TRAINING, VOCATIONAL, YOUTH_EXCHANGE, OTHER]
+        description:
+          type: string
+        location:
+          type: string
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+        participants:
+          type: integer
+        budget:
+          type: number
+          format: float
+        status:
+          type: string
+          enum: [PLANNING, IN_PROGRESS, COMPLETED, CANCELLED]
+        createdAt:
+          type: string
+          format: date-time
+
+    Phase:
+      type: object
+      properties:
+        id:
+          type: string
+        projectId:
+          type: string
+        name:
+          type: string
+        type:
+          type: string
+          enum: [ACCOMMODATION, TRAVEL, FOOD, ACTIVITIES, INSURANCE, EMERGENCY_PLANNING, REPORTING, OTHER]
+        description:
+          type: string
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+        status:
+          type: string
+          enum: [NOT_STARTED, IN_PROGRESS, COMPLETED, BLOCKED, SKIPPED]
+        budget:
+          type: number
+        spent:
+          type: number
+
+    BudgetOverview:
+      type: object
+      properties:
+        budget:
+          type: object
+          properties:
+            total:
+              type: number
+            allocated:
+              type: number
+            unallocated:
+              type: number
+            spent:
+              type: number
+            remaining:
+              type: number
+            remainingPercentage:
+              type: number
+            health:
+              type: string
+              enum: [green, yellow, red]
+        phases:
+          type: array
+          items:
+            type: object
+
+    Quote:
+      type: object
+      properties:
+        id:
+          type: string
+        vendorId:
+          type: string
+        phaseId:
+          type: string
+        amount:
+          type: number
+        currency:
+          type: string
+        status:
+          type: string
+          enum: [PENDING, ACCEPTED, REJECTED]
+        validUntil:
+          type: string
+          format: date
+
+    Vendor:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        type:
+          type: string
+        email:
+          type: string
+          format: email
+        phone:
+          type: string
+        website:
+          type: string
+        location:
+          type: string
+        rating:
+          type: number
+          format: float
+
+paths:
+  # Authentication
+  /auth/register:
+    post:
+      tags: [Authentication]
+      summary: Register new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password, name]
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                  minLength: 8
+                name:
+                  type: string
+      responses:
+        '201':
+          description: User created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    $ref: '#/components/schemas/User'
+                  token:
+                    type: string
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/login:
+    post:
+      tags: [Authentication]
+      summary: Login user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                password:
+                  type: string
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    $ref: '#/components/schemas/User'
+                  token:
+                    type: string
+
+  /auth/me:
+    get:
+      tags: [Authentication]
+      summary: Get current user
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+
+  # Projects
+  /projects:
+    get:
+      tags: [Projects]
+      summary: List all projects
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: List of projects
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Project'
+    post:
+      tags: [Projects]
+      summary: Create new project
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, type, startDate, endDate, participants, budget]
+              properties:
+                name:
+                  type: string
+                type:
+                  type: string
+                description:
+                  type: string
+                location:
+                  type: string
+                startDate:
+                  type: string
+                  format: date
+                endDate:
+                  type: string
+                  format: date
+                participants:
+                  type: integer
+                budget:
+                  type: number
+      responses:
+        '201':
+          description: Project created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project'
+
+  /projects/{id}:
+    get:
+      tags: [Projects]
+      summary: Get project details
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Project details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project'
+    patch:
+      tags: [Projects]
+      summary: Update project
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Project updated
+    delete:
+      tags: [Projects]
+      summary: Delete project
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Project deleted
+
+  # Budget
+  /budget/projects/{projectId}:
+    get:
+      tags: [Budget]
+      summary: Get budget overview
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Budget overview
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BudgetOverview'
+
+  /budget/phases/{phaseId}/record-expense:
+    post:
+      tags: [Budget]
+      summary: Record expense
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: phaseId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [amount, description]
+              properties:
+                amount:
+                  type: number
+                description:
+                  type: string
+                category:
+                  type: string
+      responses:
+        '200':
+          description: Expense recorded
+
+  /budget/phases/{phaseId}/quotes/compare:
+    get:
+      tags: [Budget]
+      summary: Compare quotes
+      description: AI-powered quote comparison with value scoring
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: phaseId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Quote comparison
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  quotes:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Quote'
+                  comparison:
+                    type: object
+                  recommendation:
+                    type: object
+
+  /budget/alerts:
+    get:
+      tags: [Budget]
+      summary: Get budget alerts
+      description: Automatic alerts for budget thresholds and over-budget phases
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Budget alerts
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  alerts:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        type:
+                          type: string
+                          enum: [info, warning, critical]
+                        projectName:
+                          type: string
+                        message:
+                          type: string
+
+  # Reports
+  /reports/projects/{id}/pdf:
+    get:
+      tags: [Reports]
+      summary: Generate PDF report
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: type
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [summary, budget, erasmus]
+      responses:
+        '200':
+          description: PDF report
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+
+  /reports/projects/{id}/excel:
+    get:
+      tags: [Reports]
+      summary: Generate Excel report
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: type
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [summary, budget]
+      responses:
+        '200':
+          description: Excel report (CSV format)
+          content:
+            text/csv:
+              schema:
+                type: string
+
+  # Learning
+  /learning/recommendations:
+    post:
+      tags: [Learning]
+      summary: Get AI recommendations
+      description: Context-aware recommendations based on past projects
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                phaseType:
+                  type: string
+                projectType:
+                  type: string
+                location:
+                  type: string
+                budget:
+                  type: number
+                participants:
+                  type: integer
+      responses:
+        '200':
+          description: Recommendations
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  recommendations:
+                    type: array
+                    items:
+                      type: object
+
+  /phases/{id}/auto-populate:
+    post:
+      tags: [Learning]
+      summary: Auto-populate phase with AI recommendations
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Phase auto-populated
+
+  # Vendors
+  /vendors:
+    get:
+      tags: [Vendors]
+      summary: List vendors
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: List of vendors
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Vendor'
+    post:
+      tags: [Vendors]
+      summary: Create vendor
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, type, email]
+      responses:
+        '201':
+          description: Vendor created
+
+  # Communications
+  /communications/quote-request:
+    post:
+      tags: [Communications]
+      summary: Send quote request to vendor
+      description: AI composes and sends email
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [vendorId, phaseId]
+              properties:
+                vendorId:
+                  type: string
+                phaseId:
+                  type: string
+                customMessage:
+                  type: string
+      responses:
+        '200':
+          description: Quote request sent
+
+  /communications/bulk-quote-request:
+    post:
+      tags: [Communications]
+      summary: Send quote requests to multiple vendors
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [vendorIds, phaseId]
+              properties:
+                vendorIds:
+                  type: array
+                  items:
+                    type: string
+                phaseId:
+                  type: string
+      responses:
+        '200':
+          description: Bulk requests sent
