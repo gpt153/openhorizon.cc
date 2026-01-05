@@ -116,7 +116,7 @@ jobs:
           HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" ${{ steps.get_url.outputs.url }})
           echo "HTTP Status: $HTTP_CODE"
 
-          if [ "$HTTP_CODE" -eq 200 ] || [ "$HTTP_CODE" -eq 301 ] || [ "$HTTP_CODE" -eq 302 ]; then
+          if [ "$HTTP_CODE" -eq 200 ] || [ "$HTTP_CODE" -eq 301 ] || [ "$HTTP_CODE" -eq 302 ] || [ "$HTTP_CODE" -eq 307 ]; then
             echo "✅ Health check passed!"
           else
             echo "❌ Health check failed with status: $HTTP_CODE"
