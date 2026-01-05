@@ -80,9 +80,7 @@ COPY --from=builder /workspace/app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /workspace/app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /workspace/app/.next/static ./.next/static
 
-# Copy Prisma generated client (from root node_modules due to workspace)
-COPY --from=builder /workspace/node_modules/.prisma ./node_modules/.prisma
-COPY --from=builder /workspace/node_modules/@prisma ./node_modules/@prisma
+# Note: Prisma client is already included in standalone build's node_modules
 
 USER nextjs
 
@@ -91,4 +89,5 @@ EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
-CMD ["node", "server.js"]
+# Server.js is in the app subdirectory due to workspace monorepo structure
+CMD ["node", "app/server.js"]
