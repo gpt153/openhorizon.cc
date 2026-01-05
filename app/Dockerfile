@@ -10,6 +10,29 @@ COPY package*.json ./
 COPY app/package*.json ./app/
 RUN npm ci --legacy-peer-deps --workspace=app
 
+# Prisma generation stage (separate to help with caching)
+FROM node:20-alpine AS prisma
+WORKDIR /workspace
+
+# Install dependencies required for Prisma
+RUN apk add --no-cache openssl libc6-compat
+
+# Copy dependencies and schema
+COPY --from=deps /workspace/node_modules ./node_modules
+COPY --from=deps /workspace/app/node_modules ./app/node_modules
+COPY app/prisma ./app/prisma
+COPY package*.json ./
+COPY app/package*.json ./app/
+
+# Generate Prisma Client
+WORKDIR /workspace/app
+ENV DATABASE_URL="postgresql://dummy:dummy@dummy:5432/dummy"
+RUN npx prisma generate && \
+    echo "=== Checking Prisma generation ===" && \
+    find /workspace -name ".prisma" -type d 2>/dev/null && \
+    find /workspace -name "@prisma" -type d 2>/dev/null && \
+    echo "=== End Prisma check ==="
+
 # Builder stage
 FROM node:20-alpine AS builder
 WORKDIR /workspace
@@ -17,8 +40,15 @@ WORKDIR /workspace
 # Install dependencies required for Prisma
 RUN apk add --no-cache openssl libc6-compat
 
+# Copy everything from deps
 COPY --from=deps /workspace/node_modules ./node_modules
 COPY --from=deps /workspace/app/node_modules ./app/node_modules
+
+# Copy generated Prisma client (generated at root level due to workspace)
+COPY --from=prisma /workspace/node_modules/.prisma ./node_modules/.prisma
+COPY --from=prisma /workspace/node_modules/@prisma ./node_modules/@prisma
+
+# Copy application code
 COPY app ./app
 COPY package*.json ./
 
@@ -27,20 +57,11 @@ ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
 # Set dummy environment variables for build time
-ENV DATABASE_URL="postgresql://dummy:dummy@dummy:5432/dummy"
 ENV NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY="pk_test_dummy"
 ENV CLERK_SECRET_KEY="sk_test_dummy"
 
-# Generate Prisma Client (in app directory)
-WORKDIR /workspace/app
-RUN npx prisma generate
-
-# Debug: Check where Prisma generated files
-RUN find /workspace -name ".prisma" -type d && \
-    ls -la /workspace/app/node_modules/.prisma || true && \
-    ls -la /workspace/node_modules/.prisma || true
-
 # Build the application
+WORKDIR /workspace/app
 ENV SKIP_ENV_VALIDATION=1
 RUN npm run build
 
@@ -63,8 +84,9 @@ COPY --from=builder /workspace/app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /workspace/app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /workspace/app/.next/static ./.next/static
 
-# Copy Prisma generated client from app node_modules
-COPY --from=builder /workspace/app/node_modules/.prisma ./node_modules/.prisma
+# Copy Prisma generated client (from root node_modules due to workspace)
+COPY --from=builder /workspace/node_modules/.prisma ./node_modules/.prisma
+COPY --from=builder /workspace/node_modules/@prisma ./node_modules/@prisma
 
 USER nextjs
 
