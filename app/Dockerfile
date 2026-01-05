@@ -78,7 +78,7 @@ RUN adduser --system --uid 1001 nextjs
 # Copy necessary files from the app directory in builder
 COPY --from=builder /workspace/app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /workspace/app/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /workspace/app/.next/static ./.next/static
+COPY --from=builder --chown=nextjs:nodejs /workspace/app/.next/static ./app/.next/static
 
 # Note: Prisma client is already included in standalone build's node_modules
 
