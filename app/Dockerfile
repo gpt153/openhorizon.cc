@@ -2,6 +2,9 @@
 FROM node:20-alpine AS deps
 WORKDIR /app
 
+# Install dependencies required for Prisma
+RUN apk add --no-cache openssl libc6-compat
+
 # Copy package files
 COPY package*.json ./
 RUN npm ci --legacy-peer-deps
@@ -9,6 +12,9 @@ RUN npm ci --legacy-peer-deps
 # Builder stage
 FROM node:20-alpine AS builder
 WORKDIR /app
+
+# Install dependencies required for Prisma
+RUN apk add --no-cache openssl libc6-compat
 
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
@@ -32,6 +38,9 @@ RUN npm run build
 # Runner stage
 FROM node:20-alpine AS runner
 WORKDIR /app
+
+# Install runtime dependencies for Prisma
+RUN apk add --no-cache openssl libc6-compat
 
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
