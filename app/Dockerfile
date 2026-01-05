@@ -35,6 +35,11 @@ ENV CLERK_SECRET_KEY="sk_test_dummy"
 WORKDIR /workspace/app
 RUN npx prisma generate
 
+# Debug: Check where Prisma generated files
+RUN find /workspace -name ".prisma" -type d && \
+    ls -la /workspace/app/node_modules/.prisma || true && \
+    ls -la /workspace/node_modules/.prisma || true
+
 # Build the application
 ENV SKIP_ENV_VALIDATION=1
 RUN npm run build
@@ -57,6 +62,8 @@ RUN adduser --system --uid 1001 nextjs
 COPY --from=builder /workspace/app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /workspace/app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /workspace/app/.next/static ./.next/static
+
+# Copy Prisma generated client from app node_modules
 COPY --from=builder /workspace/app/node_modules/.prisma ./node_modules/.prisma
 
 USER nextjs
