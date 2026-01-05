@@ -58,7 +58,7 @@ jobs:
         id: docker_build
         uses: docker/build-push-action@v5
         with:
-          context: ./app
+          context: .
           file: ./app/Dockerfile
           push: true
           tags: |
