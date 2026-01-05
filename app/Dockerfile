@@ -58,6 +58,7 @@ COPY --from=builder /workspace/app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /workspace/app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /workspace/app/.next/static ./.next/static
 COPY --from=builder /workspace/node_modules/.prisma ./node_modules/.prisma
+COPY --from=builder /workspace/node_modules/@prisma ./node_modules/@prisma
 
 USER nextjs
 
@@ -66,4 +67,6 @@ EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
+# In workspace monorepo, server.js is in app subdirectory of standalone
+WORKDIR /app/app
 CMD ["node", "server.js"]
