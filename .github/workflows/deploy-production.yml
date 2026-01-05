@@ -61,11 +61,10 @@ jobs:
           context: .
           file: ./app/Dockerfile
           push: true
+          no-cache: true
           tags: |
             europe-west1-docker.pkg.dev/openhorizon-cc/cloud-run-source-deploy/openhorizon-app:${{ github.sha }}
             europe-west1-docker.pkg.dev/openhorizon-cc/cloud-run-source-deploy/openhorizon-app:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=min
           build-args: |
             NODE_ENV=production
 

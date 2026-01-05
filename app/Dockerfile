@@ -27,11 +27,7 @@ COPY app/package*.json ./app/
 # Generate Prisma Client
 WORKDIR /workspace/app
 ENV DATABASE_URL="postgresql://dummy:dummy@dummy:5432/dummy"
-RUN npx prisma generate && \
-    echo "=== Checking Prisma generation ===" && \
-    find /workspace -name ".prisma" -type d 2>/dev/null && \
-    find /workspace -name "@prisma" -type d 2>/dev/null && \
-    echo "=== End Prisma check ==="
+RUN npx prisma generate
 
 # Builder stage
 FROM node:20-alpine AS builder
