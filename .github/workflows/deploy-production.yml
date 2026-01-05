@@ -55,9 +55,9 @@ jobs:
             --region=europe-west1 \
             --platform=managed \
             --allow-unauthenticated \
-            --memory=1Gi \
-            --cpu=1 \
-            --timeout=300 \
+            --memory=2Gi \
+            --cpu=2 \
+            --timeout=600 \
             --max-instances=10 \
             --min-instances=0 \
             --quiet
