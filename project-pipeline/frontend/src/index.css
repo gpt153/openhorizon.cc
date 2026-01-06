@@ -1,58 +1,50 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
-/* Vis-Timeline custom styles */
-.vis-timeline {
-  border: none;
-  font-family: inherit;
+/* Frappe Gantt Styles */
+.gantt-container {
+  min-height: 400px;
+  overflow-x: auto;
 }
 
-.vis-item {
-  border-color: #3b82f6;
-  background-color: #3b82f6;
-  color: white;
-  border-radius: 4px;
+.gantt .bar {
+  fill: #3b82f6;
+  stroke: #2563eb;
+  stroke-width: 0;
 }
 
-.vis-item.vis-selected {
-  border-color: #1d4ed8;
-  background-color: #1d4ed8;
+.gantt .bar-progress {
+  fill: #1d4ed8;
 }
 
-.vis-item.phase-accommodation {
-  background-color: #10b981;
-  border-color: #10b981;
+.gantt .bar-label {
+  fill: #fff;
+  font-size: 12px;
 }
 
-.vis-item.phase-travel {
-  background-color: #f59e0b;
-  border-color: #f59e0b;
+.gantt .bar.not_started {
+  fill: #e5e7eb;
+  stroke: #d1d5db;
 }
 
-.vis-item.phase-food {
-  background-color: #ef4444;
-  border-color: #ef4444;
+.gantt .bar.in_progress {
+  fill: #fbbf24;
+  stroke: #f59e0b;
 }
 
-.vis-item.phase-activities {
-  background-color: #8b5cf6;
-  border-color: #8b5cf6;
+.gantt .bar.completed {
+  fill: #10b981;
+  stroke: #059669;
 }
 
-.vis-item.phase-insurance {
-  background-color: #6366f1;
-  border-color: #6366f1;
+.gantt .grid-row {
+  fill: #fafafa;
 }
 
-.vis-time-axis .vis-text {
-  color: #374151;
+.gantt .grid-row:nth-child(even) {
+  fill: #f5f5f5;
 }
 
-.vis-time-axis .vis-grid.vis-minor {
-  border-color: #e5e7eb;
-}
-
-.vis-time-axis .vis-grid.vis-major {
-  border-color: #d1d5db;
+.gantt .today-highlight {
+  fill: #fef3c7;
+  opacity: 0.5;
 }
