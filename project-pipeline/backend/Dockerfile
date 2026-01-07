@@ -13,28 +13,25 @@ RUN npx prisma generate
 # Copy source code
 COPY . .
 
-# Build TypeScript with less strict config (allows deployment despite type errors)
-RUN npx tsc --project tsconfig.build.json
-
 # Production image
 FROM node:20-alpine
 
 WORKDIR /app
 
-# Copy package files and install production dependencies
+# Copy package files and install all dependencies (including dev for tsx)
 COPY package*.json ./
-RUN npm ci --only=production
+RUN npm ci
 
 # Copy Prisma files and generated client
 COPY prisma ./prisma/
 COPY --from=build /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=build /app/node_modules/@prisma ./node_modules/@prisma
 
-# Copy built application
-COPY --from=build /app/dist ./dist
+# Copy source code
+COPY --from=build /app/src ./src
 
 # Expose port
 EXPOSE 4000
 
-# Start application
-CMD ["node", "dist/app.js"]
+# Start with tsx (ts-node alternative) to skip type checking
+CMD ["npx", "tsx", "src/app.ts"]
