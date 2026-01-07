@@ -29,7 +29,6 @@ steps:
       - '--region=europe-west1'
       - '--platform=managed'
       - '--allow-unauthenticated'
-      - '--port=4000'
       - '--env-vars-file=env-pipeline.yaml'
     id: 'deploy-cloud-run'
 
