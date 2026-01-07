@@ -1,0 +1,6 @@
+# Environment variables for Project Pipeline Backend
+# Note: API keys set via Cloud Run console for security
+DATABASE_URL: "postgresql://postgres.jnwlzawkfqcxdtkhwokd:Lurk7.Passivism.Serving@aws-1-eu-west-1.pooler.supabase.com:6543/postgres?pgbouncer=true&schema=pipeline"
+PORT: "4000"
+JWT_SECRET: "pipeline-jwt-secret-production-key-minimum-32-characters-long-for-security"
+NODE_ENV: "production"
