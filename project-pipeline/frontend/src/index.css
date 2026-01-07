@@ -2,6 +2,22 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Frappe Gantt styles - inline to avoid vite resolution issues */
+@import url('../node_modules/frappe-gantt/dist/frappe-gantt.css');
+
+/* Custom Gantt colors */
+.gantt .bar-blue { fill: #3b82f6; }
+.gantt .bar-green { fill: #10b981; }
+.gantt .bar-yellow { fill: #f59e0b; }
+.gantt .bar-purple { fill: #8b5cf6; }
+.gantt .bar-orange { fill: #f97316; }
+.gantt .bar-red { fill: #ef4444; }
+.gantt .bar-pink { fill: #ec4899; }
+.gantt .bar-cyan { fill: #06b6d4; }
+.gantt .bar-indigo { fill: #6366f1; }
+.gantt .bar-gray { fill: #6b7280; }
+.gantt .bar-default { fill: #9ca3af; }
+
 /* Vis-Timeline custom styles */
 .vis-timeline {
   border: none;
