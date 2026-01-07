@@ -22,10 +22,9 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci
 
-# Copy Prisma files and generated client
+# Copy Prisma schema and generate client
 COPY prisma ./prisma/
-COPY --from=build /app/node_modules/.prisma ./node_modules/.prisma
-COPY --from=build /app/node_modules/@prisma ./node_modules/@prisma
+RUN npx prisma generate
 
 # Copy source code
 COPY --from=build /app/src ./src
