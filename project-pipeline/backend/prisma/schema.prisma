@@ -14,7 +14,7 @@ model User {
   email         String    @unique
   password_hash String
   name          String
-  role          Role      @default(USER)
+  role          Role      @default(VIEWER)
   created_at    DateTime  @default(now())
   updated_at    DateTime  @updatedAt
 
