@@ -1,6 +1,8 @@
 # Environment variables for Project Pipeline Backend
 # Note: PORT is automatically set by Cloud Run
-# Note: API keys set via Cloud Run console for security
+# Note: API keys are placeholders - update after deployment via Cloud Run console
 DATABASE_URL: "postgresql://postgres.jnwlzawkfqcxdtkhwokd:Lurk7.Passivism.Serving@aws-1-eu-west-1.pooler.supabase.com:6543/postgres?pgbouncer=true&schema=pipeline"
 JWT_SECRET: "pipeline-jwt-secret-production-key-minimum-32-characters-long-for-security"
 NODE_ENV: "production"
+ANTHROPIC_API_KEY: "placeholder-will-be-updated-after-deployment"
+OPENAI_API_KEY: "placeholder-will-be-updated-after-deployment"
