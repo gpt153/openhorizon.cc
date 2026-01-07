@@ -8,6 +8,9 @@
     "strictPropertyInitialization": false,
     "noUnusedLocals": false,
     "noUnusedParameters": false,
-    "skipLibCheck": true
-  }
+    "noImplicitThis": false,
+    "skipLibCheck": true,
+    "lib": ["ES2022", "DOM"]
+  },
+  "exclude": ["node_modules", "dist", "src/tests/**/*", "**/*.test.ts", "**/*.spec.ts"]
 }

@@ -23,10 +23,13 @@ const envSchema = z.object({
   SENDGRID_API_KEY: z.string().optional(),
   FROM_EMAIL: z.string().email().optional(),
   FROM_NAME: z.string().optional(),
+  EMAIL_FROM: z.string().email().optional(),
+  EMAIL_FROM_NAME: z.string().optional(),
 
   // Weaviate
   WEAVIATE_HOST: z.string().default('localhost:8080'),
   WEAVIATE_SCHEME: z.enum(['http', 'https']).default('http'),
+  WEAVIATE_API_KEY: z.string().optional(),
 
   // Security
   JWT_SECRET: z.string().min(32),
