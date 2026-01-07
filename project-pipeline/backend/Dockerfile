@@ -1,4 +1,4 @@
-FROM node:20-alpine AS build
+FROM node:20-slim AS build
 
 WORKDIR /app
 
@@ -14,12 +14,12 @@ RUN npx prisma generate
 COPY . .
 
 # Production image
-FROM node:20-alpine
-
-# Install OpenSSL 1.1 compatibility for Prisma
-RUN apk add --no-cache openssl1.1-compat
+FROM node:20-slim
 
 WORKDIR /app
+
+# Install OpenSSL for Prisma
+RUN apt-get update -y && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
 
 # Copy package files and install all dependencies (including dev for tsx)
 COPY package*.json ./
