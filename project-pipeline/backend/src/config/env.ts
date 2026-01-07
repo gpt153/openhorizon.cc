@@ -16,7 +16,7 @@ const envSchema = z.object({
   OPENPROJECT_API_KEY: z.string().optional(),
 
   // AI Services
-  ANTHROPIC_API_KEY: z.string().min(1),
+  ANTHROPIC_API_KEY: z.string().min(1).optional(),
   OPENAI_API_KEY: z.string().optional(),
 
   // Email
