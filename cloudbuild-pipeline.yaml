@@ -5,8 +5,6 @@ steps:
     args:
       - 'build'
       - '-t'
-      - 'europe-west1-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/pipeline-backend:$COMMIT_SHA'
-      - '-t'
       - 'europe-west1-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/pipeline-backend:latest'
       - '-f'
       - 'project-pipeline/backend/Dockerfile'
@@ -17,7 +15,7 @@ steps:
   - name: 'gcr.io/cloud-builders/docker'
     args:
       - 'push'
-      - 'europe-west1-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/pipeline-backend:$COMMIT_SHA'
+      - 'europe-west1-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/pipeline-backend:latest'
     id: 'push-image'
 
   # Deploy to Cloud Run
@@ -27,7 +25,7 @@ steps:
       - 'run'
       - 'deploy'
       - 'openhorizon-pipeline'
-      - '--image=europe-west1-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/pipeline-backend:$COMMIT_SHA'
+      - '--image=europe-west1-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/pipeline-backend:latest'
       - '--region=europe-west1'
       - '--platform=managed'
       - '--allow-unauthenticated'
@@ -36,7 +34,6 @@ steps:
     id: 'deploy-cloud-run'
 
 images:
-  - 'europe-west1-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/pipeline-backend:$COMMIT_SHA'
   - 'europe-west1-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/pipeline-backend:latest'
 
 options:
