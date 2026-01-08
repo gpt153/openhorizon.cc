@@ -69,9 +69,71 @@ NEXT_PUBLIC_APP_URL="https://app.openhorizon.cc"
 
 ## Deploy to Cloud Run
 
-### Method 1: Using gcloud (Recommended)
+### Method 1: Automated CI/CD via GitHub Actions (Recommended)
 
-**Deploy Landing Page:**
+The deployment is fully automated via GitHub Actions. When you push to `main`:
+
+1. **Landing page** is deployed using Cloud Run's automatic build (`--source .`)
+2. **Application** is built in GitHub Actions using Docker Buildx, then deployed
+
+**GitHub Actions Workflow:**
+- Builds Docker image in GitHub Actions (full build logs available)
+- Pushes to Artifact Registry: `europe-west1-docker.pkg.dev/openhorizon-cc/cloud-run-source-deploy/`
+- Deploys pre-built image to Cloud Run
+- Runs health checks to verify deployment
+
+**Benefits:**
+- ✅ Full build visibility in GitHub Actions logs
+- ✅ Build caching for faster deployments
+- ✅ Automatic health checks
+- ✅ No local build required
+
+**Manual trigger:**
+```bash
+# Trigger deployment via GitHub Actions UI
+# Go to Actions → Deploy to Production → Run workflow
+```
+
+### Method 2: Manual Deployment with Pre-Built Image
+
+If you need to deploy manually:
+
+```bash
+# Set variables
+export REGION="europe-west1"
+export PROJECT_ID="openhorizon-cc"
+export IMAGE_TAG=$(git rev-parse HEAD)
+
+# Build the image locally
+cd app
+docker buildx build \
+  --platform linux/amd64 \
+  -t europe-west1-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/openhorizon-app:$IMAGE_TAG \
+  -f Dockerfile \
+  .
+
+# Push to Artifact Registry
+gcloud auth configure-docker europe-west1-docker.pkg.dev
+docker push europe-west1-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/openhorizon-app:$IMAGE_TAG
+
+# Deploy to Cloud Run
+gcloud run deploy openhorizon-app \
+  --image=europe-west1-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/openhorizon-app:$IMAGE_TAG \
+  --region=$REGION \
+  --platform=managed \
+  --allow-unauthenticated \
+  --memory=1Gi \
+  --cpu=1 \
+  --timeout=300 \
+  --max-instances=10 \
+  --min-instances=0 \
+  --env-vars-file=env-app.yaml
+```
+
+### Method 3: Quick Deploy (Landing Page Only)
+
+Landing page still uses Cloud Run's automatic build:
+
 ```bash
 cd landing
 
@@ -86,44 +148,6 @@ gcloud run deploy openhorizon-landing \
   --max-instances=10 \
   --min-instances=0 \
   --env-vars-file=../env-landing.yaml
-```
-
-**Deploy Application:**
-```bash
-cd app
-
-gcloud run deploy openhorizon-app \
-  --source . \
-  --region=$REGION \
-  --allow-unauthenticated \
-  --platform=managed \
-  --memory=1Gi \
-  --cpu=1 \
-  --timeout=300 \
-  --max-instances=10 \
-  --min-instances=0 \
-  --env-vars-file=../env-app.yaml
-```
-
-### Method 2: Build Docker Image Separately
-
-```bash
-cd app
-
-# Build the image
-docker build -t gcr.io/$PROJECT_ID/open-horizon-app:latest .
-
-# Push to Google Container Registry
-docker push gcr.io/$PROJECT_ID/open-horizon-app:latest
-
-# Deploy to Cloud Run
-gcloud run deploy open-horizon-app \
-  --image=gcr.io/$PROJECT_ID/open-horizon-app:latest \
-  --region=$REGION \
-  --allow-unauthenticated \
-  --platform=managed \
-  --memory=1Gi \
-  --cpu=1
 ```
 
 ## Map Custom Domains
@@ -254,9 +278,114 @@ gcloud monitoring uptime create https://app.openhorizon.cc
 # Set up error rate alerts in Google Cloud Console
 ```
 
+## Build Architecture
+
+### Why GitHub-Based Builds?
+
+Previously, deployment used `gcloud run deploy --source .` which triggered Cloud Run's automatic build system. This approach had limitations:
+
+- ❌ Minimal error visibility (just "Build failed; check build logs")
+- ❌ No control over build environment
+- ❌ Difficult to debug failures
+- ❌ No build artifacts or caching
+
+**New approach uses Docker Buildx in GitHub Actions:**
+
+- ✅ Full build logs visible in GitHub Actions
+- ✅ Build caching for faster deployments (3-5 min → 1-2 min)
+- ✅ Easy debugging with detailed error messages
+- ✅ Reusable build artifacts in Artifact Registry
+- ✅ Can test images before deploying
+
+### Build Process Flow
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│ 1. Push to main branch                                          │
+└────────────────────────────┬────────────────────────────────────┘
+                             │
+                             ▼
+┌─────────────────────────────────────────────────────────────────┐
+│ 2. GitHub Actions Workflow Triggered                            │
+├─────────────────────────────────────────────────────────────────┤
+│   a. Checkout code                                              │
+│   b. Authenticate to Google Cloud                               │
+│   c. Setup Docker Buildx                                        │
+│   d. Build Docker image (with layer caching)                    │
+│      - Context: ./app                                           │
+│      - Dockerfile: ./app/Dockerfile                             │
+│      - Includes Prisma generation, Next.js build                │
+│   e. Push to Artifact Registry                                  │
+│      - europe-west1-docker.pkg.dev/.../openhorizon-app:SHA      │
+│      - europe-west1-docker.pkg.dev/.../openhorizon-app:latest   │
+└────────────────────────────┬────────────────────────────────────┘
+                             │
+                             ▼
+┌─────────────────────────────────────────────────────────────────┐
+│ 3. Deploy pre-built image to Cloud Run                          │
+├─────────────────────────────────────────────────────────────────┤
+│   - Use --image flag with specific SHA                          │
+│   - Apply environment variables from env-app.yaml               │
+│   - Configure memory, CPU, timeout settings                     │
+└────────────────────────────┬────────────────────────────────────┘
+                             │
+                             ▼
+┌─────────────────────────────────────────────────────────────────┐
+│ 4. Health check & verification                                  │
+├─────────────────────────────────────────────────────────────────┤
+│   - Wait 10 seconds for service to stabilize                    │
+│   - Perform HTTP health check                                   │
+│   - Show recent logs if health check fails                      │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### Dockerfile Details
+
+The `app/Dockerfile` uses a **multi-stage build** for optimal image size and security:
+
+**Stage 1: deps** - Install npm dependencies
+- Alpine Linux for minimal size
+- Includes openssl and libc6-compat for Prisma
+
+**Stage 2: builder** - Build the application
+- Generate Prisma Client
+- Build Next.js application with standalone output
+- Uses dummy env vars for build-time (real env vars injected at runtime)
+
+**Stage 3: runner** - Production runtime
+- Copy only necessary files from builder
+- Runs as non-root user (nextjs:nodejs)
+- Minimal attack surface
+
+### Debugging Build Failures
+
+If a build fails in GitHub Actions:
+
+1. **Check GitHub Actions logs**
+   - Go to Actions tab in GitHub
+   - Click on the failed workflow run
+   - Expand "Build and Push Application Docker Image" step
+   - Full build logs are visible with exact error
+
+2. **Test build locally**
+   ```bash
+   cd app
+   docker buildx build \
+     --platform linux/amd64 \
+     -t test-build \
+     -f Dockerfile \
+     .
+   ```
+
+3. **Common issues:**
+   - Missing dependencies: Check `package.json`
+   - Prisma errors: Ensure `prisma/schema.prisma` is valid
+   - Next.js build errors: Check for TypeScript/ESLint errors
+   - Out of memory: Increase GitHub Actions runner size
+
 ## Continuous Deployment (CI/CD)
 
-Create `.github/workflows/deploy.yml`:
+The deployment workflow is defined in `.github/workflows/deploy-production.yml`:
 
 ```yaml
 name: Deploy to Cloud Run

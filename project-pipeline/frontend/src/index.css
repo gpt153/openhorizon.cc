@@ -1,0 +1,74 @@
+/* Frappe Gantt styles - inline to avoid vite resolution issues */
+@import url('../node_modules/frappe-gantt/dist/frappe-gantt.css');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom Gantt colors */
+.gantt .bar-blue { fill: #3b82f6; }
+.gantt .bar-green { fill: #10b981; }
+.gantt .bar-yellow { fill: #f59e0b; }
+.gantt .bar-purple { fill: #8b5cf6; }
+.gantt .bar-orange { fill: #f97316; }
+.gantt .bar-red { fill: #ef4444; }
+.gantt .bar-pink { fill: #ec4899; }
+.gantt .bar-cyan { fill: #06b6d4; }
+.gantt .bar-indigo { fill: #6366f1; }
+.gantt .bar-gray { fill: #6b7280; }
+.gantt .bar-default { fill: #9ca3af; }
+
+/* Vis-Timeline custom styles */
+.vis-timeline {
+  border: none;
+  font-family: inherit;
+}
+
+.vis-item {
+  border-color: #3b82f6;
+  background-color: #3b82f6;
+  color: white;
+  border-radius: 4px;
+}
+
+.vis-item.vis-selected {
+  border-color: #1d4ed8;
+  background-color: #1d4ed8;
+}
+
+.vis-item.phase-accommodation {
+  background-color: #10b981;
+  border-color: #10b981;
+}
+
+.vis-item.phase-travel {
+  background-color: #f59e0b;
+  border-color: #f59e0b;
+}
+
+.vis-item.phase-food {
+  background-color: #ef4444;
+  border-color: #ef4444;
+}
+
+.vis-item.phase-activities {
+  background-color: #8b5cf6;
+  border-color: #8b5cf6;
+}
+
+.vis-item.phase-insurance {
+  background-color: #6366f1;
+  border-color: #6366f1;
+}
+
+.vis-time-axis .vis-text {
+  color: #374151;
+}
+
+.vis-time-axis .vis-grid.vis-minor {
+  border-color: #e5e7eb;
+}
+
+.vis-time-axis .vis-grid.vis-major {
+  border-color: #d1d5db;
+}

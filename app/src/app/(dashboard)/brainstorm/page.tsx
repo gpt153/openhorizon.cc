@@ -105,7 +105,7 @@ export default function BrainstormPage() {
         </div>
 
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {generationStatus.seeds.map((seed) => (
+          {generationStatus.seeds.map((seed: any) => (
             <SeedCard
               key={seed.id}
               seed={seed}
