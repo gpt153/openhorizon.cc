@@ -1,7 +1,7 @@
 import {
-  getOrganisationalSupportRate,
-  getIndividualSupportRate,
-  getTravelSupport,
+  getOrganisationalRate,
+  getIndividualRate,
+  getTravelAmount,
 } from './unit-costs'
 import { calculateDistance, calculateCityDistance } from './distance-calculator'
 
@@ -91,9 +91,9 @@ export function calculateErasmusGrant(
   }
 
   // Get rates
-  const orgSupportRate = getOrganisationalSupportRate(input.hostCountryCode)
-  const indSupportRate = getIndividualSupportRate(input.hostCountryCode)
-  const travelSupportPerPax = getTravelSupport(distanceKm)
+  const orgSupportRate = getOrganisationalRate(input.hostCountryCode)
+  const indSupportRate = getIndividualRate(input.hostCountryCode)
+  const travelSupportPerPax = getTravelAmount(distanceKm)
 
   // Calculate days
   const travelDays = input.travelDays ?? 2 // Default: 1 day each way
