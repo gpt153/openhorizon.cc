@@ -32,8 +32,8 @@ test.describe('Pipeline Projects Page', () => {
     // Click create button
     await page.locator('button:has-text("New Pipeline Project")').click();
 
-    // Dialog should appear
-    await expect(page.locator('text="Create Pipeline Project"')).toBeVisible();
+    // Dialog should appear - use role to be more specific
+    await expect(page.getByRole('heading', { name: 'Create Pipeline Project' })).toBeVisible();
 
     // Check for required form fields
     await expect(page.locator('label:has-text("Project Name")')).toBeVisible();
@@ -94,9 +94,9 @@ test.describe('Navigation', () => {
     await page.goto(`${BASE_URL}/pipeline/projects`);
     await page.waitForLoadState('networkidle');
 
-    // Check sidebar has pipeline links
-    await expect(page.locator('text="Pipeline Projects"')).toBeVisible();
-    await expect(page.locator('text="Profit Dashboard"')).toBeVisible();
+    // Check sidebar has pipeline links - use role to be more specific
+    await expect(page.getByRole('link', { name: 'Pipeline Projects' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Profit Dashboard' })).toBeVisible();
 
     // Click profit dashboard link
     await page.locator('a[href="/dashboard/profit"]').click();
