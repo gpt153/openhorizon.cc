@@ -264,4 +264,89 @@ export const pipelinePhasesRouter = router({
 
       return phases
     }),
+
+  // Chat with AI agent for a phase
+  chat: orgProcedure
+    .input(
+      z.object({
+        phaseId: z.string().uuid(),
+        userMessage: z.string().min(1),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      // Get phase with project
+      const phase = await ctx.prisma.pipelinePhase.findFirst({
+        where: {
+          id: input.phaseId,
+        },
+        include: {
+          project: true,
+        },
+      })
+
+      if (!phase || phase.project.tenantId !== ctx.orgId) {
+        throw new Error('Phase not found')
+      }
+
+      // Build agent context
+      const agentContext = {
+        project: {
+          name: phase.project.name,
+          location: phase.project.location,
+          participantCount: phase.project.participantCount,
+          startDate: phase.project.startDate,
+          endDate: phase.project.endDate,
+        },
+        phase: {
+          name: phase.name,
+          type: phase.type,
+          budgetAllocated: Number(phase.budgetAllocated),
+          startDate: phase.startDate,
+          endDate: phase.endDate,
+        },
+      }
+
+      // Get appropriate agent
+      const { getAgentForPhaseType } = await import('@/lib/ai/agents/registry')
+      const agent = getAgentForPhaseType(phase.type)
+
+      // Generate response
+      let aiResponse: string
+      try {
+        aiResponse = await agent.generateResponse(
+          `You are an AI assistant helping with ${phase.type.toLowerCase()} planning for Erasmus+ projects. Be helpful, specific, and practical.`,
+          input.userMessage
+        )
+      } catch (error) {
+        console.error('AI agent error:', error)
+        aiResponse =
+          "I'm sorry, I encountered an error processing your request. Please try again or contact support if the issue persists."
+      }
+
+      // Store conversation
+      const conversation = await ctx.prisma.aIConversation.create({
+        data: {
+          projectId: phase.projectId,
+          phaseId: input.phaseId,
+          agentType: phase.type.toLowerCase(),
+          messages: [
+            {
+              role: 'user',
+              content: input.userMessage,
+              timestamp: new Date().toISOString(),
+            },
+            {
+              role: 'assistant',
+              content: aiResponse,
+              timestamp: new Date().toISOString(),
+            },
+          ],
+        },
+      })
+
+      return {
+        response: aiResponse,
+        conversationId: conversation.id,
+      }
+    }),
 })
