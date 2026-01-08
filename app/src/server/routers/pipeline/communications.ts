@@ -1,5 +1,6 @@
 import { router, orgProcedure } from '../../trpc'
 import { z } from 'zod'
+import { sendEmail, sendQuoteRequestEmail } from '@/lib/email/resend'
 
 export const pipelineCommunicationsRouter = router({
   // List communications for a project
@@ -162,12 +163,29 @@ export const pipelineCommunicationsRouter = router({
         throw new Error('Vendor email not found')
       }
 
-      // TODO: Implement actual email sending with Resend
-      // This will be implemented when we add the email service
-      console.log('Sending email to:', communication.vendor.email)
-      console.log('Subject:', communication.subject)
-      console.log('Body:', communication.body)
+      if (!communication.subject || !communication.body) {
+        throw new Error('Email must have subject and body')
+      }
 
+      // Send email via Resend
+      const emailResult = await sendEmail({
+        to: communication.vendor.email,
+        subject: communication.subject,
+        html: communication.body,
+      })
+
+      if (!emailResult.success) {
+        // Mark as failed
+        await ctx.prisma.communication.update({
+          where: { id: input.id },
+          data: {
+            status: 'FAILED',
+          },
+        })
+        throw new Error(emailResult.error || 'Failed to send email')
+      }
+
+      // Mark as sent
       const updated = await ctx.prisma.communication.update({
         where: { id: input.id },
         data: {
@@ -226,5 +244,84 @@ export const pipelineCommunicationsRouter = router({
       })
 
       return { success: true }
+    }),
+
+  // Compose and send quote request in one step
+  sendQuoteRequest: orgProcedure
+    .input(
+      z.object({
+        phaseId: z.string().uuid(),
+        vendorId: z.string().uuid(),
+        requirements: z.string().optional(),
+        contactPerson: z.string(),
+        contactEmail: z.string().email(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      // Get phase with project
+      const phase = await ctx.prisma.pipelinePhase.findFirst({
+        where: {
+          id: input.phaseId,
+        },
+        include: {
+          project: true,
+        },
+      })
+
+      if (!phase || phase.project.tenantId !== ctx.orgId) {
+        throw new Error('Phase not found')
+      }
+
+      // Get vendor
+      const vendor = await ctx.prisma.vendor.findUnique({
+        where: { id: input.vendorId },
+      })
+
+      if (!vendor || !vendor.email) {
+        throw new Error('Vendor not found or has no email')
+      }
+
+      // Send email
+      const emailResult = await sendQuoteRequestEmail({
+        vendorName: vendor.name,
+        vendorEmail: vendor.email,
+        projectName: phase.project.name,
+        phaseType: phase.type,
+        location: phase.project.location,
+        checkIn: phase.startDate,
+        checkOut: phase.endDate,
+        participants: phase.project.participantCount,
+        requirements: input.requirements,
+        contactPerson: input.contactPerson,
+        contactEmail: input.contactEmail,
+      })
+
+      if (!emailResult.success) {
+        throw new Error(emailResult.error || 'Failed to send email')
+      }
+
+      // Store communication record
+      const communication = await ctx.prisma.communication.create({
+        data: {
+          tenantId: ctx.orgId,
+          projectId: phase.projectId,
+          phaseId: input.phaseId,
+          vendorId: input.vendorId,
+          type: 'EMAIL',
+          direction: 'OUTBOUND',
+          subject: `Quote Request: ${phase.project.name} - ${phase.type}`,
+          body: `Quote request sent to ${vendor.name} for ${phase.type}${
+            input.requirements ? `\n\nRequirements: ${input.requirements}` : ''
+          }\n\nContact: ${input.contactPerson} (${input.contactEmail})`,
+          status: 'SENT',
+          sentAt: new Date(),
+        },
+      })
+
+      return {
+        success: true,
+        communicationId: communication.id,
+        messageId: emailResult.messageId,
+      }
     }),
 })
