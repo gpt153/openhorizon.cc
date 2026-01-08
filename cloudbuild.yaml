@@ -1,0 +1,14 @@
+steps:
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '-t'
+      - 'europe-west1-docker.pkg.dev/openhorizon-cc/cloud-run-source-deploy/openhorizon-app:$BUILD_ID'
+      - '-t'
+      - 'europe-west1-docker.pkg.dev/openhorizon-cc/cloud-run-source-deploy/openhorizon-app:latest'
+      - '-f'
+      - 'app/Dockerfile'
+      - '.'
+images:
+  - 'europe-west1-docker.pkg.dev/openhorizon-cc/cloud-run-source-deploy/openhorizon-app:$BUILD_ID'
+  - 'europe-west1-docker.pkg.dev/openhorizon-cc/cloud-run-source-deploy/openhorizon-app:latest'
