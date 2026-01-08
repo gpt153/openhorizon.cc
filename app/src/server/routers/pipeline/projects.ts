@@ -1,5 +1,6 @@
 import { router, orgProcedure } from '../../trpc'
 import { z } from 'zod'
+import { calculateErasmusGrant, calculateProfitMargin } from '@/lib/erasmus/income-calculator'
 
 export const pipelineProjectsRouter = router({
   // List all pipeline projects for the organization
@@ -183,14 +184,50 @@ export const pipelineProjectsRouter = router({
         throw new Error('Pipeline project not found')
       }
 
-      // TODO: Implement Erasmus+ grant calculation logic
-      // This will be implemented in Phase 3
-      const calculatedGrant = 0
+      // Calculate activity days (total days minus 2 travel days)
+      const totalDays = Math.ceil(
+        (new Date(project.endDate).getTime() - new Date(project.startDate).getTime()) /
+          (1000 * 60 * 60 * 24)
+      )
+      const activityDays = Math.max(1, totalDays - 2)
 
+      // Calculate Erasmus+ grant
+      const grantBreakdown = calculateErasmusGrant({
+        hostCountryCode: project.hostCountry || 'ES', // Default to Spain if not set
+        participantCount: project.participantCount,
+        activityDays,
+        travelDays: 2,
+        originCity: project.originCountry || 'Stockholm', // Default
+        destinationCity: project.location || 'Barcelona', // Use location as city
+      })
+
+      // Calculate estimated costs from phases
+      const phases = await ctx.prisma.pipelinePhase.findMany({
+        where: { projectId: input.id },
+      })
+
+      const estimatedCosts = phases.reduce(
+        (sum, phase) => sum + Number(phase.budgetAllocated),
+        0
+      )
+
+      // Calculate profit margin
+      const profitDetails = calculateProfitMargin(
+        grantBreakdown.totalGrant,
+        estimatedCosts
+      )
+
+      // Update project with calculations
       const updated = await ctx.prisma.pipelineProject.update({
         where: { id: input.id },
         data: {
-          erasmusGrantCalculated: calculatedGrant,
+          erasmusGrantCalculated: grantBreakdown.totalGrant,
+          estimatedCosts,
+          profitMargin: profitDetails.profitPercentage,
+          metadata: {
+            grantBreakdown: grantBreakdown as any,
+            profitDetails: profitDetails as any,
+          },
         },
       })
 
