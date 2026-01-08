@@ -1,9 +1,9 @@
+/* Frappe Gantt styles - inline to avoid vite resolution issues */
+@import url('../node_modules/frappe-gantt/dist/frappe-gantt.css');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-/* Frappe Gantt styles - inline to avoid vite resolution issues */
-@import url('../node_modules/frappe-gantt/dist/frappe-gantt.css');
 
 /* Custom Gantt colors */
 .gantt .bar-blue { fill: #3b82f6; }

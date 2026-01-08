@@ -77,7 +77,7 @@ export default function SeedGardenPage() {
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {seeds.map((seed) => (
+        {seeds.map((seed: any) => (
           <SeedCard
             key={seed.id}
             seed={seed}

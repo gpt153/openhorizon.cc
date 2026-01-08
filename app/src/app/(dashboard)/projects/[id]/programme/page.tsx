@@ -170,14 +170,14 @@ export default function ProgrammePage({ params }: { params: Promise<{ id: string
       {/* Day Tabs */}
       <Tabs defaultValue="day-1" className="w-full">
         <TabsList className="mb-6 flex-wrap h-auto">
-          {programme.days.map((day) => (
+          {programme.days.map((day: any) => (
             <TabsTrigger key={day.id} value={`day-${day.dayNumber}`}>
               Day {day.dayNumber}
             </TabsTrigger>
           ))}
         </TabsList>
 
-        {programme.days.map((day) => (
+        {programme.days.map((day: any) => (
           <TabsContent key={day.id} value={`day-${day.dayNumber}`} className="space-y-6">
             {/* Day Header */}
             <Card>
@@ -239,7 +239,7 @@ export default function ProgrammePage({ params }: { params: Promise<{ id: string
 
             {/* Sessions */}
             <div className="space-y-4">
-              {day.sessions.map((session) => (
+              {day.sessions.map((session: any) => (
                 <Card
                   key={session.id}
                   className="relative overflow-hidden border-l-4"
