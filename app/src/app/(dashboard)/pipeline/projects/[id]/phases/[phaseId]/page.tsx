@@ -17,7 +17,7 @@ export default function PhaseDetailPage({
   const router = useRouter()
 
   const { data: project, isLoading } = trpc.pipeline.projects.getById.useQuery({ id: projectId })
-  const phase = project?.phases?.find((p) => p.id === phaseId)
+  const phase = project?.phases?.find((p: any) => p.id === phaseId)
 
   if (isLoading) {
     return (
