@@ -325,8 +325,8 @@ model Seed {
   approvalLikelihood Float  @default(0.5) @map("approval_likelihood") // 0.0-1.0
 
   // Formal mode (application-ready Erasmus+ language)
-  titleFormal              String? @db.VarChar(200) @map("title_formal")
-  descriptionFormal        String? @db.Text @map("description_formal")
+  titleFormal              String? @map("title_formal") @db.VarChar(200)
+  descriptionFormal        String? @map("description_formal") @db.Text
   approvalLikelihoodFormal Float?  @map("approval_likelihood_formal")
 
   isSaved     Boolean @default(false) @map("is_saved")
@@ -374,39 +374,39 @@ model SeedElaboration {
 // ============================================================================
 
 model PipelineProject {
-  id                   String         @id @default(uuid()) @db.Uuid
-  tenantId             String         @map("tenant_id") @db.Uuid
-  createdByUserId      String         @map("created_by_user_id")
+  id              String @id @default(uuid()) @db.Uuid
+  tenantId        String @map("tenant_id") @db.Uuid
+  createdByUserId String @map("created_by_user_id")
 
-  name                 String
-  type                 ProjectType
-  status               PipelineProjectStatus @default(PLANNING)
-  description          String?        @db.Text
-  startDate            DateTime       @map("start_date")
-  endDate              DateTime       @map("end_date")
-  budgetTotal          Decimal        @map("budget_total") @db.Decimal(12, 2)
-  budgetSpent          Decimal        @default(0) @map("budget_spent") @db.Decimal(12, 2)
-  participantCount     Int            @map("participant_count")
-  location             String
-  originCountry        String?        @map("origin_country")
-  hostCountry          String?        @map("host_country")
+  name             String
+  type             ProjectType
+  status           PipelineProjectStatus @default(PLANNING)
+  description      String?               @db.Text
+  startDate        DateTime              @map("start_date")
+  endDate          DateTime              @map("end_date")
+  budgetTotal      Decimal               @map("budget_total") @db.Decimal(12, 2)
+  budgetSpent      Decimal               @default(0) @map("budget_spent") @db.Decimal(12, 2)
+  participantCount Int                   @map("participant_count")
+  location         String
+  originCountry    String?               @map("origin_country")
+  hostCountry      String?               @map("host_country")
 
   // Erasmus+ specific
-  erasmusGrantCalculated Decimal?     @map("erasmus_grant_calculated") @db.Decimal(12, 2)
-  erasmusGrantActual     Decimal?     @map("erasmus_grant_actual") @db.Decimal(12, 2)
-  estimatedCosts         Decimal?     @map("estimated_costs") @db.Decimal(12, 2)
-  profitMargin           Decimal?     @map("profit_margin") @db.Decimal(5, 2)
+  erasmusGrantCalculated Decimal? @map("erasmus_grant_calculated") @db.Decimal(12, 2)
+  erasmusGrantActual     Decimal? @map("erasmus_grant_actual") @db.Decimal(12, 2)
+  estimatedCosts         Decimal? @map("estimated_costs") @db.Decimal(12, 2)
+  profitMargin           Decimal? @map("profit_margin") @db.Decimal(5, 2)
 
-  metadata             Json?
+  metadata Json?
 
-  createdAt            DateTime       @default(now()) @map("created_at")
-  updatedAt            DateTime       @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   // Relations
-  organization         Organization   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  phases               PipelinePhase[]
-  communications       Communication[]
-  aiConversations      AIConversation[]
+  organization    Organization     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  phases          PipelinePhase[]
+  communications  Communication[]
+  aiConversations AIConversation[]
 
   @@index([tenantId, status])
   @@index([tenantId, createdByUserId])
@@ -414,26 +414,26 @@ model PipelineProject {
 }
 
 model PipelinePhase {
-  id                String         @id @default(uuid()) @db.Uuid
-  projectId         String         @map("project_id") @db.Uuid
+  id        String @id @default(uuid()) @db.Uuid
+  projectId String @map("project_id") @db.Uuid
 
-  name              String
-  type              PhaseType
-  status            PhaseStatus    @default(NOT_STARTED)
-  startDate         DateTime       @map("start_date")
-  endDate           DateTime       @map("end_date")
-  budgetAllocated   Decimal        @map("budget_allocated") @db.Decimal(12, 2)
-  budgetSpent       Decimal        @default(0) @map("budget_spent") @db.Decimal(12, 2)
-  order             Int
+  name            String
+  type            PhaseType
+  status          PhaseStatus @default(NOT_STARTED)
+  startDate       DateTime    @map("start_date")
+  endDate         DateTime    @map("end_date")
+  budgetAllocated Decimal     @map("budget_allocated") @db.Decimal(12, 2)
+  budgetSpent     Decimal     @default(0) @map("budget_spent") @db.Decimal(12, 2)
+  order           Int
 
-  createdAt         DateTime       @default(now()) @map("created_at")
-  updatedAt         DateTime       @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   // Relations
-  project           PipelineProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  communications    Communication[]
-  quotes            Quote[]
-  aiConversations   AIConversation[]
+  project         PipelineProject  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  communications  Communication[]
+  quotes          Quote[]
+  aiConversations AIConversation[]
 
   @@index([projectId])
   @@index([status])
@@ -442,29 +442,29 @@ model PipelinePhase {
 }
 
 model Vendor {
-  id                     String       @id @default(uuid()) @db.Uuid
-  tenantId               String       @map("tenant_id") @db.Uuid
+  id       String @id @default(uuid()) @db.Uuid
+  tenantId String @map("tenant_id") @db.Uuid
 
-  name                   String
-  type                   VendorType
-  email                  String?
-  phone                  String?
-  website                String?
-  location               String?
-  rating                 Decimal?     @db.Decimal(3, 2)
-  responseRate           Decimal?     @map("response_rate") @db.Decimal(4, 2)
-  successfulBookings     Int          @default(0) @map("successful_bookings")
-  totalContacts          Int          @default(0) @map("total_contacts")
-  notes                  String?      @db.Text
-  metadata               Json?
+  name               String
+  type               VendorType
+  email              String?
+  phone              String?
+  website            String?
+  location           String?
+  rating             Decimal?   @db.Decimal(3, 2)
+  responseRate       Decimal?   @map("response_rate") @db.Decimal(4, 2)
+  successfulBookings Int        @default(0) @map("successful_bookings")
+  totalContacts      Int        @default(0) @map("total_contacts")
+  notes              String?    @db.Text
+  metadata           Json?
 
-  createdAt              DateTime     @default(now()) @map("created_at")
-  updatedAt              DateTime     @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   // Relations
-  organization           Organization @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  communications         Communication[]
-  quotes                 Quote[]
+  organization   Organization    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  communications Communication[]
+  quotes         Quote[]
 
   @@index([tenantId, type])
   @@index([rating])
@@ -472,28 +472,28 @@ model Vendor {
 }
 
 model Communication {
-  id                    String               @id @default(uuid()) @db.Uuid
-  tenantId              String               @map("tenant_id") @db.Uuid
-  projectId             String               @map("project_id") @db.Uuid
-  phaseId               String?              @map("phase_id") @db.Uuid
-  vendorId              String?              @map("vendor_id") @db.Uuid
+  id        String  @id @default(uuid()) @db.Uuid
+  tenantId  String  @map("tenant_id") @db.Uuid
+  projectId String  @map("project_id") @db.Uuid
+  phaseId   String? @map("phase_id") @db.Uuid
+  vendorId  String? @map("vendor_id") @db.Uuid
 
-  type                  CommunicationType
-  direction             CommunicationDirection
-  subject               String?
-  body                  String               @db.Text
-  status                CommunicationStatus
-  sentAt                DateTime?            @map("sent_at")
-  responseReceivedAt    DateTime?            @map("response_received_at")
+  type               CommunicationType
+  direction          CommunicationDirection
+  subject            String?
+  body               String                 @db.Text
+  status             CommunicationStatus
+  sentAt             DateTime?              @map("sent_at")
+  responseReceivedAt DateTime?              @map("response_received_at")
 
-  createdAt             DateTime             @default(now()) @map("created_at")
-  updatedAt             DateTime             @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   // Relations
-  organization          Organization         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  project               PipelineProject      @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  phase                 PipelinePhase?       @relation(fields: [phaseId], references: [id], onDelete: Cascade)
-  vendor                Vendor?              @relation(fields: [vendorId], references: [id])
+  organization Organization    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  project      PipelineProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  phase        PipelinePhase?  @relation(fields: [phaseId], references: [id], onDelete: Cascade)
+  vendor       Vendor?         @relation(fields: [vendorId], references: [id])
 
   @@index([tenantId, projectId])
   @@index([phaseId])
@@ -503,23 +503,23 @@ model Communication {
 }
 
 model Quote {
-  id          String      @id @default(uuid()) @db.Uuid
-  phaseId     String      @map("phase_id") @db.Uuid
-  vendorId    String      @map("vendor_id") @db.Uuid
+  id       String @id @default(uuid()) @db.Uuid
+  phaseId  String @map("phase_id") @db.Uuid
+  vendorId String @map("vendor_id") @db.Uuid
 
-  amount      Decimal     @db.Decimal(12, 2)
-  currency    String      @default("EUR")
-  validUntil  DateTime?   @map("valid_until")
-  status      QuoteStatus @default(PENDING)
-  details     Json?
-  notes       String?     @db.Text
+  amount     Decimal     @db.Decimal(12, 2)
+  currency   String      @default("EUR")
+  validUntil DateTime?   @map("valid_until")
+  status     QuoteStatus @default(PENDING)
+  details    Json?
+  notes      String?     @db.Text
 
-  receivedAt  DateTime    @default(now()) @map("received_at")
-  updatedAt   DateTime    @updatedAt @map("updated_at")
+  receivedAt DateTime @default(now()) @map("received_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
 
   // Relations
-  phase       PipelinePhase @relation(fields: [phaseId], references: [id], onDelete: Cascade)
-  vendor      Vendor        @relation(fields: [vendorId], references: [id])
+  phase  PipelinePhase @relation(fields: [phaseId], references: [id], onDelete: Cascade)
+  vendor Vendor        @relation(fields: [vendorId], references: [id])
 
   @@index([phaseId])
   @@index([vendorId])
@@ -528,18 +528,18 @@ model Quote {
 }
 
 model AIConversation {
-  id          String           @id @default(uuid()) @db.Uuid
-  projectId   String           @map("project_id") @db.Uuid
-  phaseId     String?          @map("phase_id") @db.Uuid
-  agentType   String           @map("agent_type") // 'accommodation', 'activities', 'emergency'
-  messages    Json             // Array of {role, content, timestamp}
+  id        String  @id @default(uuid()) @db.Uuid
+  projectId String  @map("project_id") @db.Uuid
+  phaseId   String? @map("phase_id") @db.Uuid
+  agentType String  @map("agent_type") // 'accommodation', 'activities', 'emergency'
+  messages  Json // Array of {role, content, timestamp}
 
-  createdAt   DateTime         @default(now()) @map("created_at")
-  updatedAt   DateTime         @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   // Relations
-  project     PipelineProject  @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  phase       PipelinePhase?   @relation(fields: [phaseId], references: [id], onDelete: Cascade)
+  project PipelineProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  phase   PipelinePhase?  @relation(fields: [phaseId], references: [id], onDelete: Cascade)
 
   @@index([projectId])
   @@index([phaseId])
