@@ -19,7 +19,6 @@ RUN apk add --no-cache openssl libc6-compat
 
 # Copy dependencies and schema
 COPY --from=deps /workspace/node_modules ./node_modules
-COPY --from=deps /workspace/app/node_modules ./app/node_modules
 COPY app/prisma ./app/prisma
 COPY package*.json ./
 COPY app/package*.json ./app/
@@ -38,7 +37,6 @@ RUN apk add --no-cache openssl libc6-compat
 
 # Copy everything from deps
 COPY --from=deps /workspace/node_modules ./node_modules
-COPY --from=deps /workspace/app/node_modules ./app/node_modules
 
 # Copy generated Prisma client (generated at root level due to workspace)
 COPY --from=prisma /workspace/node_modules/.prisma ./node_modules/.prisma
