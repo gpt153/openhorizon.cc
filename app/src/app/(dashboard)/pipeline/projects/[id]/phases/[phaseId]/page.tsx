@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 import { QuoteCard } from '@/components/pipeline/quotes/QuoteCard'
-import { ChatPlaceholder } from '@/components/pipeline/chat/ChatPlaceholder'
+import { PhaseChat } from '@/components/pipeline/PhaseChat'
 import { formatCurrency } from '@/types/pipeline'
 import { ArrowLeft, Calendar, Loader2 } from 'lucide-react'
 
@@ -64,11 +64,6 @@ export default function PhaseDetailPage({
 
   const startDate = new Date(phase.startDate)
   const endDate = new Date(phase.endDate)
-
-  // Determine chat agent type based on phase type
-  const chatAgentType = phase.type === 'ACCOMMODATION' ? 'accommodation' :
-                        phase.type === 'ACTIVITIES' ? 'activities' :
-                        phase.type === 'EMERGENCY' ? 'emergency' : 'general'
 
   return (
     <div className="flex flex-col h-full">
@@ -171,7 +166,11 @@ export default function PhaseDetailPage({
             {/* AI Chat Section */}
             <div>
               <h2 className="text-xl font-semibold mb-4">AI Assistant</h2>
-              <ChatPlaceholder agentType={chatAgentType} />
+              <PhaseChat
+                phaseId={resolvedParams.phaseId}
+                phaseType={phase.type}
+                phaseName={phase.name}
+              />
             </div>
           </div>
         </div>
