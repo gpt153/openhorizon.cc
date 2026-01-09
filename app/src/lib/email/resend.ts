@@ -1,7 +1,19 @@
 import { Resend } from 'resend'
 
-// Initialize Resend client
-const resend = new Resend(process.env.RESEND_API_KEY!)
+// Lazy initialization - only create client when actually sending email
+// This prevents build-time errors when RESEND_API_KEY is not available
+let resendClient: Resend | null = null
+
+function getResendClient(): Resend {
+  if (!resendClient) {
+    const apiKey = process.env.RESEND_API_KEY
+    if (!apiKey) {
+      throw new Error('RESEND_API_KEY is not configured')
+    }
+    resendClient = new Resend(apiKey)
+  }
+  return resendClient
+}
 
 export interface SendEmailParams {
   to: string | string[]
@@ -34,6 +46,9 @@ export async function sendEmail(params: SendEmailParams): Promise<EmailResult> {
         error: 'Email service not configured. Please add RESEND_API_KEY to environment variables.',
       }
     }
+
+    // Get the Resend client (lazy initialization)
+    const resend = getResendClient()
 
     const response = await resend.emails.send({
       from,
