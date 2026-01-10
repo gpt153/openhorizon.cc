@@ -22,6 +22,7 @@ model User {
   assigned_phases   PhaseAssignment[]
   conversations     AIConversation[]
   learning_patterns LearningPattern[]
+  seeds             Seed[]
 
   @@index([email])
 }
@@ -289,4 +290,64 @@ enum PatternType {
   TIMELINE_ESTIMATE
   PHASE_SKIP_FREQUENCY
   CHECKLIST_ITEM
+}
+
+model Seed {
+  id          String   @id @default(cuid())
+  user_id     String
+  user        User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  // Working mode (informal, brainstorming language)
+  title              String
+  description        String   @db.Text
+  approval_likelihood Float   @default(0.5) // 0.0-1.0
+
+  // Formal mode (application-ready Erasmus+ language)
+  title_formal              String?
+  description_formal        String?  @db.Text
+  approval_likelihood_formal Float?
+
+  // Metadata
+  tags             String[]
+  estimated_duration Int?    // Days
+  estimated_participants Int?
+
+  // State management
+  is_saved     Boolean @default(false)
+  is_dismissed Boolean @default(false)
+
+  // Elaboration tracking
+  elaboration_count Int   @default(0)
+  current_version   Json? // Latest elaborated version
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  elaborations SeedElaboration[]
+
+  @@index([user_id])
+  @@index([is_saved])
+  @@index([created_at])
+}
+
+model SeedElaboration {
+  id      String @id @default(cuid())
+  seed_id String
+  seed    Seed   @relation(fields: [seed_id], references: [id], onDelete: Cascade)
+
+  conversation_history Json // Array of messages
+  current_seed_state   Json // Current elaborated seed
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@unique([seed_id]) // One elaboration session per seed
+  @@index([seed_id])
+}
+
+enum SeedStatus {
+  ACTIVE
+  SAVED
+  DISMISSED
+  CONVERTED
 }

@@ -13,6 +13,9 @@ import PhaseEdit from './pages/PhaseEdit'
 import Chat from './pages/Chat'
 import BudgetOverview from './pages/BudgetOverview'
 import Reports from './pages/Reports'
+import SeedGarden from './pages/SeedGarden'
+import SeedGeneration from './pages/SeedGeneration'
+import SeedDetail from './pages/SeedDetail'
 import ProtectedRoute from './components/ProtectedRoute'
 import Layout from './components/Layout'
 
@@ -114,6 +117,30 @@ export default function App() {
               element={
                 <Layout>
                   <Reports />
+                </Layout>
+              }
+            />
+            <Route
+              path="/seeds"
+              element={
+                <Layout>
+                  <SeedGarden />
+                </Layout>
+              }
+            />
+            <Route
+              path="/seeds/generate"
+              element={
+                <Layout>
+                  <SeedGeneration />
+                </Layout>
+              }
+            />
+            <Route
+              path="/seeds/:id"
+              element={
+                <Layout>
+                  <SeedDetail />
                 </Layout>
               }
             />

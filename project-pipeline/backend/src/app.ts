@@ -10,6 +10,7 @@ import { registerOpenProjectRoutes } from './integrations/openproject.routes.js'
 import { registerCommunicationsRoutes } from './communications/communications.routes.js'
 import { registerVendorRoutes } from './communications/vendors.routes.js'
 import { registerLearningRoutes } from './ai/learning/learning.routes.js'
+import { registerSeedsRoutes } from './seeds/seeds.routes.js'
 
 const app = Fastify({
   logger: {
@@ -52,7 +53,8 @@ app.get('/', async () => {
       integrations: ['/integrations/openproject/test', '/projects/:id/sync/openproject'],
       communications: ['/communications/quote-request', '/communications/compose', '/communications/improve-draft'],
       vendors: ['/vendors', '/vendors/:id'],
-      learning: ['/learning/recommendations', '/learning/learn', '/phases/:id/auto-populate']
+      learning: ['/learning/recommendations', '/learning/learn', '/phases/:id/auto-populate'],
+      seeds: ['/seeds/generate', '/seeds', '/seeds/:id', '/seeds/:id/elaborate', '/seeds/:id/save', '/seeds/:id/dismiss']
     }
   }
 })
@@ -65,6 +67,7 @@ await registerOpenProjectRoutes(app)
 await registerCommunicationsRoutes(app)
 await registerVendorRoutes(app)
 await registerLearningRoutes(app)
+await registerSeedsRoutes(app)
 
 // Error handler
 app.setErrorHandler((error, request, reply) => {
