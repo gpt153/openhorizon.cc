@@ -6,10 +6,12 @@ services:
       context: .
       dockerfile: Dockerfile.test
     volumes:
-      - ./tests:/app/tests
-      - ./playwright.config.ts:/app/playwright.config.ts
-      - ./test-results:/app/test-results
-      - ./playwright-report:/app/playwright-report
+      - ./app/e2e:/app/app/e2e
+      - ./app/tests:/app/app/tests
+      - ./app/playwright.config.ts:/app/app/playwright.config.ts
+      - ./app/test-results:/app/app/test-results
+      - ./app/playwright-report:/app/app/playwright-report
     environment:
       - CI=true
+    working_dir: /app/app
     command: npx playwright test

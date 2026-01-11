@@ -10,6 +10,9 @@
     "dev:landing": "npm run dev --workspace=landing",
     "dev:app": "npm run dev --workspace=app",
     "build:landing": "npm run build --workspace=landing",
-    "build:app": "npm run build --workspace=app"
+    "build:app": "npm run build --workspace=app",
+    "test": "npm run test --workspace=app",
+    "test:ui": "npm run test:ui --workspace=app",
+    "test:docker": "docker-compose -f docker-compose.test.yml up --build --abort-on-container-exit"
   }
 }
