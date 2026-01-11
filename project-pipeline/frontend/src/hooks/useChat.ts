@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { Socket } from 'socket.io-client'
 import toast from 'react-hot-toast'
+import { useAuthStore } from '../store/authStore'
 
 export interface ChatMessage {
   id: string
@@ -40,6 +41,7 @@ export function useChat({ socket, context: initialContext, onMessageReceived }: 
   const [isTyping, setIsTyping] = useState(false)
   const [context, setContextState] = useState<ChatContext | undefined>(initialContext)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const { user } = useAuthStore()
 
   // Send message to AI
   const sendMessage = useCallback(
@@ -50,6 +52,17 @@ export function useChat({ socket, context: initialContext, onMessageReceived }: 
       }
 
       if (!content.trim()) {
+        return
+      }
+
+      if (!user?.id) {
+        toast.error('User not authenticated')
+        return
+      }
+
+      // Validate required context - projectId is required, phaseId is optional
+      if (!context?.projectId) {
+        toast.error('Please select a project to chat about')
         return
       }
 
@@ -66,17 +79,18 @@ export function useChat({ socket, context: initialContext, onMessageReceived }: 
       // Add to messages immediately
       setMessages((prev) => [...prev, userMessage])
 
-      // Send to server
+      // Send to server with correct format expected by backend
       socket.emit('chat:message', {
-        content: content.trim(),
-        projectId: context?.projectId,
-        phaseId: context?.phaseId,
+        message: content.trim(), // Backend expects 'message', not 'content'
+        projectId: context.projectId,
+        phaseId: context.phaseId || null, // phaseId is optional
+        userId: user.id, // Backend expects userId
       })
 
       // Show typing indicator
       setIsTyping(true)
     },
-    [socket, context]
+    [socket, context, user]
   )
 
   // Clear all messages
