@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { PhaseCard } from '@/components/pipeline/phases/PhaseCard'
+import { ExportReportButton } from '@/components/pipeline/projects/ExportReportButton'
 import { formatCurrency, calculateProfitMarginPercentage, getProfitMarginColor } from '@/types/pipeline'
 import { Calculator, Calendar, Users, MapPin, TrendingUp, ArrowLeft, Loader2 } from 'lucide-react'
 import { useState } from 'react'
@@ -96,9 +97,12 @@ export default function PipelineProjectDetailPage({ params }: { params: Promise<
               </p>
             )}
           </div>
-          <Badge className={statusColors[project.status]}>
-            {project.status}
-          </Badge>
+          <div className="flex items-center gap-2">
+            <ExportReportButton projectId={project.id} projectName={project.name} />
+            <Badge className={statusColors[project.status]}>
+              {project.status}
+            </Badge>
+          </div>
         </div>
 
         {/* Project Meta */}
