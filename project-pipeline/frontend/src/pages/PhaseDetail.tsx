@@ -2,13 +2,16 @@
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { format } from 'date-fns'
 import { useQuery } from '@tanstack/react-query'
+import { useState } from 'react'
 import api from '../services/api'
 import type { Phase, Quote } from '../types'
 import LoadingSpinner from '../components/LoadingSpinner'
+import PhaseAgentChat from '../components/PhaseAgentChat'
 
 export default function PhaseDetail() {
   const { phaseId } = useParams<{ phaseId: string }>()
   const navigate = useNavigate()
+  const [agentSectionOpen, setAgentSectionOpen] = useState(true)
 
   const { data: phase, isLoading, error } = useQuery({
     queryKey: ['phase', phaseId],
@@ -356,6 +359,34 @@ export default function PhaseDetail() {
               />
             </svg>
             <p className="mt-2 text-sm text-gray-600">No quotes yet for this phase</p>
+          </div>
+        )}
+      </div>
+
+      {/* AI Assistant Section */}
+      <div className="bg-white shadow rounded-lg p-6 mt-6">
+        <div
+          className="flex items-center justify-between mb-4 cursor-pointer"
+          onClick={() => setAgentSectionOpen(!agentSectionOpen)}
+        >
+          <div className="flex items-center gap-3">
+            <h2 className="text-lg font-semibold text-gray-900">AI Assistant</h2>
+            <span className="text-sm text-gray-600">
+              Ask about {phase.type.toLowerCase().replace(/_/g, ' ')} planning
+            </span>
+          </div>
+          <svg
+            className={`w-5 h-5 transition-transform text-gray-600 ${agentSectionOpen ? 'rotate-180' : ''}`}
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </div>
+        {agentSectionOpen && (
+          <div className="h-[500px]">
+            <PhaseAgentChat phase={phase} project={phase.project!} />
           </div>
         )}
       </div>
