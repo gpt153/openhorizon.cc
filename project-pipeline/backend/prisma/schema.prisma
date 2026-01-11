@@ -10,15 +10,15 @@ datasource db {
 }
 
 model User {
-  id            String    @id @default(cuid())
-  email         String    @unique
+  id            String   @id @default(cuid())
+  email         String   @unique
   password_hash String
   name          String
-  role          Role      @default(VIEWER)
-  created_at    DateTime  @default(now())
-  updated_at    DateTime  @updatedAt
+  role          Role     @default(VIEWER)
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
 
-  projects_created  Project[] @relation("ProjectCreator")
+  projects_created  Project[]         @relation("ProjectCreator")
   assigned_phases   PhaseAssignment[]
   conversations     AIConversation[]
   learning_patterns LearningPattern[]
@@ -53,9 +53,10 @@ model Project {
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
-  phases         Phase[]
-  conversations  AIConversation[]
-  communications Communication[]
+  phases            Phase[]
+  conversations     AIConversation[]
+  communications    Communication[]
+  application_forms ApplicationForm[]
 
   @@index([created_by])
   @@index([status])
@@ -96,10 +97,11 @@ model Phase {
   created_at       DateTime    @default(now())
   updated_at       DateTime    @updatedAt
 
-  assignments    PhaseAssignment[]
-  conversations  AIConversation[]
-  communications Communication[]
-  quotes         Quote[]
+  assignments       PhaseAssignment[]
+  conversations     AIConversation[]
+  communications    Communication[]
+  quotes            Quote[]
+  application_forms ApplicationForm[]
 
   @@index([project_id])
   @@index([status])
@@ -293,23 +295,23 @@ enum PatternType {
 }
 
 model Seed {
-  id          String   @id @default(cuid())
-  user_id     String
-  user        User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  id      String @id @default(cuid())
+  user_id String
+  user    User   @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
   // Working mode (informal, brainstorming language)
-  title              String
-  description        String   @db.Text
-  approval_likelihood Float   @default(0.5) // 0.0-1.0
+  title               String
+  description         String @db.Text
+  approval_likelihood Float  @default(0.5) // 0.0-1.0
 
   // Formal mode (application-ready Erasmus+ language)
-  title_formal              String?
-  description_formal        String?  @db.Text
+  title_formal               String?
+  description_formal         String? @db.Text
   approval_likelihood_formal Float?
 
   // Metadata
-  tags             String[]
-  estimated_duration Int?    // Days
+  tags                   String[]
+  estimated_duration     Int? // Days
   estimated_participants Int?
 
   // State management
@@ -350,4 +352,37 @@ enum SeedStatus {
   SAVED
   DISMISSED
   CONVERTED
+}
+
+model ApplicationForm {
+  id                   String     @id @default(cuid())
+  phase_id             String
+  phase                Phase      @relation(fields: [phase_id], references: [id], onDelete: Cascade)
+  project_id           String
+  project              Project    @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  form_type            FormType
+  version              Int        @default(1)
+  status               FormStatus @default(DRAFT)
+  form_data            Json
+  generated_narratives Json?
+  created_by           String
+  created_at           DateTime   @default(now())
+  updated_at           DateTime   @updatedAt
+  finalized_at         DateTime?
+
+  @@index([phase_id])
+  @@index([project_id])
+  @@index([status])
+  @@index([created_by])
+}
+
+enum FormType {
+  KA1
+  KA2
+  CUSTOM
+}
+
+enum FormStatus {
+  DRAFT
+  FINALIZED
 }

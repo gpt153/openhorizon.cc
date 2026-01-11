@@ -11,6 +11,7 @@ import { registerCommunicationsRoutes } from './communications/communications.ro
 import { registerVendorRoutes } from './communications/vendors.routes.js'
 import { registerLearningRoutes } from './ai/learning/learning.routes.js'
 import { registerSeedsRoutes } from './seeds/seeds.routes.js'
+import { registerApplicationFormRoutes } from './application-forms/application-forms.routes.js'
 
 const app = Fastify({
   logger: {
@@ -54,7 +55,8 @@ app.get('/', async () => {
       communications: ['/communications/quote-request', '/communications/compose', '/communications/improve-draft'],
       vendors: ['/vendors', '/vendors/:id'],
       learning: ['/learning/recommendations', '/learning/learn', '/phases/:id/auto-populate'],
-      seeds: ['/seeds/generate', '/seeds', '/seeds/:id', '/seeds/:id/elaborate', '/seeds/:id/save', '/seeds/:id/dismiss']
+      seeds: ['/seeds/generate', '/seeds', '/seeds/:id', '/seeds/:id/elaborate', '/seeds/:id/save', '/seeds/:id/dismiss'],
+      applicationForms: ['/application-forms', '/phases/:phaseId/application-form/generate', '/application-forms/:id', '/application-forms/:id/export']
     }
   }
 })
@@ -68,6 +70,7 @@ await registerCommunicationsRoutes(app)
 await registerVendorRoutes(app)
 await registerLearningRoutes(app)
 await registerSeedsRoutes(app)
+await registerApplicationFormRoutes(app)
 
 // Error handler
 app.setErrorHandler((error, request, reply) => {
