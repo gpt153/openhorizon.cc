@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { Socket } from 'socket.io-client'
 import toast from 'react-hot-toast'
+import { useAuthStore } from '../store/authStore'
 
 export interface ChatMessage {
   id: string
@@ -40,6 +41,7 @@ export function useChat({ socket, context: initialContext, onMessageReceived }: 
   const [isTyping, setIsTyping] = useState(false)
   const [context, setContextState] = useState<ChatContext | undefined>(initialContext)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const user = useAuthStore((state) => state.user)
 
   // Send message to AI
   const sendMessage = useCallback(
@@ -50,6 +52,18 @@ export function useChat({ socket, context: initialContext, onMessageReceived }: 
       }
 
       if (!content.trim()) {
+        return
+      }
+
+      // Validate required context
+      if (!context?.projectId || !context?.phaseId) {
+        toast.error('Please select a project and phase first')
+        return
+      }
+
+      // Validate user is authenticated
+      if (!user?.id) {
+        toast.error('You must be logged in to send messages')
         return
       }
 
@@ -68,15 +82,16 @@ export function useChat({ socket, context: initialContext, onMessageReceived }: 
 
       // Send to server
       socket.emit('chat:message', {
-        content: content.trim(),
-        projectId: context?.projectId,
-        phaseId: context?.phaseId,
+        message: content.trim(),
+        projectId: context.projectId,
+        phaseId: context.phaseId,
+        userId: user.id,
       })
 
       // Show typing indicator
       setIsTyping(true)
     },
-    [socket, context]
+    [socket, context, user]
   )
 
   // Clear all messages

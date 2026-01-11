@@ -30,6 +30,14 @@ export class ChatService {
       // Handle chat messages
       socket.on('chat:message', async (data) => {
         try {
+          // Validate required fields
+          if (!data.message || !data.phaseId || !data.projectId || !data.userId) {
+            socket.emit('chat:error', {
+              error: `Missing required fields. Expected: { message, phaseId, projectId, userId }. Received: ${JSON.stringify(Object.keys(data))}`
+            })
+            return
+          }
+
           await this.handleChatMessage(socket, data)
         } catch (error: any) {
           socket.emit('chat:error', {
