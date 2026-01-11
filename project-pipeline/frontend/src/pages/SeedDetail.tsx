@@ -2,7 +2,7 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useParams, useNavigate } from 'react-router-dom'
-import { getSeed, elaborateSeed, saveSeed, deleteSeed } from '../services/seeds.api'
+import { getSeed, elaborateSeed, saveSeed, deleteSeed, convertSeedToProject } from '../services/seeds.api'
 import SeedElaborationChat from '../components/SeedElaborationChat'
 import LoadingSpinner from '../components/LoadingSpinner'
 import toast from 'react-hot-toast'
@@ -62,6 +62,18 @@ export default function SeedDetail() {
     },
     onError: () => {
       toast.error('Failed to delete seed')
+    },
+  })
+
+  // Convert to project mutation
+  const convertMutation = useMutation({
+    mutationFn: () => convertSeedToProject(id!),
+    onSuccess: (response) => {
+      toast.success('Project created successfully!')
+      navigate(`/projects/${response.project.id}`)
+    },
+    onError: () => {
+      toast.error('Failed to convert seed to project')
     },
   })
 
@@ -211,6 +223,13 @@ export default function SeedDetail() {
 
           {/* Actions */}
           <div className="flex gap-2 mt-4">
+            <button
+              onClick={() => convertMutation.mutate()}
+              disabled={convertMutation.isPending}
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-medium rounded-lg transition-colors"
+            >
+              {convertMutation.isPending ? 'Converting...' : 'Convert to Project'}
+            </button>
             {!seed.is_saved && (
               <button
                 onClick={() => saveMutation.mutate()}
