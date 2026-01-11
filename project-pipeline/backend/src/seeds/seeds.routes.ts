@@ -12,6 +12,7 @@ import {
   saveSeed,
   dismissSeed,
   deleteSeed,
+  convertSeedToProject,
 } from './seeds.service.js'
 
 export async function registerSeedsRoutes(app: FastifyInstance) {
@@ -157,6 +158,25 @@ export async function registerSeedsRoutes(app: FastifyInstance) {
       return reply.code(204).send()
     } catch (error) {
       if (error instanceof Error && error.message === 'Seed not found or unauthorized') {
+        return reply.code(404).send({ error: error.message })
+      }
+      throw error
+    }
+  })
+
+  // POST /seeds/:id/convert - Convert seed to project
+  app.post('/seeds/:id/convert', {
+    onRequest: [app.authenticate]
+  }, async (request: FastifyRequest, reply: FastifyReply) => {
+    try {
+      const userId = (request.user as any).userId
+      const { id } = request.params as { id: string }
+
+      const result = await convertSeedToProject(id, userId)
+
+      return reply.code(201).send(result)
+    } catch (error) {
+      if (error instanceof Error && error.message === 'Seed not found') {
         return reply.code(404).send({ error: error.message })
       }
       throw error

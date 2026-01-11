@@ -87,3 +87,19 @@ export interface ListSeedsResponse {
 export interface GetSeedResponse {
   seed: Seed
 }
+
+export interface ConvertSeedToProjectResponse {
+  project: {
+    id: string
+    name: string
+    type: string
+    status: string
+    description: string | null
+    start_date: string
+    end_date: string
+    budget_total: number
+    participants_count: number
+    location: string
+    created_at: string
+  }
+}

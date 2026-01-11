@@ -7,6 +7,7 @@ import type {
   GetSeedResponse,
   ElaborateSeedRequest,
   ElaborationResponse,
+  ConvertSeedToProjectResponse,
 } from '../types/seeds'
 
 /**
@@ -89,4 +90,16 @@ export async function dismissSeed(
  */
 export async function deleteSeed(seedId: string): Promise<void> {
   await api.delete(`/seeds/${seedId}`)
+}
+
+/**
+ * Convert a seed to a project
+ */
+export async function convertSeedToProject(
+  seedId: string
+): Promise<ConvertSeedToProjectResponse> {
+  const response = await api.post<ConvertSeedToProjectResponse>(
+    `/seeds/${seedId}/convert`
+  )
+  return response.data
 }
