@@ -56,7 +56,7 @@ export class ChatService {
   }
 
   private async handleChatMessage(socket: Socket, data: {
-    phaseId: string
+    phaseId?: string | null
     projectId: string
     userId: string
     message: string
@@ -72,25 +72,45 @@ export class ChatService {
       })
     }
 
-    const messages: ChatMessage[] = conversation?.messages as ChatMessage[] || []
+    const messages: ChatMessage[] = (conversation?.messages as ChatMessage[]) || []
     messages.push({
       role: 'user',
       content: message,
       timestamp: new Date()
     })
 
-    // Get phase and project context
-    const phase = await prisma.phase.findUnique({
-      where: { id: phaseId },
-      include: { project: true }
-    })
+    // Get project context
+    let phase = null
+    let project = null
+    let agent
 
-    if (!phase) {
-      throw new Error('Phase not found')
+    if (phaseId) {
+      // Chat about specific phase
+      phase = await prisma.phase.findUnique({
+        where: { id: phaseId },
+        include: { project: true }
+      })
+
+      if (!phase) {
+        throw new Error('Phase not found')
+      }
+
+      project = phase.project
+      agent = getAgentForPhaseType(phase.type)
+    } else {
+      // General project chat - no specific phase
+      project = await prisma.project.findUnique({
+        where: { id: projectId }
+      })
+
+      if (!project) {
+        throw new Error('Project not found')
+      }
+
+      // Use a general purpose agent (default to first available agent type)
+      // You can create a dedicated GeneralAgent later
+      agent = getAgentForPhaseType('ACCOMMODATION') // Fallback to accommodation agent for now
     }
-
-    // Get appropriate agent
-    const agent = getAgentForPhaseType(phase.type)
 
     // Generate response
     const aiMessages = messages.map(m => ({
@@ -123,12 +143,12 @@ export class ChatService {
           user_id: userId,
           messages: messages as any,
           context: {
-            project: phase.project,
-            phase: {
+            project: project,
+            phase: phase ? {
               id: phase.id,
               name: phase.name,
               type: phase.type
-            }
+            } : null
           }
         }
       })
@@ -136,16 +156,19 @@ export class ChatService {
 
     // Send response to client
     socket.emit('chat:response', {
-      conversationId: conversation.id,
-      message: responseContent,
+      conversationId: conversation?.id,
+      content: responseContent, // Match frontend expectation
+      messageId: `msg-${Date.now()}`,
       timestamp: new Date()
     })
 
-    // Broadcast to room
-    socket.to(`phase:${phaseId}`).emit('chat:update', {
-      conversationId: conversation.id,
-      lastMessage: responseContent
-    })
+    // Broadcast to room if phase-specific
+    if (phaseId && conversation) {
+      socket.to(`phase:${phaseId}`).emit('chat:update', {
+        conversationId: conversation.id,
+        lastMessage: responseContent
+      })
+    }
   }
 
   private async handleResearchRequest(socket: Socket, data: {
