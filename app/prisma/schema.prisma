@@ -538,6 +538,16 @@ model Communication {
   sentAt             DateTime?              @map("sent_at")
   responseReceivedAt DateTime?              @map("response_received_at")
 
+  // SendGrid tracking fields
+  sendgridMessageId String?   @map("sendgrid_message_id")
+  deliveredAt       DateTime? @map("delivered_at")
+  openedAt          DateTime? @map("opened_at")
+  openCount         Int       @default(0) @map("open_count")
+  clickCount        Int       @default(0) @map("click_count")
+  bouncedAt         DateTime? @map("bounced_at")
+  bounceReason      String?   @map("bounce_reason")
+  trackingMetadata  Json?     @map("tracking_metadata")
+
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
@@ -551,6 +561,7 @@ model Communication {
   @@index([phaseId])
   @@index([vendorId])
   @@index([status])
+  @@index([sendgridMessageId])
   @@map("communications")
 }
 
@@ -658,8 +669,10 @@ enum CommunicationStatus {
   DRAFT
   SENT
   DELIVERED
+  OPENED
   RESPONDED
   FAILED
+  BOUNCED
 }
 
 enum QuoteStatus {
