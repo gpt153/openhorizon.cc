@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { trpc } from '@/lib/trpc/client'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Card, CardContent } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 import { Skeleton } from '@/components/ui/skeleton'
 import {
@@ -38,6 +38,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { QuoteCard } from '@/components/pipeline/quotes/QuoteCard'
 import { PhaseChat } from '@/components/pipeline/PhaseChat'
+import { TravelSearchPanel } from '@/components/pipeline/TravelSearchPanel'
 import { formatCurrency } from '@/types/pipeline'
 import { ArrowLeft, Calendar, Loader2, Pencil, Trash2, AlertTriangle } from 'lucide-react'
 import { toast } from 'sonner'
@@ -284,45 +285,71 @@ export default function PhaseDetailPage({
             </CardContent>
           </Card>
 
-          {/* Two Column Layout: Quotes and Chat */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Quotes Section */}
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h2 className="text-xl font-semibold">Quotes</h2>
-                <Button size="sm" disabled>
-                  Request Quotes (Disabled)
-                </Button>
+          {/* Travel Phase: Special UI */}
+          {phase.type === 'TRAVEL' ? (
+            <div className="space-y-6">
+              <TravelSearchPanel
+                phaseId={resolvedParams.phaseId}
+                defaultOrigin={phase.project.location}
+                defaultDestination=""
+                defaultPassengers={phase.project.participantCount}
+              />
+
+              {/* AI Chat for Travel */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>AI Travel Assistant</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <PhaseChat
+                    phaseId={resolvedParams.phaseId}
+                    phaseType={phase.type}
+                    phaseName={phase.name}
+                  />
+                </CardContent>
+              </Card>
+            </div>
+          ) : (
+            /* Two Column Layout: Quotes and Chat (for other phase types) */
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Quotes Section */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-xl font-semibold">Quotes</h2>
+                  <Button size="sm" disabled>
+                    Request Quotes (Disabled)
+                  </Button>
+                </div>
+
+                {phase.quotes && phase.quotes.length > 0 ? (
+                  <div className="space-y-4">
+                    {phase.quotes.map((quote) => (
+                      <QuoteCard key={quote.id} quote={quote} />
+                    ))}
+                  </div>
+                ) : (
+                  <Card>
+                    <CardContent className="py-12 text-center">
+                      <p className="text-zinc-500">No quotes yet</p>
+                      <p className="text-sm text-zinc-400 mt-1">
+                        Request quotes from vendors to get pricing estimates
+                      </p>
+                    </CardContent>
+                  </Card>
+                )}
               </div>
 
-              {phase.quotes && phase.quotes.length > 0 ? (
-                <div className="space-y-4">
-                  {phase.quotes.map((quote) => (
-                    <QuoteCard key={quote.id} quote={quote} />
-                  ))}
-                </div>
-              ) : (
-                <Card>
-                  <CardContent className="py-12 text-center">
-                    <p className="text-zinc-500">No quotes yet</p>
-                    <p className="text-sm text-zinc-400 mt-1">
-                      Request quotes from vendors to get pricing estimates
-                    </p>
-                  </CardContent>
-                </Card>
-              )}
+              {/* AI Chat Section */}
+              <div>
+                <h2 className="text-xl font-semibold mb-4">AI Assistant</h2>
+                <PhaseChat
+                  phaseId={resolvedParams.phaseId}
+                  phaseType={phase.type}
+                  phaseName={phase.name}
+                />
+              </div>
             </div>
-
-            {/* AI Chat Section */}
-            <div>
-              <h2 className="text-xl font-semibold mb-4">AI Assistant</h2>
-              <PhaseChat
-                phaseId={resolvedParams.phaseId}
-                phaseType={phase.type}
-                phaseName={phase.name}
-              />
-            </div>
-          </div>
+          )}
         </div>
       </div>
 

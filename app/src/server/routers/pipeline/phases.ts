@@ -349,4 +349,176 @@ export const pipelinePhasesRouter = router({
         conversationId: conversation.id,
       }
     }),
+
+  // Search for travel options (flights and agencies)
+  searchTravel: orgProcedure
+    .input(
+      z.object({
+        phaseId: z.string().uuid(),
+        origin: z.string().min(1),
+        destination: z.string().min(1),
+        date: z.string(),
+        passengers: z.number().int().min(1),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      // Verify phase access
+      const phase = await ctx.prisma.pipelinePhase.findFirst({
+        where: {
+          id: input.phaseId,
+        },
+        include: {
+          project: true,
+        },
+      })
+
+      if (!phase || phase.project.tenantId !== ctx.orgId) {
+        throw new Error('Phase not found')
+      }
+
+      // Build agent context
+      const agentContext = {
+        project: {
+          name: phase.project.name,
+          location: phase.project.location,
+          participantCount: phase.project.participantCount,
+          startDate: phase.project.startDate,
+          endDate: phase.project.endDate,
+        },
+        phase: {
+          name: phase.name,
+          type: phase.type,
+          budgetAllocated: Number(phase.budgetAllocated),
+          startDate: phase.startDate,
+          endDate: phase.endDate,
+        },
+      }
+
+      // Get travel agent
+      const { TravelAgent } = await import('@/lib/ai/agents/travel-agent')
+      const agent = new TravelAgent()
+
+      // Perform search
+      try {
+        const results = await agent.search(
+          {
+            origin: input.origin,
+            destination: input.destination,
+            date: new Date(input.date),
+            passengers: input.passengers,
+          },
+          agentContext
+        )
+
+        return results
+      } catch (error) {
+        console.error('Travel search error:', error)
+        throw new Error('Failed to search travel options')
+      }
+    }),
+
+  // Generate quote request emails for selected travel options
+  generateTravelQuotes: orgProcedure
+    .input(
+      z.object({
+        phaseId: z.string().uuid(),
+        origin: z.string().min(1),
+        destination: z.string().min(1),
+        date: z.string(),
+        passengers: z.number().int().min(1),
+        selectedFlightIds: z.array(z.string()).optional(),
+        selectedAgencyIds: z.array(z.string()).optional(),
+        flights: z.array(z.any()),
+        agencies: z.array(z.any()),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      // Verify phase access
+      const phase = await ctx.prisma.pipelinePhase.findFirst({
+        where: {
+          id: input.phaseId,
+        },
+        include: {
+          project: true,
+        },
+      })
+
+      if (!phase || phase.project.tenantId !== ctx.orgId) {
+        throw new Error('Phase not found')
+      }
+
+      // Build agent context
+      const agentContext = {
+        project: {
+          name: phase.project.name,
+          location: phase.project.location,
+          participantCount: phase.project.participantCount,
+          startDate: phase.project.startDate,
+          endDate: phase.project.endDate,
+        },
+        phase: {
+          name: phase.name,
+          type: phase.type,
+          budgetAllocated: Number(phase.budgetAllocated),
+          startDate: phase.startDate,
+          endDate: phase.endDate,
+        },
+      }
+
+      // Get travel agent
+      const { TravelAgent } = await import('@/lib/ai/agents/travel-agent')
+      const agent = new TravelAgent()
+
+      const searchParams = {
+        origin: input.origin,
+        destination: input.destination,
+        date: new Date(input.date),
+        passengers: input.passengers,
+      }
+
+      // Generate emails for selected options
+      const emails: { recipient: string; subject: string; body: string }[] = []
+
+      // Process selected flights
+      if (input.selectedFlightIds && input.selectedFlightIds.length > 0) {
+        const selectedFlights = input.flights.filter((f: any) =>
+          input.selectedFlightIds?.includes(f.id)
+        )
+
+        for (const flight of selectedFlights) {
+          const email = await agent.generateQuoteEmail(flight, searchParams, agentContext)
+          const lines = email.split('\n')
+          const subject = lines[0].replace('Subject: ', '')
+          const body = lines.slice(1).join('\n').trim()
+
+          emails.push({
+            recipient: flight.airline,
+            subject,
+            body,
+          })
+        }
+      }
+
+      // Process selected agencies
+      if (input.selectedAgencyIds && input.selectedAgencyIds.length > 0) {
+        const selectedAgencies = input.agencies.filter((a: any) =>
+          input.selectedAgencyIds?.includes(a.id)
+        )
+
+        for (const agency of selectedAgencies) {
+          const email = await agent.generateQuoteEmail(agency, searchParams, agentContext)
+          const lines = email.split('\n')
+          const subject = lines[0].replace('Subject: ', '')
+          const body = lines.slice(1).join('\n').trim()
+
+          emails.push({
+            recipient: agency.name,
+            subject,
+            body,
+          })
+        }
+      }
+
+      return { emails }
+    }),
 })
