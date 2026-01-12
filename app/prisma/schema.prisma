@@ -429,6 +429,13 @@ model PipelinePhase {
   budgetSpent     Decimal     @default(0) @map("budget_spent") @db.Decimal(12, 2)
   order           Int
 
+  // AI Agent results storage
+  agentSearchResults Json?    @map("agent_search_results") // Raw search data (hotels/flights/caterers)
+  agentAnalysis      Json?    @map("agent_analysis") // AI pros/cons for each option
+  selectedOptions    Json?    @map("selected_options") // User-selected options
+  quoteEmailsDrafts  Json?    @map("quote_emails_drafts") // Generated email drafts
+  quoteEmailsSent    Boolean? @default(false) @map("quote_emails_sent")
+
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
