@@ -521,4 +521,180 @@ export const pipelinePhasesRouter = router({
 
       return { emails }
     }),
+
+  // Food agent: Get stored search results
+  getFoodOptions: orgProcedure
+    .input(
+      z.object({
+        phaseId: z.string().uuid(),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      const phase = await ctx.prisma.pipelinePhase.findFirst({
+        where: {
+          id: input.phaseId,
+        },
+        include: {
+          project: true,
+        },
+      })
+
+      if (!phase || phase.project.tenantId !== ctx.orgId) {
+        throw new Error('Phase not found')
+      }
+
+      return {
+        options: phase.agentSearchResults || [],
+        selectedOptions: phase.selectedOptions || [],
+      }
+    }),
+
+  // Food agent: Analyze a specific food option
+  analyzeFoodOption: orgProcedure
+    .input(
+      z.object({
+        phaseId: z.string().uuid(),
+        option: z.object({
+          name: z.string(),
+          type: z.enum(['caterer', 'restaurant']),
+          cuisineType: z.string().optional(),
+          estimatedPricePerPerson: z.number().optional(),
+          features: z.array(z.string()).optional(),
+          capacity: z
+            .object({
+              min: z.number().optional(),
+              max: z.number().optional(),
+            })
+            .optional(),
+          dietaryOptions: z.array(z.string()).optional(),
+        }),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const phase = await ctx.prisma.pipelinePhase.findFirst({
+        where: {
+          id: input.phaseId,
+        },
+        include: {
+          project: true,
+        },
+      })
+
+      if (!phase || phase.project.tenantId !== ctx.orgId) {
+        throw new Error('Phase not found')
+      }
+
+      const agentContext = {
+        project: {
+          name: phase.project.name,
+          location: phase.project.location,
+          participantCount: phase.project.participantCount,
+          startDate: phase.project.startDate,
+          endDate: phase.project.endDate,
+        },
+        phase: {
+          name: phase.name,
+          type: phase.type,
+          budgetAllocated: Number(phase.budgetAllocated),
+          startDate: phase.startDate,
+          endDate: phase.endDate,
+        },
+      }
+
+      const { FoodAgent } = await import('@/lib/ai/agents/food-agent')
+      const foodAgent = new FoodAgent()
+
+      try {
+        const analysis = await foodAgent.analyzeFoodOption(input.option, agentContext)
+        return analysis
+      } catch (error) {
+        console.error('Food option analysis error:', error)
+        throw new Error('Failed to analyze food option')
+      }
+    }),
+
+  // Food agent: Generate quote emails for selected options
+  generateFoodQuoteEmails: orgProcedure
+    .input(
+      z.object({
+        phaseId: z.string().uuid(),
+        selectedOptionNames: z.array(z.string()),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const phase = await ctx.prisma.pipelinePhase.findFirst({
+        where: {
+          id: input.phaseId,
+        },
+        include: {
+          project: true,
+        },
+      })
+
+      if (!phase || phase.project.tenantId !== ctx.orgId) {
+        throw new Error('Phase not found')
+      }
+
+      const agentContext = {
+        project: {
+          name: phase.project.name,
+          location: phase.project.location,
+          participantCount: phase.project.participantCount,
+          startDate: phase.project.startDate,
+          endDate: phase.project.endDate,
+        },
+        phase: {
+          name: phase.name,
+          type: phase.type,
+          budgetAllocated: Number(phase.budgetAllocated),
+          startDate: phase.startDate,
+          endDate: phase.endDate,
+        },
+      }
+
+      // Get stored search results
+      const searchResults = phase.agentSearchResults as any[]
+      if (!searchResults || searchResults.length === 0) {
+        throw new Error('No food search results found. Please search first.')
+      }
+
+      // Filter selected options
+      const selectedOptions = searchResults.filter((option) =>
+        input.selectedOptionNames.includes(option.name)
+      )
+
+      if (selectedOptions.length === 0) {
+        throw new Error('No matching food options found')
+      }
+
+      // Generate quote emails
+      const { FoodAgent } = await import('@/lib/ai/agents/food-agent')
+      const foodAgent = new FoodAgent()
+
+      try {
+        const emails = await Promise.all(
+          selectedOptions.map((option) => foodAgent.generateQuoteEmail(option, agentContext))
+        )
+
+        // Store selected options and email drafts
+        await ctx.prisma.pipelinePhase.update({
+          where: { id: input.phaseId },
+          data: {
+            selectedOptions: selectedOptions as any,
+            quoteEmailsDrafts: emails as any,
+          },
+        })
+
+        return {
+          emails: emails.map((email, index) => ({
+            ...email,
+            optionName: selectedOptions[index].name,
+          })),
+          success: true,
+        }
+      } catch (error) {
+        console.error('Quote email generation error:', error)
+        throw new Error('Failed to generate quote emails')
+      }
+    }),
 })

@@ -3,6 +3,7 @@ import { AccommodationAgent } from './accommodation-agent'
 import { ActivitiesAgent } from './activities-agent'
 import { EmergencyAgent } from './emergency-agent'
 import { TravelAgent } from './travel-agent'
+import { FoodAgent } from './food-agent'
 
 export function getAgentForPhaseType(phaseType: string): BaseAgent {
   switch (phaseType) {
@@ -15,6 +16,7 @@ export function getAgentForPhaseType(phaseType: string): BaseAgent {
     case 'TRAVEL':
       return new TravelAgent()
     case 'FOOD':
+      return new FoodAgent()
     case 'INSURANCE':
     case 'CUSTOM':
     default:
