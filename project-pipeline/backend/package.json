@@ -39,6 +39,7 @@
     "dotenv": "^16.4.5",
     "exceljs": "^4.4.0",
     "fastify": "^5.1.0",
+    "jsonwebtoken": "^9.0.3",
     "langchain": "^0.3.37",
     "playwright": "^1.57.0",
     "socket.io": "^4.8.3",
