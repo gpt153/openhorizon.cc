@@ -24,6 +24,19 @@ export async function generateSeeds(
 }
 
 /**
+ * Create and save a generated seed to database
+ */
+export async function createSeed(
+  seed: any
+): Promise<{ seed: any }> {
+  const response = await api.post<{ seed: any }>(
+    '/seeds/create',
+    seed
+  )
+  return response.data
+}
+
+/**
  * List all seeds for the current user
  */
 export async function listSeeds(options?: {

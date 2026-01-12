@@ -9,6 +9,7 @@ import {
   listUserSeeds,
   getSeedById,
   elaborateSeedConversation,
+  createGeneratedSeed,
   saveSeed,
   dismissSeed,
   deleteSeed,
@@ -34,6 +35,22 @@ export async function registerSeedsRoutes(app: FastifyInstance) {
           details: error.errors
         })
       }
+      throw error
+    }
+  })
+
+  // POST /seeds/create - Create and save a generated seed
+  app.post('/seeds/create', {
+    onRequest: [app.authenticate]
+  }, async (request: FastifyRequest, reply: FastifyReply) => {
+    try {
+      const userId = (request.user as any).userId
+      const seed = request.body as any // GeneratedSeed from frontend
+
+      const savedSeed = await createGeneratedSeed(userId, seed)
+
+      return reply.code(201).send({ seed: savedSeed })
+    } catch (error) {
       throw error
     }
   })

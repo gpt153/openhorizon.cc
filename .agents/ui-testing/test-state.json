@@ -1,0 +1,42 @@
+{
+  "session_id": "session-1768166535",
+  "started": "2026-01-11T21:22:15Z",
+  "last_update": "2026-01-11T21:22:15Z",
+  "project": "openhorizon.cc",
+  "deployment": {
+    "type": "native",
+    "frontend_url": "http://localhost:5173",
+    "backend_url": "http://localhost:4000",
+    "health_check_passed": true
+  },
+  "features": {
+    "seed-generation": {"status": "ready", "priority": "P0", "batch": 1},
+    "seed-garden": {"status": "blocked", "priority": "P0", "batch": 1, "depends_on": ["seed-generation"]},
+    "seed-to-project": {"status": "blocked", "priority": "P0", "batch": 1, "depends_on": ["seed-generation", "seed-garden"]},
+    "gantt-chart": {"status": "blocked", "priority": "P1", "batch": 2, "depends_on": ["seed-to-project"]},
+    "ai-chat": {"status": "blocked", "priority": "P1", "batch": 2, "depends_on": ["seed-to-project"]},
+    "phase-details": {"status": "blocked", "priority": "P0", "batch": 2, "depends_on": ["seed-to-project"]},
+    "phase-editing": {"status": "blocked", "priority": "P0", "batch": 2, "depends_on": ["phase-details"]},
+    "phase-deletion": {"status": "blocked", "priority": "P1", "batch": 5, "depends_on": ["phase-details"]},
+    "phase-ai-agents": {"status": "blocked", "priority": "P2", "batch": 5, "depends_on": ["phase-details"]},
+    "budget-tracking": {"status": "blocked", "priority": "P0", "batch": 3, "depends_on": ["seed-to-project", "phase-details"]},
+    "budget-alerts": {"status": "blocked", "priority": "P2", "batch": 3, "depends_on": ["budget-tracking"]},
+    "budget-export-csv": {"status": "blocked", "priority": "P2", "batch": 3, "depends_on": ["budget-tracking"]},
+    "form-generation": {"status": "blocked", "priority": "P0", "batch": 4, "depends_on": ["seed-to-project", "phase-details", "budget-tracking"]},
+    "form-export-pdf": {"status": "blocked", "priority": "P0", "batch": 4, "depends_on": ["form-generation"]},
+    "form-export-word": {"status": "blocked", "priority": "P1", "batch": 4, "depends_on": ["form-generation"]},
+    "project-report-export": {"status": "blocked", "priority": "P1", "batch": 4, "depends_on": ["seed-to-project", "budget-tracking", "form-generation"]},
+    "ai-accommodation": {"status": "blocked", "priority": "P2", "batch": 5, "depends_on": ["seed-to-project", "phase-details"]}
+  },
+  "bugs": {},
+  "runners": {},
+  "monitors": {},
+  "stats": {
+    "total_features": 17,
+    "passed": 0,
+    "failed": 0,
+    "in_progress": 0,
+    "blocked": 16,
+    "ready": 1
+  }
+}

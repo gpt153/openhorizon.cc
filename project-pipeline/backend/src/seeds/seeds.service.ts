@@ -10,35 +10,18 @@ import type {
 
 /**
  * Generate new seeds from user prompt
+ * Note: Seeds are NOT saved to database automatically.
+ * User must explicitly save or dismiss them.
  */
 export async function generateAndSaveSeeds(
   userId: string,
   input: BrainstormInput
 ): Promise<GeneratedSeed[]> {
-  // Generate seeds using AI
+  // Generate seeds using AI (but don't save them yet)
   const generatedSeeds = await generateSeeds(input)
 
-  // Save seeds to database
-  const savedSeeds = await Promise.all(
-    generatedSeeds.map(async (seed) => {
-      return await prisma.seed.create({
-        data: {
-          user_id: userId,
-          title: seed.title,
-          description: seed.description,
-          approval_likelihood: seed.approvalLikelihood,
-          title_formal: seed.titleFormal,
-          description_formal: seed.descriptionFormal,
-          approval_likelihood_formal: seed.approvalLikelihoodFormal,
-          tags: seed.suggestedTags || [],
-          estimated_duration: seed.estimatedDuration,
-          estimated_participants: seed.estimatedParticipants,
-          current_version: seed as any,
-        },
-      })
-    })
-  )
-
+  // Return generated seeds without saving
+  // User will choose which ones to save via frontend
   return generatedSeeds
 }
 
@@ -177,7 +160,35 @@ export async function elaborateSeedConversation(
 }
 
 /**
- * Save a seed
+ * Create and save a generated seed to database
+ */
+export async function createGeneratedSeed(
+  userId: string,
+  seed: GeneratedSeed
+) {
+  const savedSeed = await prisma.seed.create({
+    data: {
+      user_id: userId,
+      title: seed.title,
+      description: seed.description,
+      approval_likelihood: seed.approvalLikelihood,
+      title_formal: seed.titleFormal,
+      description_formal: seed.descriptionFormal,
+      approval_likelihood_formal: seed.approvalLikelihoodFormal,
+      tags: seed.suggestedTags || [],
+      estimated_duration: seed.estimatedDuration,
+      estimated_participants: seed.estimatedParticipants,
+      current_version: seed as any,
+      is_saved: true, // Mark as saved when explicitly created by user
+      is_dismissed: false,
+    },
+  })
+
+  return savedSeed
+}
+
+/**
+ * Save a seed (mark existing seed as saved)
  */
 export async function saveSeed(seedId: string, userId: string) {
   const updated = await prisma.seed.updateMany({

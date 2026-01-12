@@ -366,6 +366,297 @@ Result: Zero downtime, continuous supervision
 
 ---
 
+### Workflow 6: Autonomous UI Testing
+
+**Scenario:** Frontend implementation complete, needs comprehensive UI testing
+
+```
+You: /command-invoke ui-test-supervise consilio http://localhost:3002 docker
+
+UI Test Supervisor:
+1. Reads implementation plan (.agents/plans/*.md)
+2. Identifies all UI features to test (e.g., login, dashboard, chat, payments)
+3. Creates test session: .agents/ui-testing/session-{timestamp}/
+4. Initializes state tracking: test-state.json
+5. Spawns Test Suite Runners (max 3 concurrent):
+   - Runner 1: Tests "User Authentication" feature
+   - Runner 2: Tests "Coach Chat" feature
+   - Runner 3: Tests "Payment Processing" feature
+
+Test Suite Runners (parallel execution):
+6. Each runner:
+   - Reads feature requirements from plan
+   - Generates Playwright test code
+   - Runs tests: npm run test:e2e:docker
+   - Reports results to supervisor
+
+7. Runner 1: ✅ All tests pass
+8. Runner 2: ❌ 2 tests fail (chat message not displaying)
+9. Runner 3: ✅ All tests pass
+
+UI Test Supervisor:
+10. Receives results:
+    - 2 features passed
+    - 1 feature failed (coach-chat)
+11. Creates GitHub issue #156 for chat failure
+12. Spawns Fix-Retest Monitor for issue #156
+
+Fix-Retest Monitor:
+13. Posts: @scar /command-invoke rca 156
+14. Waits for SCAR to complete RCA (polls every 2min, max 60min)
+15. SCAR posts RCA document
+16. Posts: @scar /command-invoke fix-rca 156
+17. Monitors fix implementation (polls every 2min, max 2h)
+18. SCAR creates PR #157
+19. Runs: /verify-scar-phase consilio 156 1
+20. Result: APPROVED ✅
+21. Retests coach-chat feature in worktree
+22. Retest result: ✅ All tests now pass
+23. Unlocks coach-chat feature, reports success, exits
+
+UI Test Supervisor:
+24. All 3 features now passing
+25. Spawns Regression Test Runner
+26. Regression Runner:
+    - Runs complete test suite (all features)
+    - Verifies no regressions introduced by fixes
+    - All 35 tests pass ✅
+27. Creates final report:
+    - Total features tested: 3
+    - Bugs found and fixed: 1
+    - Final status: ALL TESTS PASSING ✅
+28. Updates you:
+    "✅ UI testing complete
+     3 features tested, 1 bug fixed, regression clean
+     See: .agents/ui-testing/session-{timestamp}/final-report.md"
+
+Total time: 2-3h (fully autonomous)
+Total context usage: ~60-80k tokens across all subagents (supervisor: ~10-15k)
+```
+
+**See full documentation:** `docs/ui-testing-system.md`
+
+---
+
+## Port Conflict Prevention
+
+### Problem
+Services frequently default to port 3000 (React, Next.js, Express), causing conflicts that waste 5-15 minutes of debugging time. SCAR often implements the service, starts it, encounters a port conflict, then has to reconfigure and restart.
+
+### Solution
+**Always check ports BEFORE instructing SCAR to start any service.**
+
+### Implementation
+
+**1. Before Every Service Start**
+```bash
+# Check what's listening
+netstat -tlnp | grep LISTEN 2>/dev/null || ss -tlnp | grep LISTEN
+# Alternative
+lsof -i -P -n | grep LISTEN
+```
+
+**2. When Instructing SCAR**
+Include this in every SCAR instruction that involves starting a service:
+
+```
+CRITICAL: Port Conflict Prevention
+
+1. First, check which ports are in use: `lsof -i -P -n | grep LISTEN`
+2. Document the results
+3. If the service you're implementing defaults to a port that's already in use, choose an alternative:
+   - Port 3000 taken? → Use 3002, 3003, 3004, etc.
+   - Port 8000 taken? → Use 8001, 8002, 8003, etc.
+4. Update ALL configuration (package.json scripts, docker-compose.yml, .env files, README) with the chosen port
+5. Include the chosen port in your implementation summary
+
+Do NOT start the service without checking ports first.
+```
+
+**3. Update Project State**
+Track port allocations in `.agents/supervision/port-allocations.json`:
+```json
+{
+  "allocations": {
+    "3000": "main-app",
+    "3001": "scar-remote-agent",
+    "3002": "health-agent-web",
+    "8080": "webhook-receiver"
+  },
+  "last_updated": "2026-01-09T08:30:00Z"
+}
+```
+
+### Time Savings
+- **Without this**: 5-15 minutes debugging per conflict
+- **With this**: 30 seconds checking upfront
+- **ROI**: Saves 10x time on every service start
+
+---
+
+## Secrets Management
+
+### Problem
+API keys and secrets provided early in sessions are forgotten after many tokens, especially during context switches between supervisor and SCAR. We've wasted hours debugging implementations, only to discover the root cause was a missing API key that was provided at the start of the session.
+
+### Solution
+**Centralized secrets storage in `~/.archon/.secrets/`** - persistent across all sessions, accessible to both supervisor and SCAR.
+
+### Implementation
+
+**Directory Structure:**
+```
+~/.archon/.secrets/
+├── README.md              # Instructions for AI agents
+├── global.env             # Shared across all projects
+└── projects/              # Per-project secrets
+    ├── scar.env
+    ├── consilio.env
+    └── [project-name].env
+```
+
+**Secret Resolution Order:**
+1. Project-specific (`~/.archon/.secrets/projects/[project-name].env`)
+2. Global (`~/.archon/.secrets/global.env`)
+3. Workspace `.env.local` (auto-synced)
+
+### When Supervising: Secret Checks
+
+**CRITICAL: Before delegating ANY implementation that requires external services, verify secrets exist.**
+
+**1. Before Instructing SCAR**
+```bash
+# Check if required secrets exist
+cat ~/.archon/.secrets/projects/scar.env | grep OPENAI_API_KEY
+cat ~/.archon/.secrets/global.env | grep GITHUB_TOKEN
+
+# Or use SCAR commands
+/secret-check OPENAI_API_KEY STRIPE_SECRET_KEY
+```
+
+**2. If Secrets Missing**
+Do NOT proceed with implementation. First:
+```
+⚠️ REQUIRED SECRETS MISSING
+
+This implementation requires:
+- OPENAI_API_KEY (for AI features)
+- STRIPE_SECRET_KEY (for payments)
+
+Please provide these secrets:
+/secret-set OPENAI_API_KEY sk-proj-...
+/secret-set STRIPE_SECRET_KEY sk_live_...
+
+After secrets are set, I'll sync them to the workspace and begin implementation.
+```
+
+**3. Include in SCAR Instructions**
+When instructing SCAR to implement, include:
+```
+CRITICAL: Secrets Verification
+
+Before implementing, verify these secrets exist:
+- OPENAI_API_KEY
+- DATABASE_URL
+- [other required secrets]
+
+Check: cat ~/.archon/.secrets/projects/$(basename $PWD).env
+
+If missing, ASK USER IMMEDIATELY. Do not proceed with implementation.
+After confirmation, sync secrets: /secret-sync
+```
+
+### Common Secrets by Service
+
+Include this checklist when supervising implementations:
+
+**OpenAI Integration:**
+- `OPENAI_API_KEY` - API access
+- `OPENAI_ORG_ID` - Organization ID (optional)
+
+**Anthropic/Claude:**
+- `ANTHROPIC_API_KEY` - API access
+- `CLAUDE_CODE_OAUTH_TOKEN` - OAuth token for Claude Code
+
+**Stripe:**
+- `STRIPE_SECRET_KEY` - Live/test secret key
+- `STRIPE_PUBLISHABLE_KEY` - Client-side key
+- `STRIPE_WEBHOOK_SECRET` - Webhook signature verification
+
+**Supabase:**
+- `SUPABASE_URL` - Project URL
+- `SUPABASE_ANON_KEY` - Client-side key
+- `SUPABASE_SERVICE_KEY` - Server-side key (full access)
+
+**GitHub:**
+- `GITHUB_TOKEN` or `GH_TOKEN` - API access
+- `GITHUB_WEBHOOK_SECRET` - Webhook verification
+
+**Database:**
+- `DATABASE_URL` - PostgreSQL connection string
+- `REDIS_URL` - Redis connection (if using)
+
+**Messaging:**
+- `TELEGRAM_BOT_TOKEN` - Telegram bot
+- `SLACK_BOT_TOKEN` - Slack bot
+- `DISCORD_BOT_TOKEN` - Discord bot
+
+**Google Cloud:**
+- `GCP_PROJECT_ID` - Project identifier
+- `GCP_SERVICE_ACCOUNT_KEY` - JSON key file path
+
+### Available Commands
+
+Both supervisor and SCAR can use these commands:
+
+```bash
+# Set secrets
+/secret-set OPENAI_API_KEY sk-proj-...        # Project scope
+/secret-set --global GITHUB_TOKEN ghp_...     # Global scope
+
+# Retrieve secrets
+/secret-get OPENAI_API_KEY                    # View (masked)
+/secret-list                                  # List all keys
+
+# Verify secrets
+/secret-check OPENAI_API_KEY DATABASE_URL     # Check existence
+
+# Sync to workspace
+/secret-sync                                  # Create/update .env.local
+
+# Delete secrets
+/secret-delete OLD_KEY                        # Remove project secret
+/secret-delete --global DEPRECATED_TOKEN      # Remove global secret
+```
+
+### Integration with Worktrees
+
+When creating worktrees for isolated development:
+
+**After creating worktree:**
+```bash
+cd ~/.archon/worktrees/scar-issue-42
+/secret-sync  # Syncs project + global secrets to .env.local
+```
+
+**Auto-sync (future enhancement):** Worktree creation will automatically sync secrets.
+
+### Time Savings
+- **Without this**: 30-120 minutes debugging missing secrets per incident
+- **With this**: 30 seconds verifying upfront
+- **ROI**: Saves 60-240x time
+- **Impact**: Eliminates most frustrating debugging sessions
+
+### Security Notes
+- All files are `chmod 600` (owner read/write only)
+- Outside git repositories (git-safe)
+- `.env.local` auto-added to `.gitignore`
+- Secret values masked in `/secret-get` output
+
+**Full documentation:** `~/.archon/.secrets/README.md`
+
+---
+
 ## Communication Principles
 
 ### CRITICAL: No Code to User
