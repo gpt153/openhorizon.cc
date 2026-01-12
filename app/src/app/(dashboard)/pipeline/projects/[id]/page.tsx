@@ -6,8 +6,10 @@ import { trpc } from '@/lib/trpc/client'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { PhaseCard } from '@/components/pipeline/phases/PhaseCard'
 import { ExportReportButton } from '@/components/pipeline/projects/ExportReportButton'
+import { BudgetCalculator } from '@/components/budget/BudgetCalculator'
 import { formatCurrency, calculateProfitMarginPercentage, getProfitMarginColor } from '@/types/pipeline'
 import { Calculator, Calendar, Users, MapPin, TrendingUp, ArrowLeft, Loader2 } from 'lucide-react'
 import { useState } from 'react'
@@ -130,51 +132,23 @@ export default function PipelineProjectDetailPage({ params }: { params: Promise<
             <Card>
               <CardHeader>
                 <CardTitle className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
-                  Erasmus+ Grant
+                  Budget Total
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {grantAmount ? (
-                  <p className="text-2xl font-bold">{formatCurrency(grantAmount)}</p>
-                ) : (
-                  <div>
-                    <p className="text-sm text-zinc-500 mb-3">Not calculated yet</p>
-                    <Button
-                      size="sm"
-                      onClick={handleCalculateGrant}
-                      disabled={isCalculating || !project.hostCountry}
-                    >
-                      {isCalculating ? (
-                        <>
-                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                          Calculating...
-                        </>
-                      ) : (
-                        <>
-                          <Calculator className="h-4 w-4 mr-2" />
-                          Calculate Grant
-                        </>
-                      )}
-                    </Button>
-                    {!project.hostCountry && (
-                      <p className="text-xs text-red-600 mt-2">
-                        Please set host country code first
-                      </p>
-                    )}
-                  </div>
-                )}
+                <p className="text-2xl font-bold">{formatCurrency(Number(project.budgetTotal))}</p>
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader>
                 <CardTitle className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
-                  Estimated Costs
+                  Budget Spent
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-2xl font-bold">
-                  {formatCurrency(estimatedCosts || 0)}
+                  {formatCurrency(Number(project.budgetSpent))}
                 </p>
               </CardContent>
             </Card>
@@ -182,52 +156,53 @@ export default function PipelineProjectDetailPage({ params }: { params: Promise<
             <Card>
               <CardHeader>
                 <CardTitle className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
-                  Profit Margin
+                  Remaining
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {profitMargin !== null && grantAmount ? (
-                  <div className="flex items-center gap-2">
-                    <TrendingUp className={`h-5 w-5 ${getProfitMarginColor(profitMargin)}`} />
-                    <p className={`text-2xl font-bold ${getProfitMarginColor(profitMargin)}`}>
-                      {profitMargin.toFixed(1)}%
-                    </p>
-                  </div>
-                ) : (
-                  <p className="text-sm text-zinc-500">Calculate grant first</p>
-                )}
-                {profitMargin !== null && grantAmount && (
-                  <p className="text-sm text-zinc-600 mt-2">
-                    Profit: {formatCurrency((grantAmount || 0) - (estimatedCosts || 0))}
-                  </p>
-                )}
+                <p className="text-2xl font-bold text-green-600">
+                  {formatCurrency(Number(project.budgetTotal) - Number(project.budgetSpent))}
+                </p>
               </CardContent>
             </Card>
           </div>
 
-          {/* Phases Section */}
-          <div>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold">Project Phases</h2>
-            </div>
+          {/* Tabs for Budget Calculator and Phases */}
+          <Tabs defaultValue="calculator" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="calculator">Budget Calculator</TabsTrigger>
+              <TabsTrigger value="phases">Project Phases</TabsTrigger>
+            </TabsList>
 
-            {project.phases && project.phases.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {project.phases.map((phase) => (
-                  <PhaseCard key={phase.id} phase={phase} projectId={project.id} />
-                ))}
+            <TabsContent value="calculator" className="mt-6">
+              <BudgetCalculator projectId={project.id} onSave={() => refetch()} />
+            </TabsContent>
+
+            <TabsContent value="phases" className="mt-6">
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-xl font-semibold">Project Phases</h2>
+                </div>
+
+                {project.phases && project.phases.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {project.phases.map((phase) => (
+                      <PhaseCard key={phase.id} phase={phase} projectId={project.id} />
+                    ))}
+                  </div>
+                ) : (
+                  <Card>
+                    <CardContent className="py-12 text-center">
+                      <p className="text-zinc-500">No phases configured yet</p>
+                      <p className="text-sm text-zinc-400 mt-1">
+                        Phases will be created automatically when needed
+                      </p>
+                    </CardContent>
+                  </Card>
+                )}
               </div>
-            ) : (
-              <Card>
-                <CardContent className="py-12 text-center">
-                  <p className="text-zinc-500">No phases configured yet</p>
-                  <p className="text-sm text-zinc-400 mt-1">
-                    Phases will be created automatically when needed
-                  </p>
-                </CardContent>
-              </Card>
-            )}
-          </div>
+            </TabsContent>
+          </Tabs>
         </div>
       </div>
     </div>
