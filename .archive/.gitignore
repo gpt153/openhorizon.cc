@@ -1,0 +1,10 @@
+# Archive directory is tracked but contents are historical
+
+# Keep the README
+!README.md
+
+# Track all archived files (for historical reference)
+!root-docs/
+!reports/
+!agents-old/
+!plans-old/
