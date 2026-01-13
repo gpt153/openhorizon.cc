@@ -39,6 +39,7 @@ import { Label } from '@/components/ui/label'
 import { QuoteCard } from '@/components/pipeline/quotes/QuoteCard'
 import { PhaseChat } from '@/components/pipeline/PhaseChat'
 import { TravelSearchPanel } from '@/components/pipeline/TravelSearchPanel'
+import { FoodSearchPanel } from '@/components/pipeline/FoodSearchPanel'
 import { formatCurrency } from '@/types/pipeline'
 import { ArrowLeft, Calendar, Loader2, Pencil, Trash2, AlertTriangle } from 'lucide-react'
 import { toast } from 'sonner'
@@ -299,6 +300,28 @@ export default function PhaseDetailPage({
               <Card>
                 <CardHeader>
                   <CardTitle>AI Travel Assistant</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <PhaseChat
+                    phaseId={resolvedParams.phaseId}
+                    phaseType={phase.type}
+                    phaseName={phase.name}
+                  />
+                </CardContent>
+              </Card>
+            </div>
+          ) : phase.type === 'FOOD' ? (
+            <div className="space-y-6">
+              <FoodSearchPanel
+                phaseId={resolvedParams.phaseId}
+                defaultLocation={phase.project.location}
+                defaultParticipants={phase.project.participantCount}
+              />
+
+              {/* AI Chat for Food */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>AI Food Assistant</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <PhaseChat
