@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation'
 
-// Redirect to projects (auth disabled for now)
+// Redirect to pipeline projects (new pipeline app)
 export default function Home() {
-  redirect('/projects')
+  redirect('/pipeline/projects')
 }
