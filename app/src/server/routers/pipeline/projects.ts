@@ -283,4 +283,117 @@ export const pipelineProjectsRouter = router({
 
     return summary
   }),
+
+  // Get budget summary with trend data
+  getBudgetSummary: orgProcedure
+    .input(z.object({ id: z.string().uuid() }))
+    .query(async ({ ctx, input }) => {
+      const project = await ctx.prisma.pipelineProject.findFirst({
+        where: {
+          id: input.id,
+          tenantId: ctx.orgId,
+        },
+        include: {
+          phases: {
+            orderBy: {
+              order: 'asc',
+            },
+          },
+        },
+      })
+
+      if (!project) {
+        throw new Error('Pipeline project not found')
+      }
+
+      // Get expenses for trend data
+      const expenses = await ctx.prisma.expense.findMany({
+        where: {
+          projectId: input.id,
+        },
+        orderBy: {
+          date: 'asc',
+        },
+      })
+
+      // Calculate budget health
+      const totalBudget = Number(project.budgetTotal) || 0
+      const totalSpent = Number(project.budgetSpent) || 0
+      const totalRemaining = totalBudget - totalSpent
+      const percentage = totalBudget > 0 ? (totalSpent / totalBudget) * 100 : 0
+
+      let status: 'HEALTHY' | 'WARNING' | 'CRITICAL' | 'OVER_BUDGET' = 'HEALTHY'
+      let message = 'Budget is within healthy limits'
+      let colorClass = 'text-green-600'
+      let progressColor = 'bg-green-600'
+
+      if (percentage >= 100) {
+        status = 'OVER_BUDGET'
+        message = 'Budget exceeded!'
+        colorClass = 'text-red-600'
+        progressColor = 'bg-red-600'
+      } else if (percentage >= 90) {
+        status = 'CRITICAL'
+        message = 'Budget critically low'
+        colorClass = 'text-red-600'
+        progressColor = 'bg-red-600'
+      } else if (percentage >= 75) {
+        status = 'WARNING'
+        message = 'Budget running low'
+        colorClass = 'text-yellow-600'
+        progressColor = 'bg-yellow-600'
+      }
+
+      // Calculate spending trend data
+      const trendData = expenses.reduce((acc: any[], expense) => {
+        const dateStr = new Date(expense.date).toISOString().split('T')[0]
+        const existingEntry = acc.find((e) => e.date === dateStr)
+
+        if (existingEntry) {
+          existingEntry.spending += Number(expense.amount)
+        } else {
+          const previousCumulative = acc.length > 0 ? acc[acc.length - 1].cumulative : 0
+          acc.push({
+            date: dateStr,
+            spending: Number(expense.amount),
+            cumulative: previousCumulative + Number(expense.amount),
+          })
+        }
+
+        return acc
+      }, [])
+
+      // Update cumulative values
+      let cumulative = 0
+      trendData.forEach((entry) => {
+        cumulative += entry.spending
+        entry.cumulative = cumulative
+      })
+
+      return {
+        totalBudget,
+        totalSpent,
+        totalRemaining,
+        health: {
+          status,
+          percentage,
+          message,
+          colorClass,
+          progressColor,
+        },
+        phases: project.phases.map((phase) => ({
+          id: phase.id,
+          name: phase.name,
+          type: phase.type,
+          allocated: Number(phase.budgetAllocated) || 0,
+          spent: Number(phase.budgetSpent) || 0,
+          remaining: Number(phase.budgetAllocated) - Number(phase.budgetSpent),
+          percentage:
+            Number(phase.budgetAllocated) > 0
+              ? (Number(phase.budgetSpent) / Number(phase.budgetAllocated)) * 100
+              : 0,
+        })),
+        trendData,
+      }
+    }),
 })

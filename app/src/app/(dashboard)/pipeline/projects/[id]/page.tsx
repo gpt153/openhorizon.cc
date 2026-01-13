@@ -10,6 +10,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { PhaseCard } from '@/components/pipeline/phases/PhaseCard'
 import { ExportReportButton } from '@/components/pipeline/projects/ExportReportButton'
 import { BudgetCalculator } from '@/components/budget/BudgetCalculator'
+import { BudgetOverviewDashboard } from '@/components/budget/BudgetOverviewDashboard'
+import { BudgetHealthBadge } from '@/components/budget/BudgetHealthBadge'
 import { formatCurrency, calculateProfitMarginPercentage, getProfitMarginColor } from '@/types/pipeline'
 import { Calculator, Calendar, Users, MapPin, TrendingUp, ArrowLeft, Loader2 } from 'lucide-react'
 import { useState } from 'react'
@@ -20,6 +22,10 @@ export default function PipelineProjectDetailPage({ params }: { params: Promise<
   const [isCalculating, setIsCalculating] = useState(false)
 
   const { data: project, isLoading, error, refetch } = trpc.pipeline.projects.getById.useQuery({
+    id: resolvedParams.id,
+  })
+
+  const { data: budgetSummary } = trpc.pipeline.projects.getBudgetSummary.useQuery({
     id: resolvedParams.id,
   })
 
@@ -100,6 +106,7 @@ export default function PipelineProjectDetailPage({ params }: { params: Promise<
             )}
           </div>
           <div className="flex items-center gap-2">
+            {budgetSummary && <BudgetHealthBadge health={budgetSummary.health} />}
             <ExportReportButton projectId={project.id} projectName={project.name} />
             <Badge className={statusColors[project.status]}>
               {project.status}
@@ -167,15 +174,32 @@ export default function PipelineProjectDetailPage({ params }: { params: Promise<
             </Card>
           </div>
 
-          {/* Tabs for Budget Calculator and Phases */}
+          {/* Tabs for Budget Calculator, Budget Tracking, and Phases */}
           <Tabs defaultValue="calculator" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
+            <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="calculator">Budget Calculator</TabsTrigger>
+              <TabsTrigger value="tracking">Budget Tracking</TabsTrigger>
               <TabsTrigger value="phases">Project Phases</TabsTrigger>
             </TabsList>
 
             <TabsContent value="calculator" className="mt-6">
               <BudgetCalculator projectId={project.id} onSave={() => refetch()} />
+            </TabsContent>
+
+            <TabsContent value="tracking" className="mt-6">
+              {budgetSummary ? (
+                <BudgetOverviewDashboard
+                  summary={budgetSummary}
+                  trendData={budgetSummary.trendData || []}
+                />
+              ) : (
+                <Card>
+                  <CardContent className="py-12 text-center">
+                    <Loader2 className="h-8 w-8 animate-spin text-blue-600 mx-auto" />
+                    <p className="text-zinc-500 mt-4">Loading budget tracking data...</p>
+                  </CardContent>
+                </Card>
+              )}
             </TabsContent>
 
             <TabsContent value="phases" className="mt-6">
