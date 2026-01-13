@@ -236,24 +236,23 @@ function AccommodationOptionCard({
               <h4 className="font-semibold text-lg">{option.name}</h4>
               <Badge
                 variant="secondary"
-                className={
-                  option.type === 'accommodation'
-                    ? 'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-200'
-                    : 'bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-200'
-                }
+                className="bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-200"
               >
-                {option.type === 'accommodation' ? 'Caterer' : 'Restaurant'}
+                {option.type.charAt(0).toUpperCase() + option.type.slice(1)}
               </Badge>
               {selected && <CheckCircle2 className="h-5 w-5 text-blue-500" />}
             </div>
             <div className="grid grid-cols-2 gap-4 text-sm mb-3">
               <div>
-                <p className="text-zinc-500">Cuisine Type</p>
-                <p className="font-medium">{option.cuisineType}</p>
+                <p className="text-zinc-500">Estimated Price</p>
+                <p className="font-medium text-lg">€{option.estimatedPrice}</p>
               </div>
               <div>
-                <p className="text-zinc-500">Price per Person</p>
-                <p className="font-medium text-lg">€{option.estimatedPricePerPerson}</p>
+                <p className="text-zinc-500">Rating</p>
+                <p className="font-medium">
+                  {option.rating ? `${option.rating}/5 ⭐` : 'N/A'}
+                  {option.reviewCount && ` (${option.reviewCount} reviews)`}
+                </p>
               </div>
               <div>
                 <p className="text-zinc-500">Capacity</p>
@@ -267,18 +266,6 @@ function AccommodationOptionCard({
               </div>
             </div>
             <div className="space-y-2">
-              {option.dietaryOptions && option.dietaryOptions.length > 0 && (
-                <div>
-                  <p className="text-sm text-zinc-500 mb-1">Dietary Options</p>
-                  <div className="flex flex-wrap gap-1">
-                    {option.dietaryOptions.map((diet, idx) => (
-                      <Badge key={idx} variant="outline" className="text-xs">
-                        {diet}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              )}
               {option.features && option.features.length > 0 && (
                 <div>
                   <p className="text-sm text-zinc-500 mb-1">Features</p>
