@@ -47,7 +47,7 @@ export function TravelSearchPanel({
   const [selectedAgencies, setSelectedAgencies] = useState<Set<string>>(new Set())
   const [quotesDialogOpen, setQuotesDialogOpen] = useState(false)
   const [generatedEmails, setGeneratedEmails] = useState<
-    { recipient: string; subject: string; body: string }[]
+    { recipient?: string; subject: string; body: string }[]
   >([])
 
   const searchMutation = trpc.pipeline.phases.searchTravel.useMutation({
@@ -443,7 +443,7 @@ function QuotesDialog({
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
-  emails: { recipient: string; subject: string; body: string }[]
+  emails: { recipient?: string; subject: string; body: string }[]
 }) {
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null)
 
