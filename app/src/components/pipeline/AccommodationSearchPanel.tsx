@@ -38,7 +38,7 @@ export function AccommodationSearchPanel({
   const [selectedOptions, setSelectedOptions] = useState<Set<string>>(new Set())
   const [quotesDialogOpen, setQuotesDialogOpen] = useState(false)
   const [generatedEmails, setGeneratedEmails] = useState<
-    { recipient: string; subject: string; body: string; optionName?: string }[]
+    { recipient?: string; subject: string; body: string; optionName?: string }[]
   >([])
 
   const searchMutation = trpc.pipeline.phases.searchAccommodation.useMutation({
