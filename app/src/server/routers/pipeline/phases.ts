@@ -766,4 +766,152 @@ export const pipelinePhasesRouter = router({
         throw new Error('Failed to generate quote emails')
       }
     }),
+
+  // Search for accommodation options
+  searchAccommodation: orgProcedure
+    .input(
+      z.object({
+        phaseId: z.string().uuid(),
+        location: z.string().optional(),
+        participants: z.number().int().optional(),
+        checkInDate: z.string().optional(),
+        checkOutDate: z.string().optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const phase = await ctx.prisma.pipelinePhase.findFirst({
+        where: {
+          id: input.phaseId,
+        },
+        include: {
+          project: true,
+        },
+      })
+
+      if (!phase || phase.project.tenantId !== ctx.orgId) {
+        throw new Error('Phase not found')
+      }
+
+      const agentContext = {
+        project: {
+          name: phase.project.name,
+          location: input.location || phase.project.location,
+          participantCount: input.participants || phase.project.participantCount,
+          startDate: phase.project.startDate,
+          endDate: phase.project.endDate,
+        },
+        phase: {
+          name: phase.name,
+          type: phase.type,
+          budgetAllocated: Number(phase.budgetAllocated),
+          startDate: phase.startDate,
+          endDate: phase.endDate,
+        },
+      }
+
+      const { AccommodationAgent } = await import('@/lib/ai/agents/accommodation-agent')
+      const agent = new AccommodationAgent()
+
+      try {
+        const results = await agent.research(agentContext)
+
+        await ctx.prisma.pipelinePhase.update({
+          where: { id: input.phaseId },
+          data: {
+            agentSearchResults: results as any,
+          },
+        })
+
+        return {
+          options: results,
+          success: true,
+        }
+      } catch (error) {
+        console.error('Accommodation search error:', error)
+        throw new Error('Failed to search accommodation options')
+      }
+    }),
+
+  // Generate quote emails for selected accommodation options
+  generateAccommodationQuoteEmails: orgProcedure
+    .input(
+      z.object({
+        phaseId: z.string().uuid(),
+        selectedOptionNames: z.array(z.string()),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const phase = await ctx.prisma.pipelinePhase.findFirst({
+        where: {
+          id: input.phaseId,
+        },
+        include: {
+          project: true,
+        },
+      })
+
+      if (!phase || phase.project.tenantId !== ctx.orgId) {
+        throw new Error('Phase not found')
+      }
+
+      const agentContext = {
+        project: {
+          name: phase.project.name,
+          location: phase.project.location,
+          participantCount: phase.project.participantCount,
+          startDate: phase.project.startDate,
+          endDate: phase.project.endDate,
+        },
+        phase: {
+          name: phase.name,
+          type: phase.type,
+          budgetAllocated: Number(phase.budgetAllocated),
+          startDate: phase.startDate,
+          endDate: phase.endDate,
+        },
+      }
+
+      const searchResults = phase.agentSearchResults as any[]
+      if (!searchResults || searchResults.length === 0) {
+        throw new Error('No accommodation search results found. Please search first.')
+      }
+
+      const selectedOptions = searchResults.filter((option) =>
+        input.selectedOptionNames.includes(option.name)
+      )
+
+      if (selectedOptions.length === 0) {
+        throw new Error('No matching accommodation options found')
+      }
+
+      const { AccommodationAgent } = await import('@/lib/ai/agents/accommodation-agent')
+      const accommodationAgent = new AccommodationAgent()
+
+      try {
+        const emails = await Promise.all(
+          selectedOptions.map((option) =>
+            accommodationAgent.generateQuoteEmail(option, agentContext)
+          )
+        )
+
+        await ctx.prisma.pipelinePhase.update({
+          where: { id: input.phaseId },
+          data: {
+            selectedOptions: selectedOptions as any,
+            quoteEmailsDrafts: emails as any,
+          },
+        })
+
+        return {
+          emails: emails.map((email, index) => ({
+            ...email,
+            optionName: selectedOptions[index].name,
+          })),
+          success: true,
+        }
+      } catch (error) {
+        console.error('Accommodation quote email generation error:', error)
+        throw new Error('Failed to generate accommodation quote emails')
+      }
+    }),
 })
