@@ -522,6 +522,75 @@ export const pipelinePhasesRouter = router({
       return { emails }
     }),
 
+  // Search for food options (caterers and restaurants)
+  searchFood: orgProcedure
+    .input(
+      z.object({
+        phaseId: z.string().uuid(),
+        location: z.string().optional(),
+        participants: z.number().int().optional(),
+        dietaryRequirements: z.array(z.string()).optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      // Verify phase access
+      const phase = await ctx.prisma.pipelinePhase.findFirst({
+        where: {
+          id: input.phaseId,
+        },
+        include: {
+          project: true,
+        },
+      })
+
+      if (!phase || phase.project.tenantId !== ctx.orgId) {
+        throw new Error('Phase not found')
+      }
+
+      // Build agent context
+      const agentContext = {
+        project: {
+          name: phase.project.name,
+          location: input.location || phase.project.location,
+          participantCount: input.participants || phase.project.participantCount,
+          startDate: phase.project.startDate,
+          endDate: phase.project.endDate,
+        },
+        phase: {
+          name: phase.name,
+          type: phase.type,
+          budgetAllocated: Number(phase.budgetAllocated),
+          startDate: phase.startDate,
+          endDate: phase.endDate,
+        },
+      }
+
+      // Get food agent
+      const { FoodAgent } = await import('@/lib/ai/agents/food-agent')
+      const agent = new FoodAgent()
+
+      // Perform search
+      try {
+        const results = await agent.research(agentContext)
+
+        // Store results in phase for later access
+        await ctx.prisma.pipelinePhase.update({
+          where: { id: input.phaseId },
+          data: {
+            agentSearchResults: results as any,
+          },
+        })
+
+        return {
+          options: results,
+          success: true,
+        }
+      } catch (error) {
+        console.error('Food search error:', error)
+        throw new Error('Failed to search food options')
+      }
+    }),
+
   // Food agent: Get stored search results
   getFoodOptions: orgProcedure
     .input(
