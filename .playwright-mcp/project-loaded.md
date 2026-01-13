@@ -1,0 +1,174 @@
+### New console messages
+- [LOG] [Fast Refresh] rebuilding @ https://oh.153.se/_next/static/chunks/node_modules_next_dist_7a812...
+- [LOG] [Fast Refresh] done in 116ms @ https://oh.153.se/_next/static/chunks/node_modules_next_dist_7a...
+
+### Page state
+- Page URL: https://oh.153.se/projects/7da449f4-6f02-4e8d-bb73-a03d07d8db54
+- Page Title: Digital Storytelling by the Beach: Capture & Share | Open Horizon
+- Page Snapshot:
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e3]:
+      - link "OH Open Horizon" [ref=e5] [cursor=pointer]:
+        - /url: /
+        - generic [ref=e7]: OH
+        - generic [ref=e8]: Open Horizon
+      - navigation [ref=e9]:
+        - link "Dashboard" [ref=e10] [cursor=pointer]:
+          - /url: /
+          - img [ref=e11]
+          - text: Dashboard
+        - link "Projects" [ref=e14] [cursor=pointer]:
+          - /url: /projects
+          - img [ref=e15]
+          - text: Projects
+        - link "Brainstorm" [ref=e17] [cursor=pointer]:
+          - /url: /brainstorm
+          - img [ref=e18]
+          - text: Brainstorm
+        - link "Seed Garden" [ref=e21] [cursor=pointer]:
+          - /url: /seeds
+          - img [ref=e22]
+          - text: Seed Garden
+        - link "Settings" [ref=e25] [cursor=pointer]:
+          - /url: /settings
+          - img [ref=e26]
+          - text: Settings
+      - paragraph [ref=e30]: Powered by AI • Erasmus+ Compliant
+    - generic [ref=e31]:
+      - banner [ref=e32]:
+        - generic [ref=e34]: Open Horizon Project Companion
+        - generic [ref=e35]:
+          - generic [ref=e36]:
+            - generic [ref=e37]:
+              - img
+              - text: Working Mode
+            - button "Switch to Formal" [ref=e38]
+          - generic [ref=e39]: Auth Disabled - Development Mode
+      - main [ref=e40]:
+        - generic [ref=e41]:
+          - generic [ref=e42]:
+            - button "Back to Projects" [ref=e56]:
+              - img
+              - text: Back to Projects
+            - generic [ref=e57]:
+              - generic [ref=e58]:
+                - generic [ref=e59]:
+                  - 'heading "Digital Storytelling by the Beach: Capture & Share" [level=1] [ref=e60]'
+                  - button [ref=e61]:
+                    - img
+                - paragraph [ref=e62]: Empowering youth to share their stories through digital media, fostering connections and cultural exchange by the seaside.
+              - generic [ref=e63]:
+                - generic [ref=e64]: CONCEPT
+                - button "Build Programme" [ref=e65]:
+                  - img
+                  - text: Build Programme
+                - button "Export" [ref=e66]:
+                  - img
+                  - text: Export
+                - button "Delete" [ref=e67]:
+                  - img
+                  - text: Delete
+          - generic [ref=e68]:
+            - generic [ref=e70]: Overview
+            - generic [ref=e72]:
+              - generic [ref=e73]:
+                - img [ref=e74]
+                - generic [ref=e79]:
+                  - paragraph [ref=e80]: Participants
+                  - paragraph [ref=e81]: "30"
+              - generic [ref=e82]:
+                - img [ref=e83]
+                - generic [ref=e85]:
+                  - paragraph [ref=e86]: Duration
+                  - paragraph [ref=e87]: 5 days
+              - generic [ref=e88]:
+                - img [ref=e89]
+                - generic [ref=e94]:
+                  - paragraph [ref=e95]: Est. Budget
+                  - paragraph [ref=e96]: €12,000 - €18,000
+          - generic [ref=e97]:
+            - generic [ref=e99]: Objectives
+            - generic [ref=e101]:
+              - generic [ref=e102]:
+                - paragraph [ref=e103]: Equip participants with digital storytelling skills using accessible technology
+                - paragraph [ref=e104]: "→ Erasmus+ Priority: digital transformation"
+              - generic [ref=e105]:
+                - paragraph [ref=e106]: Promote intercultural dialogue and mutual understanding among European youth
+                - paragraph [ref=e107]: "→ Erasmus+ Priority: intercultural dialogue"
+              - generic [ref=e108]:
+                - paragraph [ref=e109]: Encourage civic engagement and democratic participation through the sharing of personal narratives
+                - paragraph [ref=e110]: "→ Erasmus+ Priority: democratic participation"
+          - generic [ref=e111]:
+            - generic [ref=e114]: Target Group
+            - paragraph [ref=e116]: The target group consists of youth aged 13-17 from diverse European backgrounds, interested in digital media and storytelling. Many have not previously participated in international exchanges, making this project particularly significant for them. They face challenges such as limited access to digital education and intercultural experiences. This project matters as it provides an inclusive platform for learning and expression, helping them develop digital competences and confidence in their narratives.
+          - generic [ref=e117]:
+            - generic [ref=e119]: Activity Outline (5 days)
+            - generic [ref=e121]:
+              - generic [ref=e122]:
+                - paragraph [ref=e123]: Day 1
+                - generic [ref=e124]:
+                  - paragraph [ref=e125]: "Morning: Introduction to digital storytelling and ice-breaking activities"
+                  - paragraph [ref=e126]: "Afternoon: Workshop on storytelling basics and narrative structures"
+                  - paragraph [ref=e127]: "Evening: Welcome party and team-building games by the beach"
+              - generic [ref=e128]:
+                - paragraph [ref=e129]: Day 2
+                - generic [ref=e130]:
+                  - paragraph [ref=e131]: "Morning: Photography and video recording techniques session"
+                  - paragraph [ref=e132]: "Afternoon: Exploration activities for story inspiration along the beach and surroundings"
+                  - paragraph [ref=e133]: "Evening: Group discussions on story ideas and cultural exchange"
+              - generic [ref=e134]:
+                - paragraph [ref=e135]: Day 3
+                - generic [ref=e136]:
+                  - paragraph [ref=e137]: "Morning: Scriptwriting workshop focusing on personal and cultural stories"
+                  - paragraph [ref=e138]: "Afternoon: Digital editing tools tutorial and hands-on practice"
+                  - paragraph [ref=e139]: "Evening: Peer-to-peer feedback sessions on project progress"
+              - generic [ref=e140]:
+                - paragraph [ref=e141]: Day 4
+                - generic [ref=e142]:
+                  - paragraph [ref=e143]: "Morning: Finalizing digital storytelling projects in groups"
+                  - paragraph [ref=e144]: "Afternoon: Preparation for the final presentation and sharing of stories"
+                  - paragraph [ref=e145]: "Evening: Showcase of digital stories with a beachside screening"
+              - generic [ref=e146]:
+                - paragraph [ref=e147]: Day 5
+                - generic [ref=e148]:
+                  - paragraph [ref=e149]: "Morning: Reflection activities and Youthpass workshop"
+                  - paragraph [ref=e150]: "Afternoon: Closing ceremony and feedback"
+                  - paragraph [ref=e151]: "Evening: Departure preparation and informal goodbyes"
+          - generic [ref=e152]:
+            - generic [ref=e154]: Learning Outcomes
+            - generic [ref=e156]:
+              - generic [ref=e157]:
+                - paragraph [ref=e158]: digital
+                - paragraph [ref=e159]: Participants will gain basic competencies in digital storytelling tools and editing software.
+              - generic [ref=e160]:
+                - paragraph [ref=e161]: social & civic
+                - paragraph [ref=e162]: Participants will enhance their understanding and appreciation of diverse cultures through storytelling.
+              - generic [ref=e163]:
+                - paragraph [ref=e164]: sense of initiative & entrepreneurship
+                - paragraph [ref=e165]: Participants will develop project management skills by planning, executing, and presenting a digital storytelling project.
+              - generic [ref=e166]:
+                - paragraph [ref=e167]: communication
+                - paragraph [ref=e168]: Participants will improve their communication skills in English and visual storytelling techniques.
+              - generic [ref=e169]:
+                - paragraph [ref=e170]: learning to learn
+                - paragraph [ref=e171]: Participants will learn how to give and receive constructive feedback on creative projects.
+          - generic [ref=e172]:
+            - generic [ref=e175]: Inclusion & Accessibility
+            - paragraph [ref=e177]: To ensure accessibility, the venue will be fully accessible for participants with physical disabilities. Dietary needs will be accommodated by offering a range of food options. Language support will include clear and simple English for non-native speakers, with visual aids to support understanding. Sensory-friendly spaces will be available for those who require lower stimulation. Financial support will cover travel and accommodation for participants with fewer opportunities.
+          - generic [ref=e178]:
+            - generic [ref=e181]: Partner Profile
+            - paragraph [ref=e183]: Ideal partners include youth NGOs, educational institutions, and cultural organizations with experience in digital education, storytelling, and youth exchanges. Geographic diversity is sought to enrich cultural exchange. Partners should share a commitment to inclusion, have the capacity to recruit participants fitting the project's target group, and possess expertise in non-formal education methods.
+          - generic [ref=e184]:
+            - generic [ref=e185]:
+              - generic [ref=e188]: Sustainability
+              - paragraph [ref=e190]: The project prioritizes eco-friendly practices, including minimizing waste, promoting recycling, and encouraging low-emission transport options like trains. Activities will emphasize the importance of environmental stewardship, integrating local beach clean-ups as part of the project. Local and seasonal foods will be preferred for meals to reduce carbon footprint.
+            - generic [ref=e191]:
+              - generic [ref=e194]: Impact
+              - paragraph [ref=e196]: Participants will leave with enhanced digital storytelling skills, increased cultural awareness, and a stronger sense of European identity and solidarity. Organizations will benefit from expanded networks and new collaborative opportunities. Communities will gain through the dissemination of digital stories that highlight diverse cultural narratives and promote social inclusion.
+  - region "Notifications alt+T"
+  - button "Open Next.js Dev Tools" [ref=e51] [cursor=pointer]:
+    - img [ref=e52]
+  - alert [ref=e55]
+```
