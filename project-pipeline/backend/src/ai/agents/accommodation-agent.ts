@@ -325,4 +325,97 @@ Return as JSON array.`
       }
     ]
   }
+
+  /**
+   * Generate quote request email for selected accommodation option
+   */
+  async generateQuoteEmail(
+    option: AccommodationSuggestion,
+    context: AgentContext
+  ): Promise<{ subject: string; body: string }> {
+    const projectName = context.project?.name || 'Youth Exchange Project'
+    const location = context.project?.location || 'your city'
+    const participants = context.project?.participants_count || 30
+    const startDate = context.phase?.start_date ? new Date(context.phase.start_date) : undefined
+    const endDate = context.phase?.end_date ? new Date(context.phase.end_date) : undefined
+    const nights = startDate && endDate ? this.calculateNights(startDate, endDate) : 7
+
+    const subject = `Group Accommodation Quote Request - ${projectName} (${participants} participants, ${nights} nights)`
+
+    const body = `Dear ${option.name} Team,
+
+I hope this message finds you well.
+
+I am writing to request a quote for group accommodation for an Erasmus+ youth project titled "${projectName}" taking place in ${location}.
+
+PROJECT DETAILS:
+- Number of participants: ${participants} young people (mixed gender group)
+- Duration: ${nights} nights
+${startDate ? `- Check-in: ${startDate.toLocaleDateString()}` : ''}
+${endDate ? `- Check-out: ${endDate.toLocaleDateString()}` : ''}
+- Room configuration: Open to your recommendations for group accommodation
+
+REQUIREMENTS:
+- Safe and supervised environment suitable for youth groups
+- WiFi access throughout the property
+- Common areas for group activities and socialization
+- Breakfast included (if available)
+- 24/7 reception or on-call support
+- Accessible location (near public transport)
+
+SPECIFIC REQUEST FOR ${option.type.toUpperCase()}:
+${option.type === 'hostel' || option.type === 'residence'
+  ? `We are interested in your group accommodation options. Please provide:
+1. Available room configurations (dormitories, private rooms, capacity)
+2. Pricing per person per night (our target: €${option.estimatedPrice}/person/night)
+3. Included amenities and services
+4. Meal options (breakfast, self-catering facilities)
+5. Common areas and facilities available for group use
+6. Your experience hosting youth groups or educational programs`
+  : option.type === 'hotel'
+  ? `We are interested in booking group accommodation at your hotel. Please provide:
+1. Available room types and configurations for groups
+2. Group rates per person per night (our target: €${option.estimatedPrice}/person/night)
+3. Meal packages (breakfast, half-board options)
+4. Meeting or common spaces available for our group
+5. Group booking policies and deposit requirements
+6. Your experience hosting youth educational groups`
+  : `We are interested in your accommodation for our youth group. Please provide:
+1. Available units/rooms and capacity
+2. Pricing per person per night (our target: €${option.estimatedPrice}/person/night)
+3. Amenities included (kitchen, WiFi, linens, etc.)
+4. Check-in/check-out procedures for groups
+5. House rules and supervision policies
+6. Your experience hosting educational youth groups`}
+
+Could you please send us:
+- Detailed quote with room/bed breakdown
+- Total costs including any additional fees (cleaning, tourist tax, deposits)
+- Cancellation policy and payment terms
+- Floor plans or photos of the accommodation
+- References from similar youth group stays (if available)
+
+This is an official Erasmus+ funded project, and we can provide all necessary documentation including insurance and youth protection certificates.
+
+SAFETY & SUPERVISION:
+As this is a youth project, we need to ensure:
+- Separate sleeping areas for different genders (if applicable)
+- Secure premises with controlled access
+- Emergency procedures and contacts
+- Fire safety and evacuation plans
+
+Please feel free to contact me if you need any additional information. We would appreciate receiving your quote by [DATE - one week from sending].
+
+Thank you for your time and consideration. We look forward to potentially hosting our group at ${option.name}.
+
+Best regards,
+[Your Name]
+[Your Organization]
+[Contact Information]
+
+---
+Note: This is a formal quote request for an Erasmus+ funded youth project. All accommodations must meet EU youth safety standards.`
+
+    return { subject, body }
+  }
 }
