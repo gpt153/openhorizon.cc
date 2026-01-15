@@ -11,5 +11,8 @@
     "dev:app": "npm run dev --workspace=app",
     "build:landing": "npm run build --workspace=landing",
     "build:app": "npm run build --workspace=app"
+  },
+  "dependencies": {
+    "autoprefixer": "^10.4.23"
   }
 }
