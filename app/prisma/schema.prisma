@@ -699,3 +699,45 @@ enum ExpenseCategory {
   EMERGENCY
   OTHER
 }
+
+// ============================================================================
+// BACKGROUND SEARCH JOBS (Epic 001)
+// ============================================================================
+
+model SearchJob {
+  id        String          @id @default(cuid())
+  type      SearchJobType
+  status    SearchJobStatus @default(PENDING)
+
+  // Multi-tenant isolation
+  organizationId String @map("organization_id") @db.Uuid
+  projectId      String @map("project_id")
+
+  // Search parameters (JSON)
+  searchParams Json @map("search_params")
+
+  // Results (JSON)
+  results Json?
+  error   String?
+
+  // Timestamps
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([organizationId, status])
+  @@index([id, organizationId])
+  @@map("search_jobs")
+}
+
+enum SearchJobType {
+  FOOD
+  ACCOMMODATION
+  TRAVEL
+}
+
+enum SearchJobStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
