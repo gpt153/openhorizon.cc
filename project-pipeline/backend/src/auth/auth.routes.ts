@@ -39,7 +39,7 @@ export async function registerAuthRoutes(app: FastifyInstance) {
           email: data.email,
           password_hash,
           name: data.name,
-          role: 'USER'
+          role: 'VIEWER'
         },
         select: {
           id: true,
