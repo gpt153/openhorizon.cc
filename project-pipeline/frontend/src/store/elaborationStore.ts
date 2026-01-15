@@ -46,7 +46,7 @@ const initialState = {
   quickReplies: [],
 }
 
-export const useElaborationStore = create<ElaborationState>()((set, get) => ({
+export const useElaborationStore = create<ElaborationState>()((set, _get) => ({
   ...initialState,
 
   startSession: (seedId: string, initialSeed: GeneratedSeed) => {
