@@ -11,6 +11,13 @@ import type {
   StartSessionResponse,
   ProcessAnswerResponse
 } from './seeds.types.js'
+import { generateTimeline } from './generators/timeline-generator.js'
+import { allocateBudget } from './generators/budget-allocator.js'
+import { analyzeRequirements } from './generators/requirements-analyzer.js'
+import { generatePhases } from './generators/phase-generator.js'
+import { generateChecklist } from './generators/checklist-generator.js'
+import type { RichSeedMetadata, Activity } from './generators/types.js'
+import type { Seed } from '@prisma/client'
 
 /**
  * Generate new seeds from user prompt
@@ -442,92 +449,219 @@ export async function getElaborationStatus(
 }
 
 /**
- * Convert seed to project with default phases
+ * Extract rich metadata from seed for generators
  */
-export async function convertSeedToProject(seedId: string, userId: string) {
-  // Load seed with authorization check
-  const seed = await getSeedById(seedId, userId)
+function extractSeedMetadata(seed: Seed): RichSeedMetadata {
+  const currentVersion = seed.current_version as any
 
-  // Calculate project dates from estimated duration
-  const startDate = new Date()
-  startDate.setDate(startDate.getDate() + 30) // Default: 30 days in future
+  // Extract activities from current version or default to empty
+  const activities: Activity[] = (currentVersion?.activities || []).map((a: any, index: number) => ({
+    id: `activity-${index}`,
+    name: a.name || `Activity ${index + 1}`,
+    type: a.type || 'other',
+    duration: a.duration || 2,
+    isOutdoor: a.isOutdoor || false,
+    requiresFacilitator: a.requiresFacilitator || false,
+    description: a.description
+  }))
 
-  const estimatedDays = seed.estimated_duration || 14 // Default: 14 days
-  const endDate = new Date(startDate)
-  endDate.setDate(endDate.getDate() + estimatedDays)
-
-  // Determine project type from seed tags
-  const tags = seed.tags || []
-  let projectType: 'STUDENT_EXCHANGE' | 'TRAINING' | 'CONFERENCE' | 'CUSTOM' = 'CUSTOM'
-  if (tags.some((t: string) => t.toLowerCase().includes('exchange') || t.toLowerCase().includes('mobility'))) {
-    projectType = 'STUDENT_EXCHANGE'
-  } else if (tags.some((t: string) => t.toLowerCase().includes('training') || t.toLowerCase().includes('course'))) {
-    projectType = 'TRAINING'
-  } else if (tags.some((t: string) => t.toLowerCase().includes('conference') || t.toLowerCase().includes('seminar'))) {
-    projectType = 'CONFERENCE'
+  // Determine start date: from current_version or default to 60 days in future
+  let startDate: Date
+  if (currentVersion?.startDate) {
+    startDate = new Date(currentVersion.startDate)
+  } else {
+    startDate = new Date()
+    startDate.setDate(startDate.getDate() + 60) // Default: 60 days in future
   }
 
-  // Use transaction to create project and phases atomically
-  const project = await prisma.$transaction(async (tx) => {
-    // Create project from seed data
+  return {
+    title: seed.title_formal || seed.title,
+    description: seed.description_formal || seed.description,
+    participants: seed.estimated_participants || 20,
+    duration: seed.estimated_duration || 7,
+    destination: currentVersion?.destination || 'Barcelona, Spain',
+    participantCountries: currentVersion?.participantCountries || ['TR'],
+    activities,
+    startDate,
+    estimatedBudget: currentVersion?.estimatedBudget || 50000,
+    tags: seed.tags || [],
+    isPublicEvent: currentVersion?.isPublicEvent || false,
+    hasWorkshops: activities.some(a => a.type === 'workshop'),
+    requiresPermits: currentVersion?.requiresPermits || false
+  }
+}
+
+/**
+ * Determine project type from tags
+ */
+function determineProjectType(tags: string[]): 'STUDENT_EXCHANGE' | 'TRAINING' | 'CONFERENCE' | 'CUSTOM' {
+  const lowerTags = tags.map(t => t.toLowerCase())
+
+  if (lowerTags.some(t => t.includes('exchange') || t.includes('mobility'))) {
+    return 'STUDENT_EXCHANGE'
+  }
+  if (lowerTags.some(t => t.includes('training') || t.includes('course'))) {
+    return 'TRAINING'
+  }
+  if (lowerTags.some(t => t.includes('conference') || t.includes('seminar'))) {
+    return 'CONFERENCE'
+  }
+  return 'CUSTOM'
+}
+
+/**
+ * Convert seed to complete project with intelligent phase generation
+ *
+ * Uses generator modules to create timeline, allocate budget, analyze requirements,
+ * generate phases, and populate checklists.
+ */
+export async function convertSeedToProject(seedId: string, userId: string) {
+  // 1. Load seed with authorization check
+  const seed = await getSeedById(seedId, userId)
+
+  // 2. Extract metadata from seed
+  const metadata = extractSeedMetadata(seed)
+
+  // 3. Run generators in parallel (independent operations)
+  const [timeline, budget, requirements] = await Promise.all([
+    generateTimeline(metadata),
+    allocateBudget(metadata),
+    analyzeRequirements(metadata)
+  ])
+
+  // 4. Generate phase templates (depends on timeline, budget, requirements)
+  const { phases: phaseTemplates } = generatePhases({
+    seed: metadata,
+    timeline,
+    budget,
+    requirements,
+    projectId: '' // Will be filled after project creation
+  })
+
+  // 5. Create project and phases in transaction
+  const result = await prisma.$transaction(async (tx) => {
+    // Create project
     const newProject = await tx.project.create({
       data: {
-        name: seed.title_formal || seed.title,
-        type: projectType,
+        name: metadata.title,
+        type: determineProjectType(metadata.tags),
         status: 'PLANNING',
-        description: seed.description_formal || seed.description,
-        start_date: startDate,
-        end_date: endDate,
-        budget_total: 50000, // Default budget (EUR)
-        participants_count: seed.estimated_participants || 20,
-        location: 'TBD', // User will update
+        description: metadata.description,
+        start_date: timeline.preparation.startDate,
+        end_date: timeline.followUp.endDate,
+        budget_total: budget.totalBudget,
+        budget_spent: 0,
+        participants_count: metadata.participants,
+        location: metadata.destination,
         created_by: userId,
         metadata: {
           converted_from_seed_id: seed.id,
           original_approval_likelihood: seed.approval_likelihood_formal || seed.approval_likelihood,
-        },
-      },
+          timeline_summary: {
+            preparation: {
+              startDate: timeline.preparation.startDate.toISOString(),
+              endDate: timeline.preparation.endDate.toISOString(),
+              durationWeeks: timeline.preparation.durationWeeks
+            },
+            exchange: {
+              startDate: timeline.exchange.startDate.toISOString(),
+              endDate: timeline.exchange.endDate.toISOString(),
+              durationDays: timeline.exchange.durationDays
+            },
+            followUp: {
+              startDate: timeline.followUp.startDate.toISOString(),
+              endDate: timeline.followUp.endDate.toISOString(),
+              durationWeeks: timeline.followUp.durationWeeks
+            }
+          },
+          budget_breakdown: budget.breakdown,
+          budget_justification: budget.justification,
+          requirements_summary: {
+            visas: {
+              required: requirements.visas.required,
+              countries: requirements.visas.countries,
+              type: requirements.visas.type
+            },
+            insurance: {
+              required: requirements.insurance.required,
+              type: requirements.insurance.type,
+              coverage: requirements.insurance.coverage
+            },
+            permits: {
+              required: requirements.permits.required,
+              count: requirements.permits.types.length
+            }
+          },
+          generation_timestamp: new Date().toISOString()
+        }
+      }
     })
 
-    // Generate default phases
-    const defaultPhases: Array<{ name: string; type: 'APPLICATION' | 'ACCOMMODATION' | 'TRAVEL' | 'ACTIVITIES' | 'REPORTING'; order: number; duration: number }> = [
-      { name: 'Application Phase', type: 'APPLICATION', order: 1, duration: 7 },
-      { name: 'Accommodation Booking', type: 'ACCOMMODATION', order: 2, duration: 3 },
-      { name: 'Travel Arrangements', type: 'TRAVEL', order: 3, duration: 2 },
-      { name: 'Activities Planning', type: 'ACTIVITIES', order: 4, duration: 1 },
-      { name: 'Final Reporting', type: 'REPORTING', order: 5, duration: 1 },
-    ]
+    // Create phases with checklists
+    const createdPhases = []
+    for (const phaseTemplate of phaseTemplates) {
+      // Generate checklist for this phase
+      const checklist = generateChecklist({
+        phase: phaseTemplate,
+        seed: metadata,
+        requirements
+      })
 
-    // Calculate phase dates
-    let phaseStartDate = new Date(startDate)
-    for (const phaseTemplate of defaultPhases) {
-      const phaseEndDate = new Date(phaseStartDate)
-      phaseEndDate.setDate(phaseEndDate.getDate() + phaseTemplate.duration)
-
-      await tx.phase.create({
+      const phase = await tx.phase.create({
         data: {
           project_id: newProject.id,
           name: phaseTemplate.name,
           type: phaseTemplate.type,
-          status: 'NOT_STARTED',
-          start_date: phaseStartDate,
-          end_date: phaseEndDate,
-          deadline: phaseEndDate,
-          budget_allocated: 0, // User will allocate budget
+          status: phaseTemplate.status,
+          start_date: phaseTemplate.start_date,
+          end_date: phaseTemplate.end_date,
+          deadline: phaseTemplate.deadline,
+          budget_allocated: phaseTemplate.budget_allocated,
           budget_spent: 0,
           order: phaseTemplate.order,
-          dependencies: [],
-          editable: true,
-          skippable: true,
-        },
+          dependencies: phaseTemplate.dependencies,
+          checklist: checklist as any, // JSON field
+          editable: phaseTemplate.editable,
+          skippable: phaseTemplate.skippable
+        }
       })
 
-      // Next phase starts after previous ends
-      phaseStartDate = new Date(phaseEndDate)
+      createdPhases.push(phase)
     }
 
-    return newProject
-  })
+    return { project: newProject, phases: createdPhases }
+  }, { timeout: 10000 })
 
-  return { project }
+  // 6. Return complete project data with metadata
+  return {
+    project: result.project,
+    phases: result.phases,
+    timeline: {
+      preparation: {
+        startDate: timeline.preparation.startDate.toISOString(),
+        endDate: timeline.preparation.endDate.toISOString(),
+        durationWeeks: timeline.preparation.durationWeeks
+      },
+      exchange: {
+        startDate: timeline.exchange.startDate.toISOString(),
+        endDate: timeline.exchange.endDate.toISOString(),
+        durationDays: timeline.exchange.durationDays
+      },
+      followUp: {
+        startDate: timeline.followUp.startDate.toISOString(),
+        endDate: timeline.followUp.endDate.toISOString(),
+        durationWeeks: timeline.followUp.durationWeeks
+      }
+    },
+    budget: {
+      totalBudget: budget.totalBudget,
+      breakdown: budget.breakdown,
+      justification: budget.justification
+    },
+    requirements: {
+      visas: requirements.visas,
+      insurance: requirements.insurance,
+      permits: requirements.permits
+    }
+  }
 }
