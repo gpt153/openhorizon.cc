@@ -1,11 +1,15 @@
 import { prisma } from '../config/database.js'
 import { generateSeeds } from '../ai/chains/seed-generation.js'
 import { elaborateSeed } from '../ai/chains/seed-elaboration.js'
+import { SeedElaborationAgent } from '../ai/agents/seed-elaboration-agent.js'
 import type {
   BrainstormInput,
   GeneratedSeed,
   ElaborationMessage,
-  ElaborationResponse
+  ElaborationResponse,
+  SeedMetadata,
+  StartSessionResponse,
+  ProcessAnswerResponse
 } from './seeds.types.js'
 
 /**
@@ -245,6 +249,196 @@ export async function deleteSeed(seedId: string, userId: string) {
   }
 
   return { success: true }
+}
+
+/**
+ * Start conversational elaboration session
+ */
+export async function startElaborationSession(
+  seedId: string,
+  userId: string
+): Promise<StartSessionResponse> {
+  const seed = await getSeedById(seedId, userId)
+  const agent = new SeedElaborationAgent()
+
+  // Convert database seed to GeneratedSeed format
+  const generatedSeed: GeneratedSeed = {
+    title: seed.title,
+    description: seed.description,
+    approvalLikelihood: seed.approval_likelihood,
+    titleFormal: seed.title_formal || seed.title,
+    descriptionFormal: seed.description_formal || seed.description,
+    approvalLikelihoodFormal: seed.approval_likelihood_formal || seed.approval_likelihood,
+    suggestedTags: seed.tags,
+    estimatedDuration: seed.estimated_duration,
+    estimatedParticipants: seed.estimated_participants
+  }
+
+  // Get or create elaboration record
+  let elaboration = seed.elaborations[0]
+  if (!elaboration) {
+    const initialMetadata: Partial<SeedMetadata> = {
+      completeness: 0,
+      estimatedParticipants: seed.estimated_participants,
+      duration: seed.estimated_duration
+    }
+
+    elaboration = await prisma.seedElaboration.create({
+      data: {
+        seed_id: seed.id,
+        conversation_history: [],
+        current_seed_state: generatedSeed as any
+      }
+    })
+
+    // Start session with agent
+    const response = await agent.startSession(generatedSeed, initialMetadata)
+
+    // Update elaboration with metadata
+    await prisma.seedElaboration.update({
+      where: { id: elaboration.id },
+      data: {
+        conversation_history: [
+          {
+            role: 'assistant',
+            content: response.question,
+            timestamp: new Date()
+          }
+        ] as any
+      }
+    })
+
+    return response
+  }
+
+  // Existing elaboration - resume session
+  const metadata = (elaboration as any).metadata as SeedMetadata | undefined
+  const response = await agent.startSession(generatedSeed, metadata)
+
+  return response
+}
+
+/**
+ * Process user answer and get next question
+ */
+export async function processElaborationAnswer(
+  seedId: string,
+  userId: string,
+  sessionId: string,
+  answer: string
+): Promise<ProcessAnswerResponse> {
+  const seed = await getSeedById(seedId, userId)
+  const elaboration = seed.elaborations[0]
+
+  if (!elaboration) {
+    throw new Error('No elaboration session found. Please start a session first.')
+  }
+
+  const agent = new SeedElaborationAgent()
+
+  // Convert database seed to GeneratedSeed format
+  const generatedSeed: GeneratedSeed = {
+    title: seed.title,
+    description: seed.description,
+    approvalLikelihood: seed.approval_likelihood,
+    titleFormal: seed.title_formal || seed.title,
+    descriptionFormal: seed.description_formal || seed.description,
+    approvalLikelihoodFormal: seed.approval_likelihood_formal || seed.approval_likelihood,
+    suggestedTags: seed.tags,
+    estimatedDuration: seed.estimated_duration,
+    estimatedParticipants: seed.estimated_participants
+  }
+
+  // Get current metadata
+  const currentMetadata: SeedMetadata = (elaboration as any).metadata || {
+    completeness: 0,
+    sessionId
+  }
+
+  // Validate session ID
+  if (currentMetadata.sessionId && currentMetadata.sessionId !== sessionId) {
+    throw new Error('Invalid session ID')
+  }
+
+  // Ensure session ID is set
+  currentMetadata.sessionId = sessionId
+
+  // Process answer
+  const response = await agent.processAnswer(sessionId, answer, currentMetadata, generatedSeed)
+
+  // Update conversation history
+  const conversationHistory = (elaboration.conversation_history as any[]) || []
+  conversationHistory.push(
+    {
+      role: 'user',
+      content: answer,
+      timestamp: new Date()
+    },
+    {
+      role: 'assistant',
+      content: response.nextQuestion || 'Session complete!',
+      timestamp: new Date()
+    }
+  )
+
+  // Update elaboration
+  await prisma.seedElaboration.update({
+    where: { id: elaboration.id },
+    data: {
+      conversation_history: conversationHistory as any,
+      current_seed_state: {
+        ...generatedSeed,
+        metadata: response.metadata
+      } as any
+    }
+  })
+
+  // Update seed with metadata
+  await prisma.seed.update({
+    where: { id: seed.id },
+    data: {
+      current_version: {
+        ...generatedSeed,
+        metadata: response.metadata
+      } as any,
+      estimated_duration: response.metadata.duration || seed.estimated_duration,
+      estimated_participants: response.metadata.participantCount || seed.estimated_participants
+    }
+  })
+
+  return response
+}
+
+/**
+ * Get elaboration status and progress
+ */
+export async function getElaborationStatus(
+  seedId: string,
+  userId: string
+): Promise<{
+  completeness: number
+  metadata: SeedMetadata
+  missingFields: string[]
+}> {
+  const seed = await getSeedById(seedId, userId)
+  const elaboration = seed.elaborations[0]
+
+  if (!elaboration) {
+    return {
+      completeness: 0,
+      metadata: { completeness: 0 } as SeedMetadata,
+      missingFields: ['all']
+    }
+  }
+
+  const agent = new SeedElaborationAgent()
+  const metadata: SeedMetadata = (elaboration as any).metadata || { completeness: 0 }
+
+  return {
+    completeness: agent.calculateCompleteness(metadata),
+    metadata,
+    missingFields: agent.identifyMissingFields(metadata)
+  }
 }
 
 /**

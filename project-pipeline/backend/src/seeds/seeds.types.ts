@@ -50,6 +50,85 @@ export interface SeedSuggestion {
   rationale: string
 }
 
+// Enhanced Metadata Schema for Conversational Elaboration
+export interface SeedMetadata {
+  // Participant Information
+  participantCount?: number // 16-60 (Erasmus+ requirement)
+  participantCountries?: string[] // ISO country codes
+  ageRange?: { min: number; max: number } // Typical: 18-30
+
+  // Timeline
+  duration?: number // Days (5-21 typical)
+  startDate?: Date
+  endDate?: Date
+
+  // Budget
+  totalBudget?: number // EUR
+  budgetPerParticipant?: number // EUR (suggested: 300-500)
+
+  // Destination
+  destination?: {
+    country: string // ISO country code
+    city: string
+    venue?: string
+    accessibility?: string // Accessibility notes
+  }
+
+  // Requirements
+  requirements?: {
+    visas: Array<{
+      country: string // Participant country
+      needed: boolean
+      estimatedCost?: number
+    }>
+    insurance: boolean
+    permits: string[] // Required permits
+    covidRequirements?: string
+  }
+
+  // Activities
+  activities?: Array<{
+    name: string
+    duration: string // e.g., "2 days", "4 hours"
+    budget?: number
+    learningOutcomes?: string[]
+  }>
+
+  // EU Alignment
+  erasmusPriorities?: string[] // e.g., ["Inclusion", "Green", "Digital"]
+  learningObjectives?: string[]
+
+  // Completeness Tracking
+  completeness: number // 0-100%
+  missingFields?: string[] // Fields still needed
+
+  // Session Tracking
+  sessionId?: string
+  currentQuestionIndex?: number
+}
+
+// Agent Response Types
+export interface StartSessionResponse {
+  sessionId: string
+  question: string
+  suggestions?: string[]
+  metadata: SeedMetadata
+}
+
+export interface ProcessAnswerResponse {
+  nextQuestion?: string
+  metadata: SeedMetadata
+  complete: boolean
+  suggestions?: string[]
+  validationErrors?: string[]
+}
+
+export interface ValidationResult {
+  valid: boolean
+  message?: string
+  suggestedValue?: any
+}
+
 // Enhanced types with relations
 export type SeedWithElaboration = Seed & {
   elaborations: SeedElaboration[]
