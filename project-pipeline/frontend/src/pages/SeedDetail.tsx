@@ -2,15 +2,11 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useParams, useNavigate } from 'react-router-dom'
-import { getSeed, elaborateSeed, saveSeed, deleteSeed, convertSeedToProject } from '../services/seeds.api'
-import SeedElaborationChat from '../components/SeedElaborationChat'
+import { getSeed, saveSeed, deleteSeed, convertSeedToProject } from '../services/seeds.api'
+import ConversationalElaboration from '../components/seeds/ConversationalElaboration'
 import LoadingSpinner from '../components/LoadingSpinner'
 import toast from 'react-hot-toast'
-import type {
-  ElaborationMessage,
-  SeedSuggestion,
-  GeneratedSeed,
-} from '../types/seeds'
+import type { GeneratedSeed } from '../types/seeds'
 
 export default function SeedDetail() {
   const { id } = useParams<{ id: string }>()
@@ -18,27 +14,11 @@ export default function SeedDetail() {
   const queryClient = useQueryClient()
   const [view, setView] = useState<'working' | 'formal'>('working')
 
-  // State for chat
-  const [suggestions, setSuggestions] = useState<SeedSuggestion[]>([])
-
   // Fetch seed
   const { data, isLoading, error } = useQuery({
     queryKey: ['seed', id],
     queryFn: () => getSeed(id!),
     enabled: !!id,
-  })
-
-  // Elaborate mutation
-  const elaborateMutation = useMutation({
-    mutationFn: (userMessage: string) =>
-      elaborateSeed(id!, { userMessage }),
-    onSuccess: (response) => {
-      setSuggestions(response.suggestions)
-      queryClient.invalidateQueries({ queryKey: ['seed', id] })
-    },
-    onError: () => {
-      toast.error('Failed to elaborate seed')
-    },
   })
 
   // Save mutation
@@ -101,11 +81,7 @@ export default function SeedDetail() {
 
   const { seed } = data
 
-  // Prepare elaboration data
-  const elaboration = seed.elaborations?.[0]
-  const messages: ElaborationMessage[] =
-    (elaboration?.conversation_history as any) || []
-
+  // Prepare current seed state
   const currentSeed: GeneratedSeed = seed.current_version || {
     title: seed.title,
     description: seed.description,
@@ -247,16 +223,12 @@ export default function SeedDetail() {
           </div>
         </div>
 
-        {/* Elaboration Chat */}
-        <div className="h-[600px]">
-          <SeedElaborationChat
-            messages={messages}
-            currentSeed={currentSeed}
-            suggestions={suggestions}
-            onSendMessage={(message) => elaborateMutation.mutate(message)}
-            isLoading={elaborateMutation.isPending}
-          />
-        </div>
+        {/* Conversational Elaboration */}
+        <ConversationalElaboration
+          seedId={id!}
+          initialSeed={currentSeed}
+          onComplete={() => convertMutation.mutate()}
+        />
       </div>
     </div>
   )
