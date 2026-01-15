@@ -127,6 +127,8 @@ export default function ConversationalElaboration({
           suggestions={suggestions}
           onSendMessage={handleSendMessage}
           isLoading={store.isLoading}
+          quickReplies={store.quickReplies}
+          onEditMessage={handleEditMessage}
         />
       </div>
 
