@@ -91,11 +91,16 @@ model Phase {
   budget_spent     Decimal     @default(0) @db.Decimal(12, 2)
   order            Int
   dependencies     String[]
-  checklist        Json?
+  checklist        Json?       @db.JsonB
   editable         Boolean     @default(true)
   skippable        Boolean     @default(true)
-  created_at       DateTime    @default(now())
-  updated_at       DateTime    @updatedAt
+
+  // Auto-generation tracking (Issue #96)
+  auto_generated     Boolean @default(false)
+  generation_context Json?   @db.JsonB
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 
   assignments       PhaseAssignment[]
   conversations     AIConversation[]
@@ -106,6 +111,7 @@ model Phase {
   @@index([project_id])
   @@index([status])
   @@index([type])
+  @@index([checklist], type: Gin)
 }
 
 enum PhaseType {
@@ -322,6 +328,10 @@ model Seed {
   elaboration_count Int   @default(0)
   current_version   Json? // Latest elaborated version
 
+  // Rich metadata for intelligent elaboration (Issue #96)
+  metadata     Json? @db.JsonB
+  completeness Int?
+
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
@@ -330,6 +340,7 @@ model Seed {
   @@index([user_id])
   @@index([is_saved])
   @@index([created_at])
+  @@index([metadata], type: Gin)
 }
 
 model SeedElaboration {
