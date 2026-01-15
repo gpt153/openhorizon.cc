@@ -176,7 +176,7 @@ function generateTravelChecklist(
   return [
     {
       id: randomUUID(),
-      description: fillTemplate(`Research ${direction} flight/train options to ${destination}`, seed, phase),
+      description: fillTemplate(`Research ${direction} flight/train options to ${seed.destination}`, seed, phase),
       completed: false,
       category: 'planning',
       priority: 'high'

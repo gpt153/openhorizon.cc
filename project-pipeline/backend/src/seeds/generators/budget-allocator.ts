@@ -29,7 +29,20 @@ const BASE_PERCENTAGES = {
 function hasLongDistanceTravel(destination: string, participantCountries: string[]): boolean {
   // Simplified heuristic: Check for cross-continental travel
   const europeanCountries = ['ES', 'FR', 'DE', 'IT', 'NL', 'BE', 'PT', 'AT', 'SE', 'NO', 'FI', 'DK', 'PL', 'CZ', 'HU', 'GR', 'TR', 'RO', 'BG']
-  const destCountry = destination.split(',').pop()?.trim().slice(-2) || 'ES'
+
+  // Extract country name from destination (e.g., "Barcelona, Spain" -> "Spain")
+  const destCountryName = destination.split(',').pop()?.trim().toLowerCase() || 'spain'
+
+  // Map common country names to codes
+  const countryNameMap: Record<string, string> = {
+    'spain': 'ES', 'france': 'FR', 'germany': 'DE', 'italy': 'IT',
+    'netherlands': 'NL', 'belgium': 'BE', 'portugal': 'PT', 'austria': 'AT',
+    'sweden': 'SE', 'norway': 'NO', 'finland': 'FI', 'denmark': 'DK',
+    'poland': 'PL', 'czech republic': 'CZ', 'hungary': 'HU', 'greece': 'GR',
+    'turkey': 'TR', 'romania': 'RO', 'bulgaria': 'BG'
+  }
+
+  const destCountry = countryNameMap[destCountryName] || 'ES'
 
   // If destination or any participant is outside Europe, it's long distance
   const nonEuropeanParticipants = participantCountries.filter(c => !europeanCountries.includes(c))
@@ -96,6 +109,7 @@ export function allocateBudget(metadata: RichSeedMetadata): BudgetOutput {
   if (participants >= 50) {
     percentages.contingency = 0.05
     percentages.staffing = 0.06
+    percentages.activities = Math.max(0.10, percentages.activities - 0.01) // Reduce activities to compensate
     adjustments.push('Increased contingency for large group')
   }
 
@@ -109,8 +123,9 @@ export function allocateBudget(metadata: RichSeedMetadata): BudgetOutput {
   // Normalize percentages to ensure they sum to 1.0
   const sum = Object.values(percentages).reduce((a, b) => a + b, 0)
   if (Math.abs(sum - 1.0) > 0.01) {
-    // Adjust contingency to make it sum to 1.0
-    percentages.contingency = percentages.contingency + (1.0 - sum)
+    // Adjust application fees (least impactful category) to make it sum to 1.0
+    const diff = 1.0 - sum
+    percentages.application = Math.max(0, percentages.application + diff)
   }
 
   // Calculate absolute amounts

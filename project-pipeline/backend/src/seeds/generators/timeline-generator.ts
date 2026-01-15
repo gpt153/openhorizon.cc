@@ -69,9 +69,9 @@ export function generateTimeline(metadata: RichSeedMetadata): TimelineOutput {
   const prepStart = addWeeks(exchangeStart, -prepWeeks)
   const prepEnd = addDays(exchangeStart, -1)
 
-  // Calculate follow-up period (4 weeks)
+  // Calculate follow-up period (4 weeks = 30 days)
   const followUpStart = addDays(exchangeEnd, 1)
-  const followUpEnd = addDays(exchangeEnd, 30) // 30 days = ~4 weeks
+  const followUpEnd = addDays(followUpStart, 30) // 30 days duration
 
   // Calculate phase-specific dates
   const phaseDates = new Map<PhaseType, { startDate: Date; endDate: Date; deadline: Date }>()
