@@ -174,6 +174,70 @@ export default function PipelineProjectDetailPage({ params }: { params: Promise<
             </Card>
           </div>
 
+          {/* Financial Overview - Profit & Margin Display */}
+          {grantAmount && (
+            <div className="mt-6">
+              <h3 className="text-lg font-semibold mb-4">Financial Overview</h3>
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
+                      Grant Amount
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-2xl font-bold">{formatCurrency(grantAmount)}</p>
+                    <p className="text-xs text-zinc-500 dark:text-zinc-400">Erasmus+ income</p>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
+                      Estimated Costs
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-2xl font-bold">{formatCurrency(estimatedCosts || 0)}</p>
+                    <p className="text-xs text-zinc-500 dark:text-zinc-400">Total expenses</p>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
+                      Profit
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-2xl font-bold text-green-600 dark:text-green-400">
+                      {formatCurrency(grantAmount - (estimatedCosts || 0))}
+                    </p>
+                    <p className="text-xs text-zinc-500 dark:text-zinc-400">Grant - Costs</p>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
+                      Profit Margin
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className={`text-2xl font-bold ${getProfitMarginColor(profitMargin)}`}>
+                      {profitMargin !== null ? `${profitMargin.toFixed(1)}%` : 'N/A'}
+                    </p>
+                    <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                      {profitMargin !== null && profitMargin > 30 && 'Excellent'}
+                      {profitMargin !== null && profitMargin >= 15 && profitMargin <= 30 && 'Good'}
+                      {profitMargin !== null && profitMargin < 15 && 'Low'}
+                    </p>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+          )}
+
           {/* Tabs for Budget Calculator, Budget Tracking, and Phases */}
           <Tabs defaultValue="calculator" className="w-full">
             <TabsList className="grid w-full grid-cols-3">
