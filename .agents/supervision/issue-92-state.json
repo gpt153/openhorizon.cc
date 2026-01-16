@@ -1,0 +1,11 @@
+{
+  "issue": 92,
+  "status": "monitoring",
+  "scar_started": true,
+  "started_at": "2026-01-14T08:52:16Z",
+  "last_activity": "2026-01-14T08:52:16Z",
+  "last_comment": "SCAR is on the case...",
+  "progress_estimate": "0%",
+  "retries": 0,
+  "errors": []
+}

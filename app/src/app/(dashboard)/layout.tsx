@@ -1,7 +1,9 @@
 import { Sidebar } from '@/components/layout/Sidebar'
 import { Header } from '@/components/layout/Header'
 
-// Auth disabled - public access
+// Force dynamic rendering to avoid Clerk pre-rendering issues during build
+export const dynamic = 'force-dynamic'
+
 export default function DashboardLayout({
   children,
 }: {
