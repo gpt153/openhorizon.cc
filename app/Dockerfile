@@ -50,9 +50,12 @@ COPY package*.json ./
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
-# Set dummy environment variables for build time
-ENV NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY="pk_test_dummy"
-ENV CLERK_SECRET_KEY="sk_test_dummy"
+# Set Clerk environment variables for build time
+# These must be provided as build args or will use defaults
+ARG NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_YWxsb3dlZC1mb3hob3VuZC02LmNsZXJrLmFjY291bnRzLmRldiQ
+ARG CLERK_SECRET_KEY=sk_test_p1TjLNPJ23ZeSHyYx1izc91vFupKkATkIvUYKT1yuY
+ENV NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=$NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
+ENV CLERK_SECRET_KEY=$CLERK_SECRET_KEY
 
 # Build the application
 WORKDIR /workspace/app
