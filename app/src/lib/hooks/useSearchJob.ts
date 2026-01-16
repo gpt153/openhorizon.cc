@@ -78,7 +78,7 @@ export function useSearchJob<T = unknown>(
 
       // Polling configuration
       // Returns polling interval in milliseconds, or false to stop polling
-      refetchInterval: (data) => {
+      refetchInterval: (data: { status: string; results: unknown; error: string | null } | undefined) => {
         // If no data yet, poll immediately
         if (!data) return 2000
 
