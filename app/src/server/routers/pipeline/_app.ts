@@ -8,6 +8,7 @@ import { calculatorRouter } from './calculator'
 import { expensesRouter } from './expenses'
 import { alertsRouter } from './alerts'
 import { budgetCalculatorRouter } from './budget-calculator'
+import { searchJobsRouter } from './search-jobs'
 
 export const pipelineRouter = router({
   projects: pipelineProjectsRouter,
@@ -19,4 +20,5 @@ export const pipelineRouter = router({
   budgetCalculator: budgetCalculatorRouter,
   expenses: expensesRouter,
   alerts: alertsRouter,
+  searchJobs: searchJobsRouter,
 })
