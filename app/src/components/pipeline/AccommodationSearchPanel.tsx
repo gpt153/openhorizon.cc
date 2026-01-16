@@ -129,7 +129,7 @@ export function AccommodationSearchPanel({
   // Loading state - search in progress
   if (status === 'pending' || status === 'processing') {
     return (
-      <div className="space-y-6">
+      <div className="space-y-6" data-testid="accommodation-search-loading">
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center gap-3">
@@ -185,14 +185,14 @@ export function AccommodationSearchPanel({
           <AlertTitle>Search failed</AlertTitle>
           <AlertDescription>
             <p className="mb-2">{error || 'An unexpected error occurred'}</p>
-            <Button onClick={handleSearch} disabled={searchMutation.isPending} size="sm">
+            <Button onClick={handleSearch} disabled={searchMutation.isPending} size="sm" data-testid="retry-button">
               {searchMutation.isPending ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Retrying...
                 </>
               ) : (
-                'Retry Search'
+                'Retry'
               )}
             </Button>
           </AlertDescription>
@@ -232,6 +232,7 @@ export function AccommodationSearchPanel({
           </div>
           <Button
             className="mt-4 w-full"
+            data-testid="accommodation-search-button"
             onClick={handleSearch}
             disabled={searchMutation.isPending || status === 'pending' || status === 'processing'}
           >
@@ -254,7 +255,7 @@ export function AccommodationSearchPanel({
       {status === 'completed' && results && (
         <>
           {/* Accommodation Options */}
-          <div className="space-y-4">
+          <div className="space-y-4" data-testid="accommodation-results">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-semibold flex items-center gap-2">
                 <Building2 className="h-5 w-5" />
@@ -325,6 +326,7 @@ function AccommodationOptionCard({
 }) {
   return (
     <Card
+      data-testid="accommodation-option"
       className={`cursor-pointer transition-all ${
         selected
           ? 'border-blue-500 dark:border-blue-400 ring-2 ring-blue-500 dark:ring-blue-400'
