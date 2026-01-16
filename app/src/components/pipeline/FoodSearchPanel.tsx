@@ -237,9 +237,9 @@ export function FoodSearchPanel({
             className="mt-4 w-full"
             data-testid="food-search-button"
             onClick={handleSearch}
-            disabled={searchMutation.isPending || status === 'pending' || status === 'processing'}
+            disabled={searchMutation.isPending}
           >
-            {searchMutation.isPending || status === 'pending' || status === 'processing' ? (
+            {searchMutation.isPending ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Searching...
