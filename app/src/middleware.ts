@@ -1,13 +1,38 @@
-// AUTH COMPLETELY DISABLED FOR MVP TESTING
-// Clerk middleware removed to avoid key validation errors
-
+import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'
 import { NextResponse } from 'next/server'
-import type { NextRequest } from 'next/server'
 
-export function middleware(request: NextRequest) {
-  // No-op middleware - all routes accessible without authentication
+// Define public routes (accessible without authentication)
+const isPublicRoute = createRouteMatcher([
+  '/',                    // Landing page
+  '/sign-in(.*)',        // Sign-in pages
+  '/sign-up(.*)',        // Sign-up pages
+  '/api/webhooks(.*)',   // Webhooks (Clerk, SendGrid, etc.)
+])
+
+export default clerkMiddleware(async (auth, request) => {
+  // Public routes - allow access
+  if (isPublicRoute(request)) {
+    return NextResponse.next()
+  }
+
+  // Protected routes - require authentication
+  const { userId } = await auth()
+
+  if (!userId) {
+    // For API routes, return 401 Unauthorized
+    if (request.nextUrl.pathname.startsWith('/api')) {
+      return new NextResponse('Unauthorized', { status: 401 })
+    }
+
+    // For pages, redirect to sign-in
+    const signInUrl = new URL('/sign-in', request.url)
+    signInUrl.searchParams.set('redirect_url', request.url)
+    return NextResponse.redirect(signInUrl)
+  }
+
+  // Authenticated - allow access
   return NextResponse.next()
-}
+})
 
 export const config = {
   matcher: [

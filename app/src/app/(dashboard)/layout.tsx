@@ -4,7 +4,6 @@ import { Header } from '@/components/layout/Header'
 // Force dynamic rendering to avoid Clerk pre-rendering issues during build
 export const dynamic = 'force-dynamic'
 
-// Auth disabled - public access
 export default function DashboardLayout({
   children,
 }: {
