@@ -3,6 +3,7 @@ import { inngest } from '@/inngest/client'
 import { generateProjectFromIdea } from '@/inngest/functions/generate-project'
 import { generateProgramme } from '@/inngest/functions/generate-programme'
 import { generateSeedsJob } from '@/inngest/functions/generate-seeds'
+import { foodAgentSearch } from '@/inngest/functions/food-agent-search'
 
 /**
  * Inngest API Route
@@ -19,5 +20,6 @@ export const { GET, POST, PUT } = serve({
     generateProjectFromIdea,
     generateProgramme,
     generateSeedsJob,
+    foodAgentSearch,
   ],
 })
