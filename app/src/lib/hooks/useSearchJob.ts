@@ -78,11 +78,11 @@ export function useSearchJob<T = unknown>(
 
       // Polling configuration
       // Returns polling interval in milliseconds, or false to stop polling
-      refetchInterval: (data: { status: string; results: unknown; error: string | null } | undefined) => {
+      refetchInterval: (query) => {
         // If no data yet, poll immediately
-        if (!data) return 2000
+        if (!query.state.data) return 2000
 
-        const status = data.status
+        const status = query.state.data.status
 
         // Poll every 2 seconds while job is in progress
         if (status === 'PENDING' || status === 'PROCESSING') {
