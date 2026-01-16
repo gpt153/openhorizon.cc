@@ -82,9 +82,12 @@ export function AccommodationSearchPanel({
     }
 
     // Calculate dates: use phase dates or default to today + 30 days
-    const startDate = phase.startDate || new Date().toISOString()
-    const endDate =
-      phase.endDate || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+    const startDate = phase.startDate
+      ? (phase.startDate instanceof Date ? phase.startDate.toISOString() : phase.startDate)
+      : new Date().toISOString()
+    const endDate = phase.endDate
+      ? (phase.endDate instanceof Date ? phase.endDate.toISOString() : phase.endDate)
+      : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
 
     searchMutation.mutate({
       projectId: phase.projectId,
