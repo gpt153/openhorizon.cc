@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import {
   Dialog,
   DialogContent,
@@ -16,9 +17,10 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { trpc } from '@/lib/trpc/client'
-import { Building2, Loader2, CheckCircle2, Mail } from 'lucide-react'
+import { Building2, Loader2, CheckCircle2, Mail, AlertCircle } from 'lucide-react'
 import type { AccommodationSuggestion } from '@/lib/ai/agents/accommodation-agent'
 import { toast } from 'sonner'
+import { useSearchJob } from '@/lib/hooks/useSearchJob'
 
 interface AccommodationSearchPanelProps {
   phaseId: string
@@ -33,18 +35,25 @@ export function AccommodationSearchPanel({
 }: AccommodationSearchPanelProps) {
   const [location, setLocation] = useState(defaultLocation)
   const [participants, setParticipants] = useState(defaultParticipants)
+  const [jobId, setJobId] = useState<string | null>(null)
 
-  const [searchResults, setSearchResults] = useState<AccommodationSuggestion[] | null>(null)
   const [selectedOptions, setSelectedOptions] = useState<Set<string>>(new Set())
   const [quotesDialogOpen, setQuotesDialogOpen] = useState(false)
   const [generatedEmails, setGeneratedEmails] = useState<
     { recipient?: string; subject: string; body: string; optionName?: string }[]
   >([])
 
-  const searchMutation = trpc.pipeline.phases.searchAccommodation.useMutation({
+  // Get phase data to extract project info
+  const { data: phase } = trpc.pipeline.phases.getById.useQuery({ id: phaseId })
+
+  // Use search job hook for polling
+  const { status, results, error } = useSearchJob<AccommodationSuggestion[]>(jobId)
+
+  // Submit search mutation
+  const searchMutation = trpc.pipeline.searchJobs.submitAccommodationSearch.useMutation({
     onSuccess: (data) => {
-      setSearchResults(data.options)
-      toast.success('Found accommodation options!')
+      setJobId(data.jobId)
+      toast.success('Search started! This usually takes 15-20 seconds...')
     },
     onError: (error) => {
       toast.error(`Search failed: ${error.message}`)
@@ -67,10 +76,26 @@ export function AccommodationSearchPanel({
       return
     }
 
+    if (!phase?.project) {
+      toast.error('Project information not available')
+      return
+    }
+
+    // Calculate dates: use phase dates or default to today + 30 days
+    const startDate = phase.startDate || new Date().toISOString()
+    const endDate =
+      phase.endDate || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+
     searchMutation.mutate({
-      phaseId,
-      location,
-      participants,
+      projectId: phase.projectId,
+      destination: location,
+      dates: {
+        start: startDate,
+        end: endDate,
+      },
+      participantCount: participants,
+      projectName: phase.project.name,
+      budgetAllocated: phase.budgetAllocated ? Number(phase.budgetAllocated) : undefined,
     })
   }
 
@@ -90,10 +115,90 @@ export function AccommodationSearchPanel({
       return
     }
 
+    if (!results) {
+      toast.error('No search results available')
+      return
+    }
+
     generateQuotesMutation.mutate({
       phaseId,
       selectedOptionNames: Array.from(selectedOptions),
     })
+  }
+
+  // Loading state - search in progress
+  if (status === 'pending' || status === 'processing') {
+    return (
+      <div className="space-y-6">
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center gap-3">
+              <Loader2 className="h-5 w-5 animate-spin text-blue-500" />
+              <div>
+                <p className="font-medium">Searching for accommodation options...</p>
+                <p className="text-sm text-muted-foreground">Usually takes 15-20 seconds</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+
+  // Error state
+  if (status === 'failed') {
+    return (
+      <div className="space-y-6">
+        {/* Search Form - show it again for retry */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Search Accommodation Options</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="location">Location</Label>
+                <Input
+                  id="location"
+                  placeholder="e.g., Barcelona"
+                  value={location}
+                  onChange={(e) => setLocation(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="participants">Number of Participants</Label>
+                <Input
+                  id="participants"
+                  type="number"
+                  min="1"
+                  value={participants}
+                  onChange={(e) => setParticipants(parseInt(e.target.value) || 0)}
+                />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Error Alert */}
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Search failed</AlertTitle>
+          <AlertDescription>
+            <p className="mb-2">{error || 'An unexpected error occurred'}</p>
+            <Button onClick={handleSearch} disabled={searchMutation.isPending} size="sm">
+              {searchMutation.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Retrying...
+                </>
+              ) : (
+                'Retry Search'
+              )}
+            </Button>
+          </AlertDescription>
+        </Alert>
+      </div>
+    )
   }
 
   return (
@@ -128,9 +233,9 @@ export function AccommodationSearchPanel({
           <Button
             className="mt-4 w-full"
             onClick={handleSearch}
-            disabled={searchMutation.isPending}
+            disabled={searchMutation.isPending || status === 'pending' || status === 'processing'}
           >
-            {searchMutation.isPending ? (
+            {searchMutation.isPending || status === 'pending' || status === 'processing' ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Searching...
@@ -145,21 +250,19 @@ export function AccommodationSearchPanel({
         </CardContent>
       </Card>
 
-      {/* Results */}
-      {searchMutation.isPending && <SearchingSkeleton />}
-
-      {searchResults && (
+      {/* Results - only show when completed */}
+      {status === 'completed' && results && (
         <>
           {/* Accommodation Options */}
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-semibold flex items-center gap-2">
                 <Building2 className="h-5 w-5" />
-                Accommodation Options ({searchResults.length})
+                Accommodation Options ({results.length})
               </h3>
             </div>
             <div className="grid grid-cols-1 gap-4">
-              {searchResults.map((option) => (
+              {results.map((option) => (
                 <AccommodationOptionCard
                   key={option.name}
                   option={option}
