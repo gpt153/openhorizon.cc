@@ -14,6 +14,20 @@ import type { AgentContext } from '@/lib/ai/agents/base-agent'
  *
  * Event: 'search/food.requested'
  * Retry Policy: 3 attempts with exponential backoff
+ *
+ * ## Observability
+ *
+ * Logs are structured with JSON objects for easy parsing in Cloud Run logs.
+ * All logs include: jobId, timestamp, and relevant context (duration, status, etc.)
+ *
+ * ## Alert Thresholds (for future monitoring setup)
+ *
+ * - High failure rate: >10% failures in last hour
+ * - Slow jobs: >60 seconds completion time
+ * - Job queue backlog: >50 pending jobs
+ *
+ * These thresholds can be configured in your monitoring tool (Cloud Monitoring,
+ * Inngest dashboard, or external alerting system).
  */
 
 export const foodAgentSearch = inngest.createFunction(
@@ -24,6 +38,17 @@ export const foodAgentSearch = inngest.createFunction(
   { event: 'search/food.requested' },
   async ({ event, step }) => {
     const { jobId, searchParams } = event.data
+    const jobStartTime = Date.now()
+
+    // Structured log: Job started
+    console.log('[Food Search] Job started', {
+      jobId,
+      destination: searchParams.destination,
+      participantCount: searchParams.participantCount,
+      budgetAllocated: searchParams.budgetAllocated || 5000,
+      dateRange: `${searchParams.dates.start} to ${searchParams.dates.end}`,
+      timestamp: new Date().toISOString(),
+    })
 
     // Step 1: Update status PENDING → PROCESSING
     await step.run('update-status-processing', async () => {
@@ -31,14 +56,22 @@ export const foodAgentSearch = inngest.createFunction(
         where: { id: jobId },
         data: { status: 'PROCESSING' },
       })
-      console.log(`[Food Search] Job ${jobId}: Status updated to PROCESSING`)
+      console.log('[Food Search] Status updated', {
+        jobId,
+        status: 'PROCESSING',
+        timestamp: new Date().toISOString(),
+      })
     })
 
     try {
       // Step 2: Execute Food agent search
       const results = await step.run('execute-food-search', async () => {
-        console.log(`[Food Search] Job ${jobId}: Starting search...`)
-        console.log(`[Food Search] Params:`, JSON.stringify(searchParams, null, 2))
+        const searchStartTime = Date.now()
+
+        console.log('[Food Search] Search execution started', {
+          jobId,
+          timestamp: new Date().toISOString(),
+        })
 
         // Initialize Food agent
         const agent = new FoodAgent()
@@ -63,8 +96,16 @@ export const foodAgentSearch = inngest.createFunction(
 
         // Execute the search
         const foodOptions = await agent.research(agentContext)
+        const searchDuration = Date.now() - searchStartTime
 
-        console.log(`[Food Search] Job ${jobId}: Found ${foodOptions.length} options`)
+        console.log('[Food Search] Search execution completed', {
+          jobId,
+          duration: searchDuration,
+          durationSeconds: (searchDuration / 1000).toFixed(2),
+          resultCount: foodOptions.length,
+          timestamp: new Date().toISOString(),
+        })
+
         return foodOptions
       })
 
@@ -77,7 +118,17 @@ export const foodAgentSearch = inngest.createFunction(
             results: results as any, // Store FoodOption[] as JSON
           },
         })
-        console.log(`[Food Search] Job ${jobId}: Completed successfully`)
+
+        const totalDuration = Date.now() - jobStartTime
+
+        console.log('[Food Search] Job completed', {
+          jobId,
+          status: 'COMPLETED',
+          totalDuration,
+          totalDurationSeconds: (totalDuration / 1000).toFixed(2),
+          resultCount: results.length,
+          timestamp: new Date().toISOString(),
+        })
       })
 
       return {
@@ -90,6 +141,8 @@ export const foodAgentSearch = inngest.createFunction(
       // Step 4: Update status PROCESSING → FAILED
       await step.run('update-status-failed', async () => {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+        const errorStack = error instanceof Error ? error.stack : undefined
+        const totalDuration = Date.now() - jobStartTime
 
         await prisma.searchJob.update({
           where: { id: jobId },
@@ -99,7 +152,15 @@ export const foodAgentSearch = inngest.createFunction(
           },
         })
 
-        console.error(`[Food Search] Job ${jobId}: Failed with error:`, errorMessage)
+        console.error('[Food Search] Job failed', {
+          jobId,
+          status: 'FAILED',
+          error: errorMessage,
+          stack: errorStack,
+          totalDuration,
+          totalDurationSeconds: (totalDuration / 1000).toFixed(2),
+          timestamp: new Date().toISOString(),
+        })
       })
 
       // Re-throw error to trigger Inngest retry mechanism
