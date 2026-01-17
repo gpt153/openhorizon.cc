@@ -36,7 +36,7 @@ export async function createTestBrainstormSession(
       tenantId,
       userId,
       prompt,
-      conversationHistory: [],
+      // creativityTemp and seedCount use schema defaults
     },
   })
 
