@@ -13,6 +13,10 @@ jobs:
     container:
       image: mcr.microsoft.com/playwright:v1.57.0-jammy
 
+    env:
+      APP_URL: https://openhorizon.cc
+      API_URL: https://openhorizon.cc/api
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -23,7 +27,7 @@ jobs:
           node-version: '20'
           cache: 'npm'
 
-      - name: Install dependencies
+      - name: Install root dependencies
         run: npm ci
 
       - name: Run Playwright tests

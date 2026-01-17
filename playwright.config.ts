@@ -12,6 +12,14 @@ export default defineConfig({
     trace: 'on-first-retry',
   },
 
+  // Start dev server before running tests (only in local development)
+  webServer: process.env.CI ? undefined : {
+    command: 'cd project-pipeline/frontend && npm run dev -- --port 5174',
+    url: 'http://localhost:5174',
+    reuseExistingServer: true,
+    timeout: 120000, // 2 minutes to start
+  },
+
   projects: [
     {
       name: 'chromium',
