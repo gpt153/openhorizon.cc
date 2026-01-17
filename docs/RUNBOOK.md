@@ -1201,6 +1201,256 @@ Via Supabase Dashboard:
 4. Restore to that point
 ```
 
+### Automated Backup Scripts
+
+**Location:** `scripts/` directory
+
+OpenHorizon provides three automated scripts for backup management:
+
+#### 1. restore-backup.sh - Restore from Backup
+
+**Purpose:** Safely restore a Supabase backup to staging or production
+
+**Usage:**
+```bash
+# Restore to staging (recommended first step)
+./scripts/restore-backup.sh <backup-id> staging
+
+# Restore to production (requires multi-step confirmation)
+./scripts/restore-backup.sh <backup-id> production
+```
+
+**Example:**
+```bash
+# List available backups
+supabase backups list --project-ref jnwlzawkfqcxdtkhwokd
+
+# Restore specific backup to staging
+./scripts/restore-backup.sh 2026-01-17T03:00:00Z staging
+```
+
+**Safety Features:**
+- Multi-step confirmation for production restores
+- Prerequisites validation (CLI, auth, permissions)
+- Lists available backups before proceeding
+- Comprehensive logging (`logs/restore-*.log`)
+- Clear error messages and troubleshooting guidance
+
+**Prerequisites:**
+- Supabase CLI installed: `npm install -g supabase`
+- SUPABASE_ACCESS_TOKEN environment variable set
+- Appropriate permissions for target environment
+
+#### 2. verify-backup.sh - Verify Database Integrity
+
+**Purpose:** Automatically verify database integrity after restoration
+
+**Usage:**
+```bash
+# Verify staging database
+./scripts/verify-backup.sh staging
+
+# Verify production database
+./scripts/verify-backup.sh production
+```
+
+**What It Checks:**
+- ✅ Database connectivity
+- ✅ Critical tables exist (Organisation, User, Project, Seed, Budget)
+- ✅ Record counts for each table
+- ✅ Database constraints (primary keys, foreign keys, unique)
+- ✅ Data freshness (latest project/seed timestamps)
+- ✅ Referential integrity (no orphaned records)
+- ✅ Database size
+
+**Typical Workflow:**
+```bash
+# After restoring backup
+./scripts/restore-backup.sh <backup-id> staging
+
+# Immediately verify
+./scripts/verify-backup.sh staging
+
+# Check output for ✅ or ❌
+# If all checks pass, proceed to manual testing
+```
+
+**Output:**
+- Logs saved to `logs/verify-YYYYMMDD-HHMMSS.log`
+- Clear ✅/❌ indicators for each check
+- Next steps provided (manual testing checklist)
+
+**Prerequisites:**
+- psql (PostgreSQL client) installed
+- DATABASE_URL environment variable set (or env-specific variant)
+
+#### 3. check-backups.sh - Monitor Backup Health
+
+**Purpose:** Automated backup health monitoring with alerting
+
+**Usage:**
+```bash
+# Manual health check
+./scripts/check-backups.sh
+
+# With custom age threshold (36 hours)
+BACKUP_MAX_AGE_HOURS=36 ./scripts/check-backups.sh
+```
+
+**What It Checks:**
+- ✅ Backups exist
+- ✅ Latest backup age (alerts if > 24 hours old by default)
+- ✅ Backup status (completed vs failed)
+- ✅ Backup size (warns if suspiciously small)
+- ✅ Total backup count
+
+**Alert Channels:**
+1. **Email** (if `ALERT_EMAIL` set and `mail` command available)
+2. **Slack** (if `SLACK_WEBHOOK_URL` set)
+3. **Exit code** (1 = failure, for monitoring systems)
+
+**Automated Monitoring:**
+
+Add to cron for daily checks:
+```bash
+# Check backups daily at 9 AM
+0 9 * * * /path/to/scripts/check-backups.sh >> /var/log/backup-checks.log 2>&1
+```
+
+Or use Google Cloud Scheduler:
+```bash
+# Create Cloud Scheduler job
+gcloud scheduler jobs create http backup-health-check \
+    --schedule="0 9 * * *" \
+    --uri="https://your-function-url/check-backups" \
+    --http-method=POST
+```
+
+**Environment Variables:**
+```bash
+# Required
+export SUPABASE_ACCESS_TOKEN="your_token"
+
+# Optional
+export BACKUP_MAX_AGE_HOURS=24  # Alert threshold
+export ALERT_EMAIL="alerts@openhorizon.cc"
+export SLACK_WEBHOOK_URL="https://hooks.slack.com/..."
+```
+
+### Complete Restore Workflow (Step-by-Step)
+
+**Scenario:** Restore database after data loss incident
+
+**Step 1: Identify Backup**
+```bash
+# List available backups
+supabase backups list --project-ref jnwlzawkfqcxdtkhwokd
+
+# Identify backup timestamp closest to desired restore point
+# Example: 2026-01-16T03:00:00Z
+```
+
+**Step 2: Restore to Staging (Always First!)**
+```bash
+# Restore to staging environment
+./scripts/restore-backup.sh 2026-01-16T03:00:00Z staging
+
+# Expected output:
+# - Prerequisites check passes
+# - Restoration completes successfully
+# - Log file created in logs/
+```
+
+**Step 3: Verify Staging Restoration**
+```bash
+# Run automated verification
+./scripts/verify-backup.sh staging
+
+# Expected output:
+# ✅ Database connection successful
+# ✅ All critical tables exist
+# ✅ Database constraints intact
+# ✅ No orphaned records
+# ✅ Data freshness acceptable
+```
+
+**Step 4: Manual Testing (Staging)**
+Perform manual verification:
+- [ ] Navigate to staging application URL
+- [ ] Test user authentication
+- [ ] Check dashboard loads correctly
+- [ ] Verify projects are visible and accessible
+- [ ] Test seed generation functionality
+- [ ] Test budget calculator
+- [ ] Verify no console errors
+- [ ] Check that data matches expected state
+
+**Step 5: Restore to Production (If Staging Passes)**
+```bash
+# Only proceed if staging verification passed!
+./scripts/restore-backup.sh 2026-01-16T03:00:00Z production
+
+# Type 'RESTORE PRODUCTION' when prompted
+# Restoration will proceed
+```
+
+**Step 6: Verify Production Restoration**
+```bash
+# Run automated verification
+./scripts/verify-backup.sh production
+
+# Perform same manual testing as staging
+```
+
+**Step 7: Post-Restore**
+- Document the restore in this runbook (add timestamp and outcome)
+- Notify team of successful restoration
+- Monitor application for 24 hours for anomalies
+- Create manual backup of current state for safety
+
+### Backup Verification Status
+
+**Last Verified:** 2026-01-17
+**Backup Status:** ✅ Enabled (Supabase Pro plan)
+**Retention Period:** 7 days
+**Latest Backup:** [To be verified - check Supabase dashboard]
+**Backup Size:** [To be verified - typical range 10-100MB]
+
+**Verification Checklist:**
+- [ ] Automated daily backups enabled in Supabase dashboard
+- [ ] 7-day retention configured
+- [ ] Latest backup completed successfully (within 24 hours)
+- [ ] Backup monitoring script added to cron (`check-backups.sh`)
+- [ ] Alert email/Slack configured
+- [ ] Monthly restore test scheduled
+
+**Next Verification Due:** [One month from last verification]
+
+### Backup Restoration Test Results
+
+**Last Test Date:** [To be completed]
+**Backup Used:** [backup-id]
+**Target Environment:** Staging
+**Restoration Time:** [X] minutes
+**Verification Result:** [Pass/Fail]
+
+**Tests Performed:**
+- [ ] Database connectivity
+- [ ] Table existence
+- [ ] Record counts
+- [ ] Constraint validation
+- [ ] Data freshness
+- [ ] Application login
+- [ ] Project access
+- [ ] Seed generation
+- [ ] Budget calculator
+
+**Issues Encountered:** [None / describe issues]
+
+**Recovery Time:** [X] minutes (from initiation to verified working)
+**RTO Achieved:** [Yes/No] (Target: < 2 hours)
+**RPO Achieved:** [Yes/No] (Target: < 24 hours data loss)
+
 ---
 
 ## 🚀 Deployment & Rollback
