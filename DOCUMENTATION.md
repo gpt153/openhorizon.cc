@@ -7,6 +7,11 @@
 
 ## 📋 Quick Navigation
 
+### For Users
+- [User Guide](#user-guide) - How to use OpenHorizon (for project coordinators)
+- [Getting Started](#getting-started-user) - Your first project in 5 minutes
+- [Troubleshooting](#troubleshooting-user) - Common user issues and solutions
+
 ### For Development
 - [Product Requirements Document (PRD)](#prd) - Complete system specification
 - [README](#readme) - Project overview and setup
@@ -19,6 +24,83 @@
 
 ### For Deployment
 - [Deployment Guide](#deployment) - Production deployment instructions
+
+---
+
+## 📚 User Documentation
+
+### <a name="user-guide"></a>User Guide
+
+**Location:** `docs/user-guide/README.md`
+
+**What it contains:**
+- Complete guide to using OpenHorizon platform
+- Feature walkthroughs (seeds, projects, programmes, budget, vendor search, export)
+- Tips and best practices for Erasmus+ projects
+- Workflow examples and use cases
+
+**When to use:**
+- Learning how to use OpenHorizon features
+- Understanding optimal workflows
+- Getting tips for better project planning
+- Reference for feature capabilities
+
+---
+
+### <a name="getting-started-user"></a>Getting Started (Users)
+
+**Location:** `docs/user-guide/getting-started.md`
+
+**What it contains:**
+- 5-minute quick start guide
+- Step-by-step first project creation
+- Screenshot walkthrough
+- Introduction to all major features
+
+**When to use:**
+- First-time user onboarding
+- Quick platform overview
+- Teaching others to use OpenHorizon
+- Refresher on basic workflows
+
+---
+
+### <a name="troubleshooting-user"></a>Troubleshooting Guide
+
+**Location:** `docs/user-guide/troubleshooting.md`
+
+**What it contains:**
+- Common user issues (login, project generation, export failures)
+- Step-by-step solutions for each issue
+- Contact support information
+- FAQ for general questions
+- Links to bug reporting
+
+**When to use:**
+- Something isn't working as expected
+- Error messages appear
+- Need help with a feature
+- Before contacting support
+
+---
+
+### Feature-Specific Guides
+
+**Location:** `docs/user-guide/features/`
+
+**Available guides:**
+- **Seeds** (`seeds.md`) - AI-powered project ideation, seed garden, elaboration
+- **Projects** (`projects.md`) - Project management, phases, Gantt charts, AI assistance
+- **Programmes** (`programmes.md`) - Activity scheduling, programme builder
+- **Budget** (`budget.md`) - Erasmus+ budget calculator, unit costs, distance calculation
+- **Vendor Search** (`vendor-search.md`) - Finding accommodation, travel, and food providers
+- **Export** (`export.md`) - Document export, application forms, formats
+
+**When to use:**
+- Learning specific features in depth
+- Advanced feature usage
+- Understanding feature limitations
+- Optimizing your workflow
 
 ---
 
