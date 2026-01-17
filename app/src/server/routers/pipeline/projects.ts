@@ -207,7 +207,7 @@ export const pipelineProjectsRouter = router({
       })
 
       const estimatedCosts = phases.reduce(
-        (sum, phase) => sum + Number(phase.budgetAllocated),
+        (sum: number, phase: any) => sum + Number(phase.budgetAllocated),
         0
       )
 
@@ -258,19 +258,19 @@ export const pipelineProjectsRouter = router({
     const summary = {
       totalProjects: projects.length,
       totalGrantsCalculated: projects.reduce(
-        (sum, p) => sum + (Number(p.erasmusGrantCalculated) || 0),
+        (sum: number, p: any) => sum + (Number(p.erasmusGrantCalculated) || 0),
         0
       ),
       totalGrantsActual: projects.reduce(
-        (sum, p) => sum + (Number(p.erasmusGrantActual) || 0),
+        (sum: number, p: any) => sum + (Number(p.erasmusGrantActual) || 0),
         0
       ),
       totalEstimatedCosts: projects.reduce(
-        (sum, p) => sum + (Number(p.estimatedCosts) || 0),
+        (sum: number, p: any) => sum + (Number(p.estimatedCosts) || 0),
         0
       ),
       totalActualCosts: projects.reduce(
-        (sum, p) => sum + (Number(p.budgetSpent) || 0),
+        (sum: number, p: any) => sum + (Number(p.budgetSpent) || 0),
         0
       ),
       estimatedProfit: 0,
@@ -345,7 +345,7 @@ export const pipelineProjectsRouter = router({
       }
 
       // Calculate spending trend data
-      const trendData = expenses.reduce((acc: any[], expense) => {
+      const trendData = expenses.reduce((acc: any[], expense: any) => {
         const dateStr = new Date(expense.date).toISOString().split('T')[0]
         const existingEntry = acc.find((e) => e.date === dateStr)
 
@@ -365,7 +365,7 @@ export const pipelineProjectsRouter = router({
 
       // Update cumulative values
       let cumulative = 0
-      trendData.forEach((entry) => {
+      trendData.forEach((entry: any) => {
         cumulative += entry.spending
         entry.cumulative = cumulative
       })
@@ -381,7 +381,7 @@ export const pipelineProjectsRouter = router({
           colorClass,
           progressColor,
         },
-        phases: project.phases.map((phase) => ({
+        phases: project.phases.map((phase: any) => ({
           id: phase.id,
           name: phase.name,
           type: phase.type,

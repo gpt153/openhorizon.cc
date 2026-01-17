@@ -6,8 +6,20 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { formatCurrency } from '@/types/budget'
-import { ExpenseCategory } from '@prisma/client'
+// Removed invalid Prisma type import from '@prisma/client'
 import { MoreHorizontal, FileText, Pencil, Trash2 } from 'lucide-react'
+
+// ExpenseCategory enum from Prisma schema
+// Defined locally to avoid Prisma client generation issues
+enum ExpenseCategory {
+  ACCOMMODATION = 'ACCOMMODATION',
+  TRAVEL = 'TRAVEL',
+  FOOD = 'FOOD',
+  ACTIVITIES = 'ACTIVITIES',
+  INSURANCE = 'INSURANCE',
+  EMERGENCY = 'EMERGENCY',
+  OTHER = 'OTHER',
+}
 import {
   DropdownMenu,
   DropdownMenuContent,

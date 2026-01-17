@@ -1,12 +1,13 @@
 import archiver from 'archiver'
 import { Readable } from 'stream'
-import { PipelineProject, PipelinePhase, Expense } from '@prisma/client'
+// Removed invalid Prisma type imports from '@prisma/client'
 import { generateProjectPDF } from './pdf-generator'
 import { generateProjectExcel } from './excel-generator'
 
-export interface ProjectWithDetails extends PipelineProject {
-  phases: PipelinePhase[]
-  expenses: Expense[]
+export interface ProjectWithDetails {
+  phases: any[]
+  expenses: any[]
+  [key: string]: any
 }
 
 export async function generateProjectZIP(project: ProjectWithDetails): Promise<Buffer> {

@@ -1,10 +1,11 @@
 import { chromium } from 'playwright'
-import { PipelineProject, PipelinePhase, Expense } from '@prisma/client'
+// Removed invalid Prisma type imports from '@prisma/client'
 import { formatCurrency } from '@/types/budget'
 
-export interface ProjectWithDetails extends PipelineProject {
-  phases: PipelinePhase[]
-  expenses: Expense[]
+export interface ProjectWithDetails {
+  phases: any[]
+  expenses: any[]
+  [key: string]: any
 }
 
 export async function generateProjectPDF(project: ProjectWithDetails): Promise<Buffer> {

@@ -157,6 +157,92 @@ gcloud run deploy openhorizon-app \
 
 See `DEPLOY_INSTRUCTIONS.md` for complete deployment guide.
 
+## 📊 Monitoring & Observability
+
+OpenHorizon uses **Google Cloud Monitoring** with **OpenTelemetry** for comprehensive observability.
+
+### Dashboard Access
+- **Production Dashboard:** [Cloud Monitoring Dashboard](https://console.cloud.google.com/monitoring/dashboards?project=openhorizon-cc)
+- **Alert Policies:** [Alerting](https://console.cloud.google.com/monitoring/alerting?project=openhorizon-cc)
+- **Logs:** [Cloud Run Logs](https://console.cloud.google.com/run/detail/europe-west1/openhorizon-app/logs?project=openhorizon-cc)
+
+### Key Metrics Tracked
+
+**System Performance:**
+- Request count (total, by endpoint)
+- Request latency (p50, p95, p99)
+- Error rate (5xx responses)
+- CPU/memory utilization
+- Autoscaling instances
+
+**Business Metrics:**
+- Projects created (daily/weekly count)
+- Searches completed (food, accommodation)
+- Documents exported (PDF, Excel, Word)
+- User signups
+
+**Inngest Background Jobs:**
+- Job completion rate (success vs. failed)
+- Job duration (average, p95)
+- Job failure rate (percentage)
+- Job retry count
+
+### Alert Notifications
+
+Alerts are sent to `alerts@openhorizon.cc` for:
+- ⚠️ Error rate > 1% (5 min sustained)
+- ⚠️ P95 latency > 1s (5 min sustained)
+- ⚠️ Inngest job failure rate > 10% (10 min sustained)
+- ⚠️ Service inactive > 1 hour
+
+### Setup Monitoring (First-Time)
+
+```bash
+# Run the monitoring setup script (one-time setup)
+./scripts/setup-monitoring.sh
+
+# This creates:
+# - Email notification channel
+# - 4 alert policies (error rate, latency, job failures, inactivity)
+```
+
+### Local Development
+
+Metrics are **disabled by default** in development. To enable:
+
+```bash
+# In .env.local
+GOOGLE_CLOUD_PROJECT=openhorizon-cc
+ENABLE_METRICS=true
+OTEL_SERVICE_NAME=openhorizon-app-dev
+```
+
+### Troubleshooting
+
+**Metrics not appearing:**
+- Check Cloud Logging for export errors
+- Verify `GOOGLE_CLOUD_PROJECT` and `ENABLE_METRICS` env vars
+- Wait 2-5 minutes for data propagation
+
+**Alerts not firing:**
+- Verify notification channels are configured
+- Check alert policy thresholds in Cloud Console
+- Ensure email address is verified
+
+**Dashboard empty:**
+- Ensure app has traffic (metrics only appear after requests)
+- Check that `ENABLE_METRICS=true` in production
+- Wait up to 5 minutes for initial data
+
+### Metrics Architecture
+
+- **Frontend (Next.js):** tRPC middleware tracks all API calls
+- **Backend (Fastify):** Plugin hooks track HTTP requests
+- **Background Jobs (Inngest):** Each function wrapped with metrics
+- **Export:** OpenTelemetry → Cloud Monitoring (60s interval)
+
+See [Implementation Plan](.plans/issue-134-monitoring-observability-plan.md) for technical details.
+
 ## 📁 Detailed Structure
 
 ### Landing Page (`landing/`)

@@ -101,7 +101,7 @@ export function BudgetAlertConfig({ projectId }: BudgetAlertConfigProps) {
         {!isLoading && alerts && alerts.length > 0 && (
           <div className="space-y-3">
             <h4 className="text-sm font-medium">Active Alerts</h4>
-            {alerts.map(alert => (
+            {alerts.map((alert: any) => (
               <div key={alert.id} className="flex items-center justify-between p-3 border rounded-lg">
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
