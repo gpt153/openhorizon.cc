@@ -4,6 +4,8 @@ import { extractProjectDNA } from '@/lib/ai/chains/project-dna-extraction'
 import { generateProjectConcept } from '@/lib/ai/chains/project-concept-generation'
 import { retrieveSimilarProjects } from '@/lib/ai/chains/retrieve-similar-projects'
 import type { UserIdeaInputs } from '@/lib/types/project'
+import { InngestMetrics } from '@/lib/monitoring/inngest-metrics'
+import { BusinessMetrics } from '@/lib/monitoring/business-metrics'
 
 /**
  * Generate Project from Idea - Background Job
@@ -19,7 +21,14 @@ export const generateProjectFromIdea = inngest.createFunction(
   },
   { event: 'project.generate-from-idea' },
   async ({ event, step }) => {
+    const startTime = Date.now()
+    const functionId = 'project.generate-from-idea'
     const { sessionId, tenantId, userId } = event.data
+
+    // Record job start
+    InngestMetrics.recordJobStart(functionId)
+
+    try {
 
     // Step 1: Load session
     const session = await step.run('load-session', async () => {
@@ -108,7 +117,21 @@ export const generateProjectFromIdea = inngest.createFunction(
       })
     })
 
-    console.log(`✅ Project generated successfully: ${project.id}`)
-    return { projectId: project.id }
+      console.log(`✅ Project generated successfully: ${project.id}`)
+
+      // Record business metric: project created
+      BusinessMetrics.recordProjectCreated(tenantId)
+
+      // Record job success
+      const duration = Date.now() - startTime
+      InngestMetrics.recordJobSuccess(functionId, duration)
+
+      return { projectId: project.id }
+    } catch (error) {
+      // Record job failure
+      const duration = Date.now() - startTime
+      InngestMetrics.recordJobFailure(functionId, error, duration)
+      throw error
+    }
   }
 )

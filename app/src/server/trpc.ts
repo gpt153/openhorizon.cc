@@ -1,6 +1,7 @@
 import { initTRPC, TRPCError } from '@trpc/server'
 import superjson from 'superjson'
 import type { Context } from './context'
+import { metricsMiddleware } from './middleware/metrics'
 
 const t = initTRPC.context<Context>().create({
   transformer: superjson,
@@ -8,10 +9,14 @@ const t = initTRPC.context<Context>().create({
 
 // Base router and procedure helpers
 export const router = t.router
-export const publicProcedure = t.procedure
 
-// Protected procedure - requires authentication
-export const protectedProcedure = t.procedure.use(async (opts) => {
+// Public procedure with metrics tracking
+export const publicProcedure = t.procedure.use(metricsMiddleware)
+
+// Protected procedure - requires authentication (includes metrics)
+export const protectedProcedure = t.procedure
+  .use(metricsMiddleware)
+  .use(async (opts) => {
   const { ctx } = opts
 
   if (!ctx.userId) {

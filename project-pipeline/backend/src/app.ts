@@ -14,6 +14,7 @@ import { registerSeedsRoutes } from './seeds/seeds.routes.js'
 import { registerApplicationFormRoutes } from './application-forms/application-forms.routes.js'
 import { registerExportRoutes } from './exports/exports.routes.js'
 import { initSentry, setupSentryMiddleware, setupSentryErrorHandler } from './lib/sentry.js'
+import metricsPlugin from './middleware/metrics.js'
 
 // Initialize Sentry as early as possible
 initSentry()
@@ -25,6 +26,8 @@ const app = Fastify({
 })
 
 // Register plugins
+await app.register(metricsPlugin)
+
 await app.register(cors, {
   origin: env.NODE_ENV === 'production' ? false : '*'
 })

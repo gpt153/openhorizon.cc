@@ -2,6 +2,8 @@ import { inngest } from '@/inngest/client'
 import prisma from '@/lib/prisma'
 import { FoodAgent } from '@/lib/ai/agents/food-agent'
 import type { AgentContext } from '@/lib/ai/agents/base-agent'
+import { InngestMetrics } from '@/lib/monitoring/inngest-metrics'
+import { BusinessMetrics } from '@/lib/monitoring/business-metrics'
 
 /**
  * Food Agent Background Search - Inngest Function
@@ -36,9 +38,16 @@ export const foodAgentSearch = inngest.createFunction(
     retries: 3,
   },
   { event: 'search/food.requested' },
-  async ({ event, step }) => {
+  async ({ event, step, attempt }) => {
     const { jobId, searchParams } = event.data
     const jobStartTime = Date.now()
+    const functionId = 'food-agent-search'
+
+    // Record job start and retries
+    InngestMetrics.recordJobStart(functionId)
+    if (attempt > 0) {
+      InngestMetrics.recordJobRetry(functionId, attempt)
+    }
 
     // Structured log: Job started
     console.log('[Food Search] Job started', {
@@ -131,6 +140,11 @@ export const foodAgentSearch = inngest.createFunction(
         })
       })
 
+      // Record job success and business metric
+      const totalDuration = Date.now() - jobStartTime
+      InngestMetrics.recordJobSuccess(functionId, totalDuration)
+      BusinessMetrics.recordSearchCompleted('food')
+
       return {
         success: true,
         jobId,
@@ -162,6 +176,10 @@ export const foodAgentSearch = inngest.createFunction(
           timestamp: new Date().toISOString(),
         })
       })
+
+      // Record job failure
+      const totalDuration = Date.now() - jobStartTime
+      InngestMetrics.recordJobFailure(functionId, error, totalDuration)
 
       // Re-throw error to trigger Inngest retry mechanism
       throw error
