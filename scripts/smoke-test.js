@@ -20,9 +20,17 @@ export const options = {
 const BASE_URL = __ENV.BASE_URL || 'https://app.openhorizon.cc';
 const TRPC_ENDPOINT = `${BASE_URL}/api/trpc`;
 
+// Authentication configuration
+const AUTH_TOKEN = __ENV.CLERK_TEST_TOKEN;
+
 const headers = {
   'Content-Type': 'application/json',
 };
+
+// Add authentication cookie if token is provided
+if (AUTH_TOKEN) {
+  headers['Cookie'] = `__session=${AUTH_TOKEN}`;
+}
 
 function trpcQuery(procedure, input = null) {
   const inputParam = input ? `?input=${encodeURIComponent(JSON.stringify(input))}` : '';

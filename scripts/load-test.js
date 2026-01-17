@@ -17,6 +17,9 @@ const errorRate = new Rate('errors');
 const projectListDuration = new Trend('project_list_duration');
 const pipelineListDuration = new Trend('pipeline_list_duration');
 const seedListDuration = new Trend('seed_list_duration');
+const projectCreationDuration = new Trend('project_creation_duration');
+const vendorSearchDuration = new Trend('vendor_search_duration');
+const documentExportDuration = new Trend('document_export_duration');
 const requestCounter = new Counter('total_requests');
 
 // Test configuration
@@ -42,11 +45,20 @@ export const options = {
 const BASE_URL = __ENV.BASE_URL || 'https://app.openhorizon.cc';
 const TRPC_ENDPOINT = `${BASE_URL}/api/trpc`;
 
-// Mock authentication headers (in production, you'd use real auth tokens)
-// For now, we'll test public/unauthenticated endpoints or use a test account
+// Authentication configuration
+// Set CLERK_TEST_TOKEN environment variable with a valid session token
+// To obtain: Log in to app, open DevTools → Application → Cookies → Copy __session value
+const AUTH_TOKEN = __ENV.CLERK_TEST_TOKEN;
+
+// Build headers with authentication if available
 const headers = {
   'Content-Type': 'application/json',
 };
+
+// Add authentication cookie if token is provided
+if (AUTH_TOKEN) {
+  headers['Cookie'] = `__session=${AUTH_TOKEN}`;
+}
 
 /**
  * Make a tRPC query request
@@ -220,12 +232,140 @@ function testProgrammesList() {
 }
 
 /**
+ * Test project creation endpoint (POST mutation)
+ * Returns project ID for subsequent tests
+ */
+function testProjectCreation() {
+  let projectId = null;
+
+  group('Project Creation', () => {
+    const projectData = {
+      name: `Load Test Project ${Date.now()}-${__VU}`,
+      description: 'Performance testing project created by K6 load test',
+      seedId: null, // Not linked to a seed
+    };
+
+    const start = Date.now();
+    const response = trpcMutation('pipeline.projects.create', projectData);
+    const duration = Date.now() - start;
+
+    projectCreationDuration.add(duration);
+
+    const success = check(response, {
+      'project creation status is 200': (r) => r.status === 200,
+      'project creation time < 2s': (r) => r.timings.duration < 2000,
+      'project has ID in response': (r) => {
+        try {
+          const body = JSON.parse(r.body);
+          return body.result?.data?.id !== undefined;
+        } catch {
+          return false;
+        }
+      },
+    });
+
+    errorRate.add(!success);
+
+    // Extract project ID for subsequent tests
+    if (success && response.status === 200) {
+      try {
+        const body = JSON.parse(response.body);
+        projectId = body.result.data.id;
+      } catch (e) {
+        console.warn('Failed to extract project ID:', e);
+      }
+    }
+  });
+
+  return projectId;
+}
+
+/**
+ * Test vendor search trigger (background job initiation)
+ * Note: We don't wait for job completion, just verify trigger works
+ */
+function testVendorSearch(projectId) {
+  if (!projectId) {
+    console.warn('Skipping vendor search test: no project ID');
+    return;
+  }
+
+  group('Vendor Search Trigger', () => {
+    // Simplified search data for load testing
+    const searchData = {
+      projectId: projectId,
+      searchType: 'food',
+      location: 'Barcelona, Spain',
+      participantCount: 30,
+      startDate: '2026-07-01',
+      endDate: '2026-07-10',
+    };
+
+    const start = Date.now();
+    const response = trpcMutation('pipeline.searchJobs.triggerSearch', searchData);
+    const duration = Date.now() - start;
+
+    vendorSearchDuration.add(duration);
+
+    const success = check(response, {
+      'vendor search trigger status is 200': (r) => r.status === 200,
+      'vendor search trigger time < 1s': (r) => r.timings.duration < 1000,
+      'job ID or acknowledgment returned': (r) => {
+        try {
+          const body = JSON.parse(r.body);
+          // Accept various success indicators
+          return body.result?.data !== undefined || r.status === 200;
+        } catch {
+          return r.status === 200;
+        }
+      },
+    });
+
+    errorRate.add(!success);
+  });
+}
+
+/**
+ * Test document export endpoint (PDF generation)
+ */
+function testDocumentExport(projectId) {
+  if (!projectId) {
+    console.warn('Skipping document export test: no project ID');
+    return;
+  }
+
+  group('Document Export', () => {
+    const exportUrl = `${BASE_URL}/api/projects/${projectId}/export?format=pdf`;
+
+    const start = Date.now();
+    const response = http.get(exportUrl, {
+      headers: headers,
+      tags: { type: 'export', format: 'pdf' }
+    });
+    const duration = Date.now() - start;
+
+    documentExportDuration.add(duration);
+
+    const success = check(response, {
+      'export status is 200': (r) => r.status === 200,
+      'export response time < 3s': (r) => r.timings.duration < 3000,
+      'export content-type is PDF': (r) => {
+        const contentType = r.headers['Content-Type'] || r.headers['content-type'];
+        return contentType && contentType.includes('application/pdf');
+      },
+      'export file size > 0': (r) => r.body && r.body.length > 0,
+    });
+
+    errorRate.add(!success);
+  });
+}
+
+/**
  * Main test scenario - simulates a typical user session
  */
 export default function () {
   // Initial health check
   testHealthCheck();
-
   sleep(1);
 
   // User loads dashboard - fetches multiple lists
@@ -246,6 +386,20 @@ export default function () {
 
   // User browses programmes
   testProgrammesList();
+  sleep(0.5);
+
+  // NEW: Write operations (only 10% of users to avoid DB pollution)
+  // This tests project creation, vendor search trigger, and document export
+  if (Math.random() < 0.1) {
+    const projectId = testProjectCreation();
+
+    if (projectId) {
+      sleep(1);
+      testVendorSearch(projectId);
+      sleep(1);
+      testDocumentExport(projectId);
+    }
+  }
 
   // Random think time between actions (1-3 seconds)
   sleep(Math.random() * 2 + 1);
