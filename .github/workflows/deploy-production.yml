@@ -22,6 +22,15 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install Dependencies for Smoke Tests
+        run: npm ci
+
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
         with:
@@ -109,22 +118,33 @@ jobs:
           echo "⏳ Waiting for service to be ready..."
           sleep 10
 
-      - name: Health Check
+      - name: Run Production Smoke Tests
         run: |
-          echo "🏥 Performing health check..."
-          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" ${{ steps.get_url.outputs.url }})
-          echo "HTTP Status: $HTTP_CODE"
+          echo "🔍 Running comprehensive smoke tests against production..."
+          npm run smoke-test:prod
+        env:
+          NODE_OPTIONS: '--no-warnings'
 
-          if [ "$HTTP_CODE" -eq 200 ] || [ "$HTTP_CODE" -eq 301 ] || [ "$HTTP_CODE" -eq 302 ] || [ "$HTTP_CODE" -eq 307 ]; then
-            echo "✅ Health check passed!"
-          else
-            echo "❌ Health check failed with status: $HTTP_CODE"
-            echo "🔍 Checking recent logs..."
-            gcloud run services logs read openhorizon-app \
-              --region=europe-west1 \
-              --limit=50
-            exit 1
-          fi
+      - name: Smoke Test Results
+        if: success()
+        run: |
+          echo "✅ All smoke tests passed - deployment validated!"
+
+      - name: Smoke Test Failure - Collect Diagnostics
+        if: failure()
+        run: |
+          echo "❌ Smoke tests failed - collecting diagnostics..."
+          echo ""
+          echo "🔍 Cloud Run logs (last 100 lines):"
+          gcloud run services logs read openhorizon-app \
+            --region=europe-west1 \
+            --limit=100
+          echo ""
+          echo "🔍 Service status:"
+          gcloud run services describe openhorizon-app \
+            --region=europe-west1 \
+            --format='yaml(status)'
+          exit 1
 
       - name: Verify Deployments
         run: |

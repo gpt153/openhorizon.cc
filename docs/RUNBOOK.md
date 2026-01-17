@@ -1309,6 +1309,83 @@ gcloud run services logs read openhorizon-app \
 # - Normal latency
 ```
 
+### Post-Deployment Validation
+
+**Automated Smoke Tests** run automatically after every production deployment via GitHub Actions. These tests verify:
+
+1. **Service Reachability** - Homepage loads (HTTP 200, <2s)
+2. **Authentication** - Clerk integration working
+3. **Authorization** - Protected routes require auth
+4. **Database** - PostgreSQL connection healthy
+5. **Background Jobs** - Inngest webhook responds
+
+**Manual Smoke Test Execution:**
+
+If you need to manually validate a deployment:
+
+```bash
+npm run smoke-test:prod
+```
+
+**Expected Output (Success):**
+```
+🔍 Running smoke tests against: https://app.openhorizon.cc
+
+✅ Homepage Load (427ms)
+✅ Authentication Endpoints (64ms)
+✅ Protected Route Authorization (58ms)
+✅ Database Health Check (205ms)
+✅ Inngest Webhook (80ms)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+✅ ALL CHECKS PASSED (0.83s)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
+**Interpreting Results:**
+
+✅ **All Checks Pass:**
+```
+✅ ALL CHECKS PASSED (1.34s)
+```
+→ Deployment is healthy, no action needed
+
+❌ **Some Checks Fail:**
+```
+❌ 2 of 5 checks FAILED
+```
+→ Review error messages, check logs, consider rollback
+
+**Troubleshooting Guide:**
+
+| Failed Check | Possible Cause | Resolution |
+|-------------|---------------|------------|
+| Homepage Load | Cloud Run not responding | Check Cloud Run console, verify deployment |
+| Authentication Endpoints | Clerk integration issue | Verify `CLERK_SECRET_KEY` env var |
+| Protected Route Authorization | Auth middleware broken | Check middleware in app |
+| Database Health Check | PostgreSQL connection down | Verify `DATABASE_URL`, check Cloud SQL |
+| Inngest Webhook | Inngest config issue | Verify `INNGEST_EVENT_KEY`, `INNGEST_SIGNING_KEY` |
+
+**Manual Rollback Procedure:**
+
+If smoke tests fail and you need to rollback:
+
+```bash
+# List recent revisions
+gcloud run revisions list \
+  --service=openhorizon-app \
+  --region=europe-west1 \
+  --limit=5
+
+# Rollback to previous revision
+gcloud run services update-traffic openhorizon-app \
+  --region=europe-west1 \
+  --to-revisions=<PREVIOUS_REVISION>=100
+
+# Verify rollback with smoke tests
+npm run smoke-test:prod
+```
+
 ### Post-Deployment Monitoring
 
 **Monitor for 30 minutes after deployment:**
