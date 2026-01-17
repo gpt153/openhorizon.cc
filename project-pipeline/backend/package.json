@@ -33,6 +33,7 @@
     "@langchain/openai": "^0.3.17",
     "@prisma/client": "^5.22.0",
     "@sendgrid/mail": "^8.1.6",
+    "@sentry/node": "^10.34.0",
     "axios": "^1.13.2",
     "bcryptjs": "^2.4.3",
     "docx": "^9.0.0",

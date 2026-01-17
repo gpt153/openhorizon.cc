@@ -13,6 +13,10 @@ import { registerLearningRoutes } from './ai/learning/learning.routes.js'
 import { registerSeedsRoutes } from './seeds/seeds.routes.js'
 import { registerApplicationFormRoutes } from './application-forms/application-forms.routes.js'
 import { registerExportRoutes } from './exports/exports.routes.js'
+import { initSentry, setupSentryMiddleware, setupSentryErrorHandler } from './lib/sentry.js'
+
+// Initialize Sentry as early as possible
+initSentry()
 
 const app = Fastify({
   logger: {
@@ -33,12 +37,55 @@ await app.register(jwt, {
 app.decorate('authenticate', authenticate)
 app.decorate('requireRole', requireRole)
 
+// Setup Sentry middleware
+setupSentryMiddleware(app)
+
 // Health check endpoint
 app.get('/health', async () => {
   return {
     status: 'ok',
     timestamp: new Date().toISOString(),
     environment: env.NODE_ENV
+  }
+})
+
+// Sentry test endpoint (for testing error tracking)
+app.get('/sentry-test', async (request, reply) => {
+  const { Sentry } = await import('./lib/sentry.js')
+  const testType = (request.query as any).type || 'error'
+
+  if (testType === 'error') {
+    // Test 1: Throw an error
+    throw new Error('This is a test error from backend Sentry integration')
+  } else if (testType === 'message') {
+    // Test 2: Send a message
+    Sentry.captureMessage('Test message from backend Sentry integration', 'info')
+    return {
+      success: true,
+      message: 'Test message sent to Sentry'
+    }
+  } else if (testType === 'context') {
+    // Test 3: Send error with custom context
+    Sentry.withScope((scope) => {
+      scope.setTag('test-tag', 'backend-integration-test')
+      scope.setContext('test-context', {
+        testKey: 'testValue',
+        timestamp: new Date().toISOString()
+      })
+      scope.setUser({
+        id: 'test-user-456',
+        email: 'backend-test@example.com'
+      })
+      Sentry.captureException(new Error('Test error with custom context from backend'))
+    })
+    return {
+      success: true,
+      message: 'Test error with custom context sent to Sentry'
+    }
+  } else {
+    return reply.code(400).send({
+      error: 'Invalid test type. Use ?type=error, ?type=message, or ?type=context'
+    })
   }
 })
 
@@ -75,22 +122,8 @@ await registerSeedsRoutes(app)
 await registerApplicationFormRoutes(app)
 await registerExportRoutes(app)
 
-// Error handler
-app.setErrorHandler((error, request, reply) => {
-  app.log.error(error)
-
-  if (error.validation) {
-    return reply.code(400).send({
-      error: 'Validation error',
-      details: error.validation
-    })
-  }
-
-  return reply.code(500).send({
-    error: 'Internal server error',
-    message: env.NODE_ENV === 'development' ? error.message : undefined
-  })
-})
+// Setup Sentry error handler (replaces the default error handler)
+setupSentryErrorHandler(app)
 
 // Start server
 const start = async () => {
