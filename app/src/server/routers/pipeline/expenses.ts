@@ -1,6 +1,6 @@
 import { router, orgProcedure } from '../../trpc'
 import { z } from 'zod'
-import { ExpenseCategory } from '@prisma/client'
+// Removed invalid Prisma type import from '@prisma/client'
 import { shouldTriggerAlert } from '@/lib/budget/health-calculator'
 import { sendBudgetAlertEmail } from '@/lib/email/templates/budget-alert'
 

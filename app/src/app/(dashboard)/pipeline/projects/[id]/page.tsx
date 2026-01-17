@@ -274,7 +274,7 @@ export default function PipelineProjectDetailPage({ params }: { params: Promise<
 
                 {project.phases && project.phases.length > 0 ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {project.phases.map((phase) => (
+                    {project.phases.map((phase: any) => (
                       <PhaseCard key={phase.id} phase={phase} projectId={project.id} />
                     ))}
                   </div>

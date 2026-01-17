@@ -6,7 +6,7 @@
 
 import { MeterProvider, PeriodicExportingMetricReader } from '@opentelemetry/sdk-metrics'
 import { MetricExporter } from '@google-cloud/opentelemetry-cloud-monitoring-exporter'
-import { Resource } from '@opentelemetry/resources'
+import { resourceFromAttributes } from '@opentelemetry/resources'
 import { ATTR_SERVICE_NAME, ATTR_SERVICE_VERSION } from '@opentelemetry/semantic-conventions'
 
 /**
@@ -41,7 +41,7 @@ class FastifyMetricsCollectorClass {
     }
 
     try {
-      const resource = new Resource({
+      const resource = resourceFromAttributes({
         [ATTR_SERVICE_NAME]: 'project-pipeline-backend',
         [ATTR_SERVICE_VERSION]: process.env.npm_package_version || '1.0.0',
       })

@@ -1,5 +1,5 @@
 import ExcelJS from 'exceljs'
-import { PipelineProject, PipelinePhase, Expense } from '@prisma/client'
+// Removed invalid Prisma type imports from '@prisma/client'
 import { formatCurrency } from '@/types/budget'
 
 export interface ProjectWithDetails extends PipelineProject {

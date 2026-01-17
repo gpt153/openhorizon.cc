@@ -9,7 +9,7 @@
 
 import { MeterProvider, PeriodicExportingMetricReader } from '@opentelemetry/sdk-metrics'
 import { MetricExporter } from '@google-cloud/opentelemetry-cloud-monitoring-exporter'
-import { Resource } from '@opentelemetry/resources'
+import { resourceFromAttributes } from '@opentelemetry/resources'
 import { ATTR_SERVICE_NAME } from '@opentelemetry/semantic-conventions'
 
 /**
@@ -40,7 +40,7 @@ class InngestMetricsClass {
     }
 
     try {
-      const resource = new Resource({
+      const resource = resourceFromAttributes({
         [ATTR_SERVICE_NAME]: process.env.OTEL_SERVICE_NAME || 'openhorizon-app',
       })
 

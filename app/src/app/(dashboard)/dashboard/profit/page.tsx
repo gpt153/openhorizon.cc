@@ -17,8 +17,8 @@ export default function ProfitDashboardPage() {
 
     // Calculate profit data for each project
     const profitData: ProfitData[] = projects
-      .filter((project) => project.erasmusGrantCalculated) // Only include projects with calculated grants
-      .map((project) => {
+      .filter((project: any) => project.erasmusGrantCalculated) // Only include projects with calculated grants
+      .map((project: any) => {
         const grantAmount = project.erasmusGrantCalculated ? Number(project.erasmusGrantCalculated) : null
         const estimatedCosts = project.estimatedCosts ? Number(project.estimatedCosts) : null
         const profit = grantAmount && estimatedCosts !== null ? grantAmount - estimatedCosts : null

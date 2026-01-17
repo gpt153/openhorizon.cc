@@ -1,4 +1,4 @@
-import { PipelineProject, PipelinePhase, Expense } from '@prisma/client'
+// Removed invalid Prisma type imports from '@prisma/client'
 import { BudgetSummary, SpendingTrendData } from '@/types/budget'
 import { calculateBudgetHealth } from './health-calculator'
 

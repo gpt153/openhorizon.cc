@@ -1,4 +1,4 @@
-import { ExpenseCategory } from '@prisma/client'
+// Removed invalid Prisma type import from '@prisma/client'
 
 export interface Expense {
   id: string

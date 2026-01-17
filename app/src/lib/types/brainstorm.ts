@@ -1,4 +1,4 @@
-import type { BrainstormSession, Seed, SeedElaboration } from '@prisma/client'
+// Removed invalid Prisma type imports from '@prisma/client'
 
 // Input types
 export interface BrainstormInput {

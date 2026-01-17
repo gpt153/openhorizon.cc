@@ -369,7 +369,7 @@ export default function PhaseDetailPage({
 
                 {phase.quotes && phase.quotes.length > 0 ? (
                   <div className="space-y-4">
-                    {phase.quotes.map((quote) => (
+                    {phase.quotes.map((quote: any) => (
                       <QuoteCard key={quote.id} quote={quote} />
                     ))}
                   </div>

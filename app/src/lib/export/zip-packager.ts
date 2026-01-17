@@ -1,6 +1,6 @@
 import archiver from 'archiver'
 import { Readable } from 'stream'
-import { PipelineProject, PipelinePhase, Expense } from '@prisma/client'
+// Removed invalid Prisma type imports from '@prisma/client'
 import { generateProjectPDF } from './pdf-generator'
 import { generateProjectExcel } from './excel-generator'
 
