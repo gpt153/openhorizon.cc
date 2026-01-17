@@ -41,11 +41,15 @@ export async function createTestProgramme(
     data: {
       tenantId,
       projectId,
-      name,
       status,
-      startDate,
-      endDate,
-      overallDescription: 'A comprehensive programme for the test project',
+      generatedFromConcept: {
+        name: name || 'Test Programme',
+        description: 'A comprehensive programme for the test project',
+        startDate: startDate?.toISOString(),
+        endDate: endDate?.toISOString(),
+        durationDays: Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)),
+      },
+      // aiModel has default value in schema
     },
   })
 
@@ -186,11 +190,14 @@ export async function createTestPipelineProject(
       tenantId,
       createdByUserId,
       name: 'Test Pipeline Project',
-      type: 'YOUTH_EXCHANGE',
+      type: 'STUDENT_EXCHANGE',
       status: 'PLANNING',
       startDate: new Date('2024-09-01'),
       endDate: new Date('2024-09-10'),
       description: 'Test project for pipeline and vendor search E2E tests',
+      budgetTotal: 10000,
+      participantCount: 30,
+      location: 'Barcelona, Spain',
     },
   })
 
@@ -202,9 +209,8 @@ export async function createTestPipelineProject(
       type: 'FOOD',
       startDate: new Date('2024-09-02'),
       endDate: new Date('2024-09-09'),
-      budget: 3000,
-      participants: 30,
-      notes: 'Plan meals for 30 participants over 7 days',
+      budgetAllocated: 3000,
+      order: 1,
     },
   })
 
@@ -215,9 +221,8 @@ export async function createTestPipelineProject(
       type: 'ACCOMMODATION',
       startDate: new Date('2024-09-01'),
       endDate: new Date('2024-09-10'),
-      budget: 5000,
-      participants: 30,
-      notes: 'Find accommodation for 30 participants',
+      budgetAllocated: 5000,
+      order: 2,
     },
   })
 

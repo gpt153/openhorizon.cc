@@ -1,395 +1,369 @@
-# E2E Test Infrastructure
+# E2E Test Infrastructure Documentation
 
-This directory contains the complete E2E test infrastructure for OpenHorizon, including database seeding, authentication helpers, and test fixtures.
+## 📋 Table of Contents
 
-## 📁 Directory Structure
+- [Overview](#overview)
+- [Quick Start](#quick-start)
+- [Setup Instructions](#setup-instructions)
+  - [1. Database Setup](#1-database-setup)
+  - [2. Clerk Test Users](#2-clerk-test-users)
+  - [3. Environment Configuration](#3-environment-configuration)
+  - [4. Prisma Client Generation](#4-prisma-client-generation)
+- [Running Tests](#running-tests)
+- [Test Infrastructure Components](#test-infrastructure-components)
+- [Fixtures Reference](#fixtures-reference)
+- [Writing Tests](#writing-tests)
+- [Troubleshooting](#troubleshooting)
+- [Best Practices](#best-practices)
+
+---
+
+## Overview
+
+This directory contains the E2E (End-to-End) test infrastructure for Open Horizon, built with [Playwright](https://playwright.dev/).
+
+**Key Features:**
+- ✅ Automated database seeding before tests
+- ✅ Authentication state management with Clerk
+- ✅ Reusable test fixtures for users, projects, seeds, and phases
+- ✅ Global setup/teardown for test isolation
+- ✅ Comprehensive test data scenarios
+
+---
+
+## Quick Start
+
+```bash
+# 1. Copy environment template
+cp .env.test.local.example .env.test.local
+
+# 2. Edit .env.test.local with your database URL and Clerk user IDs
+
+# 3. Generate Prisma client
+cd app && npx prisma generate && cd ..
+
+# 4. Run tests
+npx playwright test
+```
+
+---
+
+## Setup Instructions
+
+### 1. Database Setup
+
+#### Create Test Database
+
+```bash
+# Create a PostgreSQL test database
+createdb openhorizon_test
+
+# Or using psql:
+psql -U postgres -c "CREATE DATABASE openhorizon_test;"
+```
+
+#### Configure Database URL
+
+Add to `.env.test.local`:
+```env
+TEST_DATABASE_URL="postgresql://user:password@localhost:5432/openhorizon_test"
+```
+
+**⚠️ Important:**
+- Use a **separate database** for tests
+- Never point tests at your development or production database
+- The test database will be **reset** before each test run
+
+### 2. Clerk Test Users
+
+The test infrastructure requires **3 test users** to be created in your Clerk dashboard.
+
+#### Step-by-Step:
+
+1. **Go to Clerk Dashboard** → Users → Create User
+
+2. **Create these 3 users:**
+
+   | Role | Email | Password |
+   |------|-------|----------|
+   | Admin | `admin@test.openhorizon.cc` | `TestPassword123!` |
+   | Staff | `staff@test.openhorizon.cc` | `TestPassword123!` |
+   | Participant | `participant@test.openhorizon.cc` | `TestPassword123!` |
+
+3. **Copy User IDs:**
+   - After creating each user, copy their Clerk User ID (format: `user_xxxxxxxxxxxxxxxxxxxxx`)
+
+4. **Add IDs to `.env.test.local`:**
+   ```env
+   TEST_ADMIN_USER_ID="user_xxxxxxxxxxxxxxxxxxxxx"
+   TEST_STAFF_USER_ID="user_yyyyyyyyyyyyyyyyyyyyyyy"
+   TEST_PARTICIPANT_USER_ID="user_zzzzzzzzzzzzzzzzzzzzz"
+   ```
+
+### 3. Environment Configuration
+
+Copy the example file and fill in your values:
+
+```bash
+cp .env.test.local.example .env.test.local
+```
+
+See `.env.test.local.example` for all available options.
+
+### 4. Prisma Client Generation
+
+Ensure Prisma Client is generated:
+
+```bash
+cd app
+npm install
+npx prisma generate
+```
+
+---
+
+## Running Tests
+
+```bash
+# Run all tests
+npx playwright test
+
+# Run specific test file
+npx playwright test tests/e2e/seed-creation.spec.ts
+
+# Run in UI mode (interactive)
+npx playwright test --ui
+
+# Run in headed mode (see browser)
+npx playwright test --headed
+
+# Debug a test
+npx playwright test tests/e2e/seed-creation.spec.ts --debug
+
+# Show test report
+npx playwright show-report
+```
+
+---
+
+## Test Infrastructure Components
+
+### Directory Structure
 
 ```
 tests/
 ├── helpers/
-│   ├── database.ts         # Database connection, seeding, and reset utilities
-│   └── auth.ts             # Authentication helpers for Clerk
+│   ├── database.ts         # Database utilities
+│   └── auth.ts             # Authentication utilities
 ├── fixtures/
-│   ├── index.ts            # Barrel export
-│   ├── users.ts            # User and organization fixtures
+│   ├── users.ts            # User & organization fixtures
 │   ├── projects.ts         # Project fixtures
-│   ├── seeds.ts            # Seed (brainstorm) fixtures
-│   └── phases.ts           # Programme and pipeline phase fixtures
-├── global-setup.ts         # Runs before all tests (DB seed + auth)
-├── global-teardown.ts      # Runs after all tests (cleanup)
-├── auth.setup.ts           # Legacy auth setup (kept for compatibility)
-└── *.spec.ts               # Test files
+│   ├── seeds.ts            # Seed fixtures
+│   ├── phases.ts           # Programme & phase fixtures
+│   └── index.ts            # Barrel export
+├── e2e/                    # E2E test specs
+├── global-setup.ts         # Runs once before all tests
+├── global-teardown.ts      # Runs once after all tests
+└── README.md               # This file
 ```
 
-## 🚀 Quick Start
+### Global Setup (`global-setup.ts`)
 
-### 1. Environment Setup
+Runs **once** before all tests:
+1. ✅ Waits for database
+2. ✅ Connects to database
+3. ✅ Runs migrations
+4. ✅ Resets & seeds database
+5. ✅ Authenticates test users
+6. ✅ Saves auth state files
 
-Copy `.env.test.example` to `.env.test` and fill in values:
+### Helpers
 
-```bash
-cp .env.test.example .env.test
-```
+#### `database.ts`
+- `getTestPrismaClient()` - Get Prisma client
+- `resetDatabase()` - Clear all data
+- `seedDatabase()` - Populate test data
+- `migrateDatabase()` - Run migrations
 
-Required environment variables:
-- `TEST_DATABASE_URL` - Separate test database (IMPORTANT: Not production!)
-- `BASE_URL` - Application URL (default: http://localhost:3000)
-- `CLERK_SECRET_KEY` - Clerk test mode secret key
-- `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` - Clerk test mode publishable key
-- Test user credentials (admin, staff, participant)
+#### `auth.ts`
+- `signInAsAdmin(page)` - Sign in as admin
+- `signInAsStaff(page)` - Sign in as staff
+- `signInAsParticipant(page)` - Sign in as participant
+- `saveAuthState(page, path)` - Save auth state
 
-### 2. Create Clerk Test Users
+---
 
-**IMPORTANT:** You must manually create test users in Clerk dashboard before running tests.
+## Fixtures Reference
 
-1. Go to Clerk Dashboard → Users
-2. Create three users:
-   - `admin@test.openhorizon.cc` (password: `TestPassword123!`)
-   - `staff@test.openhorizon.cc` (password: `TestPassword123!`)
-   - `participant@test.openhorizon.cc` (password: `TestPassword123!`)
-3. Copy their Clerk user IDs to `.env.test`:
-   ```
-   TEST_ADMIN_USER_ID="user_xxx"
-   TEST_STAFF_USER_ID="user_yyy"
-   TEST_PARTICIPANT_USER_ID="user_zzz"
-   ```
-
-### 3. Create Test Database
-
-```bash
-# Create test database
-createdb openhorizon_test
-
-# Run migrations
-DATABASE_URL="postgresql://localhost/openhorizon_test" npx prisma migrate deploy
-```
-
-### 4. Run Tests
-
-```bash
-# Run all tests
-npm run test
-
-# Run specific test file
-npx playwright test tests/week1-features.spec.ts
-
-# Run with UI for debugging
-npm run test:ui
-
-# Run in headed mode (see browser)
-npx playwright test --headed
-```
-
-## 🧪 How It Works
-
-### Global Setup (Runs Once Before All Tests)
-
-1. **Wait for Database** - Ensures DB is ready
-2. **Run Migrations** - Applies latest schema
-3. **Reset Database** - Clears all test data (TRUNCATE)
-4. **Seed Database** - Creates test organizations, users, projects, seeds, phases
-5. **Authenticate Users** - Signs in test users and saves auth state
-
-### Test Execution
-
-Tests run **serially** (workers: 1) to avoid database conflicts. Each test:
-- Uses pre-seeded data from global setup
-- Authenticates using helper functions
-- Accesses test organization and its data
-- Cleans up after itself (if needed)
-
-### Global Teardown (Runs Once After All Tests)
-
-- Disconnects from database
-- Optionally cleans up test data (currently disabled for faster re-runs)
-
-## 📦 Using Fixtures
-
-Fixtures provide realistic test data without boilerplate.
-
-### Example: Create Test Project
+### Users & Organizations (`users.ts`)
 
 ```typescript
-import { getTestPrismaClient } from './helpers/database'
-import { createTestProject } from './fixtures/projects'
+import { createTestOrganization, TEST_USERS } from '../fixtures/users'
 
-test('should display project', async ({ page }) => {
-  const prisma = getTestPrismaClient()
-  const testOrg = await prisma.organization.findFirst({ where: { slug: 'test-org' } })
-
-  const project = await createTestProject(prisma, testOrg.id, 'DRAFT', {
-    title: 'My Test Project'
-  })
-
-  await page.goto(`/projects/${project.id}`)
-  await expect(page.locator(`text=${project.title}`)).toBeVisible()
+const org = await createTestOrganization(prisma, {
+  name: 'Test Org',
+  slug: 'test-org',
 })
+
+// Access predefined users
+const adminId = TEST_USERS.admin.id
 ```
 
-### Example: Use Pre-seeded Data
+### Projects (`projects.ts`)
 
 ```typescript
-import { getTestPrismaClient } from './helpers/database'
+import { createTestProject, PROJECT_SCENARIOS } from '../fixtures/projects'
 
-test('should list projects', async ({ page }) => {
-  // Data is already seeded by global-setup
-  const prisma = getTestPrismaClient()
-  const projects = await prisma.project.findMany({
-    where: { organization: { slug: 'test-org' } }
-  })
-
-  await page.goto('/projects')
-
-  for (const project of projects) {
-    await expect(page.locator(`text=${project.title}`)).toBeVisible()
-  }
+const project = await createTestProject(prisma, orgId, 'DRAFT', {
+  title: 'My Test Project',
 })
 ```
 
-## 🔐 Authentication
-
-### Using Auth Helpers
+### Seeds (`seeds.ts`)
 
 ```typescript
-import { signInAsAdmin, signInAsStaff, signOut } from './helpers/auth'
+import { createTestSeed } from '../fixtures/seeds'
 
-test('admin can access admin panel', async ({ page }) => {
-  await signInAsAdmin(page)
-  await page.goto('/admin')
-  await expect(page).toHaveURL('/admin')
-})
-
-test('staff cannot access admin panel', async ({ page }) => {
-  await signInAsStaff(page)
-  await page.goto('/admin')
-  await expect(page).toHaveURL(/\/dashboard/) // Redirected
+const seed = await createTestSeed(prisma, orgId, {
+  title: 'Test Seed',
+  description: 'A test project idea',
 })
 ```
 
-### Available Auth Functions
-
-- `signInAsAdmin(page)` - Sign in as admin user
-- `signInAsStaff(page)` - Sign in as staff user
-- `signInAsParticipant(page)` - Sign in as participant user
-- `signOut(page)` - Sign out current user
-- `isAuthenticated(page)` - Check if user is authenticated
-- `ensureAuthenticated(page, role)` - Sign in if not already authenticated
-
-## 🗄️ Database Helpers
-
-### Available Functions
-
-- `getTestPrismaClient()` - Get Prisma client for test database
-- `connectDatabase()` - Connect to database
-- `disconnectDatabase()` - Disconnect from database
-- `resetDatabase()` - **⚠️ DANGER:** Deletes all data (TRUNCATE CASCADE)
-- `cleanTestData()` - Remove only test-specific data (softer cleanup)
-- `waitForDatabase(maxAttempts, delayMs)` - Wait for DB to be ready
-- `migrateDatabase()` - Run Prisma migrations
-- `seedDatabase()` - Seed database with test fixtures
-
-### Safety Mechanisms
-
-The `resetDatabase()` function has safety checks:
-- Database URL must contain "test" OR
-- `ALLOW_DB_RESET=1` must be set
-
-This prevents accidentally wiping production data.
-
-## 🎭 Test Scenarios
-
-### Predefined Fixtures
-
-Fixtures include realistic scenarios you can use directly:
-
-**Organizations:**
-- `ORGANIZATION_SCENARIOS.basicOrg` - BASIC tier organization
-- `ORGANIZATION_SCENARIOS.proOrg` - PRO tier organization
-- `ORGANIZATION_SCENARIOS.freeOrg` - FREE tier organization
-
-**Projects:**
-- `PROJECT_SCENARIOS.draftProject` - Draft status project
-- `PROJECT_SCENARIOS.conceptProject` - Concept status project
-- `PROJECT_SCENARIOS.planningProject` - Planning status project
-
-**Seeds:**
-- `SEED_SCENARIOS.savedSeed` - High-quality saved seed
-- `SEED_SCENARIOS.dismissedSeed` - Dismissed seed
-- `SEED_SCENARIOS.highPotentialSeed` - Very high approval likelihood
-
-**Programmes:**
-- `PROGRAMME_SCENARIOS.draftProgramme` - Draft programme
-- `PROGRAMME_SCENARIOS.publishedProgramme` - Published programme
-
-## 🔄 Background Job Testing
-
-For tests involving background jobs (Inngest), use polling:
+### Programmes & Phases (`phases.ts`)
 
 ```typescript
-test('food search completes', async ({ page }) => {
-  // Trigger search
-  await page.getByTestId('search-button').click()
+import { createTestProgramme } from '../fixtures/phases'
 
-  // Poll for results (max 60 seconds)
-  let attempts = 0
-  const maxAttempts = 30
-  let resultsVisible = false
-
-  while (attempts < maxAttempts && !resultsVisible) {
-    try {
-      await page.getByTestId('results').waitFor({ state: 'visible', timeout: 2000 })
-      resultsVisible = true
-    } catch {
-      attempts++
-      await page.waitForTimeout(2000)
-    }
-  }
-
-  expect(resultsVisible).toBe(true)
+const programme = await createTestProgramme(prisma, orgId, projectId, {
+  name: 'Test Programme',
+  status: 'DRAFT',
 })
 ```
 
-## 🐛 Debugging
+---
 
-### View Test Database
+## Writing Tests
 
-```bash
-# Connect to test database
-psql openhorizon_test
-
-# View organizations
-SELECT * FROM organizations;
-
-# View projects
-SELECT * FROM projects;
-
-# View user memberships
-SELECT * FROM user_organization_memberships;
-```
-
-### Screenshots and Videos
-
-Failed tests automatically capture:
-- Screenshots (saved to `test-results/`)
-- Videos (saved to `test-results/`)
-- Traces (for Playwright Inspector)
-
-View traces:
-```bash
-npx playwright show-trace test-results/.../trace.zip
-```
-
-### Verbose Logging
-
-Enable debug logging:
-```bash
-DEBUG=1 npx playwright test
-```
-
-## 📝 Writing New Tests
-
-### Basic Template
+### Basic Test
 
 ```typescript
 import { test, expect } from '@playwright/test'
-import { signInAsAdmin } from './helpers/auth'
 
-test.describe('Feature Name', () => {
-  test.beforeEach(async ({ page }) => {
-    await signInAsAdmin(page)
-  })
-
-  test('should do something', async ({ page }) => {
-    await page.goto('/feature')
-    await expect(page.locator('text=Expected Content')).toBeVisible()
-  })
+test('my feature works', async ({ page }) => {
+  await page.goto('/my-page')
+  await page.click('button:has-text("Submit")')
+  await expect(page.locator('.success')).toBeVisible()
 })
 ```
 
-### With Custom Fixtures
+### Using Pre-Authenticated State
 
 ```typescript
-import { test, expect } from '@playwright/test'
-import { signInAsAdmin } from './helpers/auth'
+test.use({ storageState: '.auth/admin-user.json' })
+
+test('admin dashboard', async ({ page }) => {
+  await page.goto('/dashboard')
+  // Already authenticated!
+})
+```
+
+### Using Fixtures
+
+```typescript
 import { getTestPrismaClient } from './helpers/database'
-import { createTestProject } from './fixtures/projects'
+import { createTestSeed } from './fixtures/seeds'
 
-test.describe('Projects', () => {
-  let projectId: string
+test('displays seeds', async ({ page }) => {
+  const prisma = getTestPrismaClient()
+  const org = await prisma.organization.findFirst({ where: { slug: 'test-org' } })
 
-  test.beforeAll(async () => {
-    const prisma = getTestPrismaClient()
-    const testOrg = await prisma.organization.findFirst({
-      where: { slug: 'test-org' }
-    })
-
-    const project = await createTestProject(prisma, testOrg.id, 'DRAFT')
-    projectId = project.id
+  await createTestSeed(prisma, org.id, {
+    title: 'Test Seed',
+    isSaved: true,
   })
 
-  test.beforeEach(async ({ page }) => {
-    await signInAsAdmin(page)
-  })
-
-  test('should display project', async ({ page }) => {
-    await page.goto(`/projects/${projectId}`)
-    await expect(page.locator('.project-title')).toBeVisible()
-  })
+  await page.goto('/seeds')
+  await expect(page.locator('text=Test Seed')).toBeVisible()
 })
 ```
 
-## 🚨 Common Issues
+---
 
-### Issue: Tests fail with "organization not found"
+## Troubleshooting
 
-**Solution:** Ensure global setup ran successfully. Check:
+### "Database URL not configured"
+
 ```bash
-# Verify test org exists
-psql openhorizon_test -c "SELECT * FROM organizations WHERE slug = 'test-org';"
+cp .env.test.local.example .env.test.local
+# Edit .env.test.local with your database URL
 ```
 
-If missing, run:
+### "@prisma/client not found"
+
 ```bash
-npx playwright test --global-setup=./tests/global-setup.ts
+cd app && npm install && npx prisma generate
 ```
 
-### Issue: "Clerk user not found" errors
+### "Safety check: Database URL must contain 'test'"
 
-**Solution:** Create test users in Clerk dashboard and update `.env.test` with their IDs.
-
-### Issue: Database permission errors
-
-**Solution:** Ensure your database user has TRUNCATE privileges:
-```sql
-GRANT TRUNCATE ON ALL TABLES IN SCHEMA public TO your_user;
+Make sure your database URL contains "test":
+```env
+TEST_DATABASE_URL="postgresql://user:pass@localhost:5432/openhorizon_test"
 ```
 
-### Issue: Tests hang or timeout
+### Authentication Fails
 
-**Solution:** Check that background jobs (Inngest) are running or mocked properly. Increase timeout:
+1. Verify test users exist in Clerk Dashboard
+2. Copy correct User IDs (not emails!)
+3. Update `.env.test.local`
+
+---
+
+## Best Practices
+
+### Test Isolation
+
+✅ Use unique data per test
 ```typescript
-test('slow test', async ({ page }) => {
-  test.setTimeout(120000) // 2 minutes
-  // ...
-})
+const title = `Test ${Date.now()}`
 ```
 
-## 📚 Resources
+❌ Don't rely on shared state
 
-- [Playwright Documentation](https://playwright.dev)
-- [Prisma Documentation](https://www.prisma.io/docs)
-- [Clerk Testing Guide](https://clerk.com/docs/testing)
-- [Inngest Testing](https://www.inngest.com/docs/testing)
+### Selectors
 
-## ✅ Acceptance Criteria Met
+✅ Use semantic selectors
+```typescript
+await page.click('button:has-text("Submit")')
+```
 
-This infrastructure satisfies all requirements from Issue #129:
+❌ Don't use fragile CSS
+```typescript
+await page.click('.btn.mt-4.px-6') // Breaks easily
+```
 
-- ✅ Test data seed functions for all entities
-- ✅ Playwright global setup seeds database
-- ✅ Playwright global teardown cleans up
-- ✅ Reusable fixtures for common scenarios
-- ✅ Authentication helpers work in E2E context
-- ✅ Tests can create realistic, varied data
-- ✅ Setup/teardown runs without errors
-- ✅ Idempotent design (can re-run safely)
+### Waiting
+
+✅ Use built-in waiting
+```typescript
+await expect(page.locator('.success')).toBeVisible({ timeout: 5000 })
+```
+
+❌ Don't use arbitrary timeouts
+```typescript
+await page.waitForTimeout(3000) // Slow and unreliable
+```
+
+---
+
+## Additional Resources
+
+- [Playwright Documentation](https://playwright.dev/)
+- [Clerk Testing Guide](https://clerk.com/docs/testing/overview)
+- [Prisma Testing Guide](https://www.prisma.io/docs/guides/testing)
+
+---
+
+**Last Updated:** 2026-01-17
+**Maintained by:** Open Horizon Team

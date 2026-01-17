@@ -200,60 +200,72 @@ export async function migrateDatabase(): Promise<void> {
 export async function seedDatabase(): Promise<void> {
   console.log('[DB] Seeding database...')
 
-  // Import and run fixture functions
-  const { createTestOrganization, createTestUserMembership, TEST_USERS } = await import(
-    '../fixtures/users'
-  )
-  const { createTestProject, PROJECT_SCENARIOS } = await import('../fixtures/projects')
-  const { createTestSeed, SEED_SCENARIOS } = await import('../fixtures/seeds')
-  const { createTestProgramme, PROGRAMME_SCENARIOS } = await import('../fixtures/phases')
+  try {
+    // Import and run fixture functions
+    const { createTestOrganization, createTestUserMembership, TEST_USERS } = await import(
+      '../fixtures/users'
+    )
+    const { createTestProject, PROJECT_SCENARIOS } = await import('../fixtures/projects')
+    const { createTestSeed, SEED_SCENARIOS } = await import('../fixtures/seeds')
+    const { createTestProgramme, PROGRAMME_SCENARIOS } = await import('../fixtures/phases')
 
-  const prisma = getTestPrismaClient()
+    const prisma = getTestPrismaClient()
 
-  // 1. Create test organization
-  const testOrg = await createTestOrganization(prisma, {
-    name: 'Test Organization',
-    slug: 'test-org',
-  })
-  console.log('[DB]   ✓ Created test organization')
-
-  // 2. Create test user memberships
-  for (const [key, user] of Object.entries(TEST_USERS)) {
-    await createTestUserMembership(prisma, user.id, testOrg.id, user.role)
-    console.log(`[DB]   ✓ Created ${key} user membership`)
-  }
-
-  // 3. Create test projects
-  for (const [key, scenario] of Object.entries(PROJECT_SCENARIOS)) {
-    await createTestProject(prisma, testOrg.id, scenario.status, {
-      title: scenario.title,
-      projectDna: scenario.projectDna,
-      createdByUserId: TEST_USERS.admin.id,
+    // 1. Create test organization
+    const testOrg = await createTestOrganization(prisma, {
+      name: 'Test Organization',
+      slug: 'test-org',
     })
-    console.log(`[DB]   ✓ Created ${key}`)
-  }
+    console.log('[DB]   ✓ Created test organization')
 
-  // 4. Create test seeds
-  for (const [key, scenario] of Object.entries(SEED_SCENARIOS)) {
-    await createTestSeed(prisma, testOrg.id, {
-      title: scenario.title,
-      description: scenario.description,
-      createdByUserId: TEST_USERS.admin.id,
-    })
-    console.log(`[DB]   ✓ Created ${key}`)
-  }
+    // 2. Create test user memberships
+    for (const [key, user] of Object.entries(TEST_USERS)) {
+      await createTestUserMembership(prisma, user.id, testOrg.id, user.role)
+      console.log(`[DB]   ✓ Created ${key} user membership`)
+    }
 
-  // 5. Create test programmes with phases
-  const testProject = await prisma.project.findFirst({
-    where: { tenantId: testOrg.id, status: 'DRAFT' },
-  })
-
-  if (testProject) {
-    for (const [key, scenario] of Object.entries(PROGRAMME_SCENARIOS)) {
-      await createTestProgramme(prisma, testOrg.id, testProject.id, scenario)
+    // 3. Create test projects
+    for (const [key, scenario] of Object.entries(PROJECT_SCENARIOS)) {
+      await createTestProject(prisma, testOrg.id, scenario.status, {
+        title: scenario.title,
+        projectDna: scenario.projectDna,
+        createdByUserId: TEST_USERS.admin.id,
+      })
       console.log(`[DB]   ✓ Created ${key}`)
     }
-  }
 
-  console.log('[DB] ✓ Database seeding complete')
+    // 4. Create test seeds
+    for (const [key, scenario] of Object.entries(SEED_SCENARIOS)) {
+      await createTestSeed(prisma, testOrg.id, {
+        title: scenario.title,
+        description: scenario.description,
+        createdByUserId: TEST_USERS.admin.id,
+      })
+      console.log(`[DB]   ✓ Created ${key}`)
+    }
+
+    // 5. Create test programmes with phases (if scenarios exist)
+    const testProject = await prisma.project.findFirst({
+      where: { tenantId: testOrg.id, status: 'DRAFT' },
+    })
+
+    if (testProject) {
+      const programmeScenarios = Object.entries(PROGRAMME_SCENARIOS)
+      if (programmeScenarios.length > 0) {
+        for (const [key, scenario] of programmeScenarios) {
+          await createTestProgramme(prisma, testOrg.id, testProject.id, scenario)
+          console.log(`[DB]   ✓ Created ${key}`)
+        }
+      } else {
+        console.log('[DB]   ℹ No programme scenarios to create')
+      }
+    } else {
+      console.log('[DB]   ⚠ No DRAFT project found, skipping programme creation')
+    }
+
+    console.log('[DB] ✓ Database seeding complete')
+  } catch (error) {
+    console.error('[DB] ✗ Database seeding failed:', error)
+    throw error
+  }
 }
