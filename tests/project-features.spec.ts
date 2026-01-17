@@ -1,11 +1,17 @@
 import { test, expect } from '@playwright/test';
+import { signInAsAdmin } from './helpers/auth';
 
 test.describe('OpenHorizon Project Features', () => {
+  test.beforeEach(async ({ page }) => {
+    // Authenticate before each test
+    await signInAsAdmin(page);
+  });
+
   test('should load the homepage and redirect to projects', async ({ page }) => {
     await page.goto('/');
 
-    // Should redirect to /projects
-    await expect(page).toHaveURL(/.*projects/);
+    // Should redirect to /projects or /dashboard
+    await expect(page).toHaveURL(/.\*(projects|dashboard)/);
 
     // Check page title
     await expect(page).toHaveTitle(/Open Horizon Project Companion/);

@@ -1,17 +1,23 @@
 import { test, expect } from '@playwright/test';
+import { signInAsAdmin } from './helpers/auth';
 
 /**
  * Week 1 Sprint Feature Verification Tests
  * Tests for Issues #86, #87, #88 deployed to production
  */
 
-const APP_URL = process.env.APP_URL || 'https://oh.153.se';
+const APP_URL = process.env.BASE_URL || 'https://oh.153.se';
 
 test.describe('Issue #86: Food Agent UI Integration', () => {
+  test.beforeEach(async ({ page }) => {
+    // Authenticate before each test
+    await signInAsAdmin(page);
+  });
+
   test('food search panel is accessible on FOOD phase', async ({ page }) => {
-    // Navigate to app (will redirect to auth if not logged in)
+    // Navigate to app (now authenticated)
     await page.goto(`${APP_URL}/pipeline/projects`);
-    await page.waitForTimeout(3000);
+    await page.waitForLoadState('networkidle');
 
     const url = page.url();
     console.log(`Current URL: ${url}`);
@@ -31,9 +37,13 @@ test.describe('Issue #86: Food Agent UI Integration', () => {
 });
 
 test.describe('Issue #88: Budget Tracking Dashboard', () => {
+  test.beforeEach(async ({ page }) => {
+    await signInAsAdmin(page);
+  });
+
   test('budget tracking tab is present on project detail page', async ({ page }) => {
     await page.goto(`${APP_URL}/pipeline/projects`);
-    await page.waitForTimeout(3000);
+    await page.waitForLoadState('networkidle');
 
     // Take screenshot
     await page.screenshot({
@@ -51,9 +61,13 @@ test.describe('Issue #88: Budget Tracking Dashboard', () => {
 });
 
 test.describe('Issue #87: Accommodation Agent Enhancement', () => {
+  test.beforeEach(async ({ page }) => {
+    await signInAsAdmin(page);
+  });
+
   test('accommodation search panel exists', async ({ page }) => {
     await page.goto(`${APP_URL}/pipeline/projects`);
-    await page.waitForTimeout(3000);
+    await page.waitForLoadState('networkidle');
 
     // Take screenshot
     await page.screenshot({
