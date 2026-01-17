@@ -10,9 +10,15 @@
     "dev:landing": "npm run dev --workspace=landing",
     "dev:app": "npm run dev --workspace=app",
     "build:landing": "npm run build --workspace=landing",
-    "build:app": "npm run build --workspace=app"
+    "build:app": "npm run build --workspace=app",
+    "smoke-test": "tsx scripts/smoke-test.ts",
+    "smoke-test:prod": "tsx scripts/smoke-test.ts https://app.openhorizon.cc",
+    "smoke-test:staging": "tsx scripts/smoke-test.ts https://oh.153.se"
   },
   "dependencies": {
     "autoprefixer": "^10.4.23"
+  },
+  "devDependencies": {
+    "tsx": "^4.7.0"
   }
 }
