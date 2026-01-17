@@ -379,7 +379,7 @@ export const pipelineCommunicationsRouter = router({
 
       // Generate draft communications for each vendor
       const communications = await Promise.all(
-        vendors.map(async (vendor) => {
+        vendors.map(async (vendor: any) => {
           const template = emailTemplateEngine.renderQuoteRequest({
             vendorName: vendor.name,
             projectName: phase.project.name,

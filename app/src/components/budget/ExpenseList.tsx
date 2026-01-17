@@ -8,6 +8,18 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { formatCurrency } from '@/types/budget'
 // Removed invalid Prisma type import from '@prisma/client'
 import { MoreHorizontal, FileText, Pencil, Trash2 } from 'lucide-react'
+
+// ExpenseCategory enum from Prisma schema
+// Defined locally to avoid Prisma client generation issues
+enum ExpenseCategory {
+  ACCOMMODATION = 'ACCOMMODATION',
+  TRAVEL = 'TRAVEL',
+  FOOD = 'FOOD',
+  ACTIVITIES = 'ACTIVITIES',
+  INSURANCE = 'INSURANCE',
+  EMERGENCY = 'EMERGENCY',
+  OTHER = 'OTHER',
+}
 import {
   DropdownMenu,
   DropdownMenuContent,

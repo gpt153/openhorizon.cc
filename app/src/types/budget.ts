@@ -1,5 +1,17 @@
 // Removed invalid Prisma type import from '@prisma/client'
 
+// ExpenseCategory enum from Prisma schema
+// Defined locally to avoid Prisma client generation issues
+enum ExpenseCategory {
+  ACCOMMODATION = 'ACCOMMODATION',
+  TRAVEL = 'TRAVEL',
+  FOOD = 'FOOD',
+  ACTIVITIES = 'ACTIVITIES',
+  INSURANCE = 'INSURANCE',
+  EMERGENCY = 'EMERGENCY',
+  OTHER = 'OTHER',
+}
+
 export interface Expense {
   id: string
   tenantId: string

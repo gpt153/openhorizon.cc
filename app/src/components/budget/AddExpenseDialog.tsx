@@ -35,6 +35,18 @@ import { trpc } from '@/lib/trpc/client'
 import { toast } from 'sonner'
 import { Plus } from 'lucide-react'
 
+// ExpenseCategory enum from Prisma schema
+// Defined locally to avoid Prisma client generation issues
+enum ExpenseCategory {
+  ACCOMMODATION = 'ACCOMMODATION',
+  TRAVEL = 'TRAVEL',
+  FOOD = 'FOOD',
+  ACTIVITIES = 'ACTIVITIES',
+  INSURANCE = 'INSURANCE',
+  EMERGENCY = 'EMERGENCY',
+  OTHER = 'OTHER',
+}
+
 const expenseSchema = z.object({
   phaseId: z.string().uuid(),
   amount: z.number().positive('Amount must be positive'),

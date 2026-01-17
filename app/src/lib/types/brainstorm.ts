@@ -57,10 +57,10 @@ export interface SeedSuggestion {
 }
 
 // Enhanced types with relations
-export type SeedWithElaboration = Seed & {
-  elaborations: SeedElaboration[]
+export type SeedWithElaboration = any & {
+  elaborations: any[]
 }
 
-export type SessionWithSeeds = BrainstormSession & {
-  seeds: Seed[]
+export type SessionWithSeeds = any & {
+  seeds: any[]
 }

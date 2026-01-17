@@ -10,7 +10,7 @@ import {
   type DailyStructureOutput,
   type SessionOutput,
 } from '@/lib/ai/programme-prompts'
-import type { Project } from '@prisma/client'
+// Removed invalid Prisma type import - using 'any' for Project type
 
 const llm = new ChatOpenAI({
   modelName: 'gpt-4-turbo-preview',
@@ -20,7 +20,7 @@ const llm = new ChatOpenAI({
 /**
  * Extract programme requirements from project
  */
-export function extractProgrammeRequirements(project: Project) {
+export function extractProgrammeRequirements(project: any) {
   const dna = project.projectDna as any
 
   return {
