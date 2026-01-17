@@ -1,11 +1,13 @@
 import { test, expect } from '@playwright/test'
-import { signIn, signOut, TEST_USERS } from '../../tests/helpers/auth'
+import { signIn, signOut } from '../../../tests/helpers/auth'
 
 // Test configuration - use actual test users from fixtures
 const TEST_ADMIN = {
   email: process.env.TEST_ADMIN_EMAIL || 'admin@test.openhorizon.cc',
   password: process.env.TEST_ADMIN_PASSWORD || 'TestPassword123!',
 }
+
+const TEST_USER = TEST_ADMIN // Use admin as default test user for signup tests
 
 test.describe('Authentication Flow', () => {
   test.describe('Sign Up Flow', () => {
