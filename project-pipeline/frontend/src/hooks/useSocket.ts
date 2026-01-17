@@ -53,7 +53,9 @@ export function useSocket(): UseSocketReturn {
 
       newSocket.on('connect_error', (err) => {
         setStatus('error')
-        setError(err.message || 'Connection failed')
+        const errorMessage = err.message || 'Failed to connect to server'
+        setError(`WebSocket connection failed: ${errorMessage}. Please check your network connection.`)
+        console.error('[useSocket] Connection error:', err)
       })
 
       newSocket.on('error', (err) => {
