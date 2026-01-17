@@ -1,4 +1,6 @@
 import { test, expect } from '@playwright/test'
+import { signInAsAdmin } from '../helpers/auth'
+import { getTestPrismaClient } from '../helpers/database'
 
 /**
  * E2E Test Suite: Project Generation (Seed → Project Conversion)
@@ -16,10 +18,29 @@ import { test, expect } from '@playwright/test'
  * Related: Issue #131 (E2E Complete User Flows)
  */
 
-const APP_URL = process.env.APP_URL || 'http://localhost:5174'
+const APP_URL = process.env.BASE_URL || 'http://localhost:3000'
 
 test.describe('Project Generation - Seed to Project Conversion', () => {
+  let testOrgId: string
+
+  test.beforeAll(async () => {
+    // Get test organization ID from database
+    const prisma = getTestPrismaClient()
+    const testOrg = await prisma.organization.findFirst({
+      where: { slug: 'test-org' },
+    })
+
+    if (!testOrg) {
+      throw new Error('Test organization not found. Did global setup run?')
+    }
+
+    testOrgId = testOrg.id
+  })
+
   test.beforeEach(async ({ page }) => {
+    // Authenticate using test helper
+    await signInAsAdmin(page)
+
     // Navigate to seeds page
     await page.goto(`${APP_URL}/seeds`)
     await page.waitForLoadState('networkidle')
@@ -438,6 +459,11 @@ test.describe('Project Generation - Seed to Project Conversion', () => {
 })
 
 test.describe('Project Generation - Edge Cases', () => {
+  test.beforeEach(async ({ page }) => {
+    // Authenticate for edge case tests
+    await signInAsAdmin(page)
+  })
+
   test('should handle concurrent conversions', async ({ browser }) => {
     // Create two contexts to simulate concurrent users
     const context1 = await browser.newContext()

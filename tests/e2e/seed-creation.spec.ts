@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test'
+import { signInAsAdmin } from '../helpers/auth'
 
 /**
  * E2E Test Suite: Seed Creation (Brainstorming UI)
@@ -17,11 +18,14 @@ import { test, expect } from '@playwright/test'
  * Related: Issue #131 (E2E Complete User Flows)
  */
 
-const APP_URL = process.env.APP_URL || 'http://localhost:5174'
+const APP_URL = process.env.BASE_URL || 'http://localhost:3000'
 
 test.describe('Seed Creation - Brainstorming UI', () => {
   test.beforeEach(async ({ page }) => {
-    // Authenticated via auth.setup.ts
+    // Authenticate using test helper
+    await signInAsAdmin(page)
+
+    // Navigate to seeds generation page
     await page.goto(`${APP_URL}/seeds/generate`)
     await page.waitForLoadState('networkidle')
   })
@@ -279,6 +283,11 @@ test.describe('Seed Creation - Brainstorming UI', () => {
 })
 
 test.describe('Seed Creation - Edge Cases', () => {
+  test.beforeEach(async ({ page }) => {
+    // Authenticate for edge case tests
+    await signInAsAdmin(page)
+  })
+
   test('should handle very long prompts', async ({ page }) => {
     await page.goto(`${APP_URL}/seeds/generate`)
 

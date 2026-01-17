@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test'
-import { signInAsAdmin } from '../../tests/helpers/auth'
-import { getTestPrismaClient } from '../../tests/helpers/database'
-import { createTestPipelineProject } from '../../tests/fixtures/phases'
+import { signInAsAdmin } from '../../../tests/helpers/auth'
+import { getTestPrismaClient } from '../../../tests/helpers/database'
+import { createTestPipelineProject } from '../../../tests/fixtures/phases'
 
 /**
  * E2E Test Suite: Vendor Search Background Jobs
