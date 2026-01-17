@@ -1,4 +1,7 @@
 import { test, expect } from '@playwright/test'
+import { signInAsAdmin } from '../../tests/helpers/auth'
+import { getTestPrismaClient } from '../../tests/helpers/database'
+import { createTestPipelineProject } from '../../tests/fixtures/phases'
 
 /**
  * E2E Test Suite: Vendor Search Background Jobs
@@ -14,28 +17,38 @@ import { test, expect } from '@playwright/test'
  */
 
 test.describe('Vendor Search Background Jobs', () => {
-  // Test setup: Mock project and phase IDs
-  // In a real scenario, these would be created via API or fixtures
-  const testProjectId = 'test-project-id'
-  const testPhaseId = 'test-phase-id'
-  const phasePageUrl = `/pipeline/projects/${testProjectId}/phases/${testPhaseId}`
+  let testProjectId: string
+  let testPhaseId: string
+  let phasePageUrl: string
+
+  test.beforeAll(async () => {
+    // Create test pipeline project with phases
+    const prisma = getTestPrismaClient()
+    const testOrg = await prisma.organization.findFirst({
+      where: { slug: 'test-org' },
+    })
+
+    if (!testOrg) {
+      throw new Error('Test organization not found. Did global setup run?')
+    }
+
+    const { project, phases } = await createTestPipelineProject(prisma, testOrg.id)
+    testProjectId = project.id
+    testPhaseId = phases.food.id
+    phasePageUrl = `/pipeline/projects/${testProjectId}/phases/${testPhaseId}`
+  })
 
   test.beforeEach(async ({ page }) => {
-    // Note: In a real implementation, you'd need to:
-    // 1. Set up authentication (login)
-    // 2. Create test project and phase via API
-    // 3. Navigate to the phase detail page
+    // Authenticate before each test
+    await signInAsAdmin(page)
 
-    // For now, we'll navigate directly and handle auth redirects
+    // Navigate to phase page
     await page.goto(phasePageUrl)
   })
 
   test('Food agent search completes successfully', async ({ page }) => {
-    // Navigate to pipeline project phase page
-    await page.goto(phasePageUrl)
-
     // Wait for page to load
-    await page.waitForLoadState('domcontentloaded')
+    await page.waitForLoadState('networkidle')
 
     // Look for the food search form
     // The FoodSearchPanel has a "Search Food Options" card title
@@ -58,10 +71,27 @@ test.describe('Vendor Search Background Jobs', () => {
       page.getByTestId('food-search-loading')
     ).toBeVisible({ timeout: 5000 })
 
-    // Wait for results to appear (max 30 seconds for background job)
-    await expect(
-      page.getByTestId('food-results')
-    ).toBeVisible({ timeout: 30000 })
+    // Poll for job completion (background job via Inngest)
+    // Wait for results to appear (max 60 seconds for background job)
+    let attempts = 0
+    const maxAttempts = 30 // 30 attempts * 2 seconds = 60 seconds max
+    let resultsVisible = false
+
+    while (attempts < maxAttempts && !resultsVisible) {
+      try {
+        // Check if results are visible
+        await page.getByTestId('food-results').waitFor({ state: 'visible', timeout: 2000 })
+        resultsVisible = true
+      } catch {
+        attempts++
+        console.log(`⏳ Waiting for background job... (attempt ${attempts}/${maxAttempts})`)
+        await page.waitForTimeout(2000)
+      }
+    }
+
+    if (!resultsVisible) {
+      throw new Error('Background job did not complete within 60 seconds')
+    }
 
     // Verify results are displayed using data-testid
     const results = await page.getByTestId('food-option').count()

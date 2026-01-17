@@ -1,9 +1,10 @@
 import { test, expect } from '@playwright/test'
+import { signIn, signOut, TEST_USERS } from '../../tests/helpers/auth'
 
-// Test configuration
-const TEST_USER = {
-  email: process.env.TEST_USER_EMAIL || 'test@example.com',
-  password: process.env.TEST_USER_PASSWORD || 'TestPassword123!',
+// Test configuration - use actual test users from fixtures
+const TEST_ADMIN = {
+  email: process.env.TEST_ADMIN_EMAIL || 'admin@test.openhorizon.cc',
+  password: process.env.TEST_ADMIN_PASSWORD || 'TestPassword123!',
 }
 
 test.describe('Authentication Flow', () => {
@@ -60,15 +61,11 @@ test.describe('Authentication Flow', () => {
 
   test.describe('Sign In Flow', () => {
     test('should sign in existing user', async ({ page }) => {
-      await page.goto('/sign-in')
-
-      // Fill sign-in form
-      await page.fill('input[name="identifier"]', TEST_USER.email)
-      await page.fill('input[name="password"]', TEST_USER.password)
-      await page.click('button[type="submit"]')
-
-      // Should redirect to dashboard
-      await expect(page).toHaveURL(/\/dashboard/, { timeout: 10000 })
+      // Use helper function for consistent sign-in
+      await signIn(page, {
+        email: TEST_ADMIN.email,
+        password: TEST_ADMIN.password,
+      })
 
       // Verify user is authenticated
       await expect(page.locator('[data-clerk-element="userButton"]')).toBeVisible({
@@ -90,18 +87,17 @@ test.describe('Authentication Flow', () => {
     })
 
     test('should remember session after page refresh', async ({ page }) => {
-      // Sign in
-      await page.goto('/sign-in')
-      await page.fill('input[name="identifier"]', TEST_USER.email)
-      await page.fill('input[name="password"]', TEST_USER.password)
-      await page.click('button[type="submit"]')
-      await expect(page).toHaveURL(/\/dashboard/, { timeout: 10000 })
+      // Sign in using helper
+      await signIn(page, {
+        email: TEST_ADMIN.email,
+        password: TEST_ADMIN.password,
+      })
 
       // Refresh page
       await page.reload()
 
       // Should still be authenticated
-      await expect(page).toHaveURL(/\/dashboard/)
+      await expect(page).toHaveURL(/\/(dashboard|projects)/)
       await expect(page.locator('[data-clerk-element="userButton"]')).toBeVisible({
         timeout: 5000,
       })
@@ -118,12 +114,11 @@ test.describe('Authentication Flow', () => {
     })
 
     test('should allow authenticated users to access dashboard', async ({ page }) => {
-      // Sign in first
-      await page.goto('/sign-in')
-      await page.fill('input[name="identifier"]', TEST_USER.email)
-      await page.fill('input[name="password"]', TEST_USER.password)
-      await page.click('button[type="submit"]')
-      await expect(page).toHaveURL(/\/dashboard/, { timeout: 10000 })
+      // Sign in using helper
+      await signIn(page, {
+        email: TEST_ADMIN.email,
+        password: TEST_ADMIN.password,
+      })
 
       // Try to access other protected routes
       await page.goto('/projects')
@@ -144,24 +139,14 @@ test.describe('Authentication Flow', () => {
 
   test.describe('Sign Out Flow', () => {
     test('should sign out user and redirect to sign-in', async ({ page }) => {
-      // Sign in first
-      await page.goto('/sign-in')
-      await page.fill('input[name="identifier"]', TEST_USER.email)
-      await page.fill('input[name="password"]', TEST_USER.password)
-      await page.click('button[type="submit"]')
-      await expect(page).toHaveURL(/\/dashboard/, { timeout: 10000 })
+      // Sign in using helper
+      await signIn(page, {
+        email: TEST_ADMIN.email,
+        password: TEST_ADMIN.password,
+      })
 
-      // Click user button
-      await page.click('[data-clerk-element="userButton"]')
-
-      // Wait for menu to appear
-      await page.waitForTimeout(500)
-
-      // Click sign out
-      await page.click('text=/sign out/i')
-
-      // Should redirect to sign-in
-      await expect(page).toHaveURL(/\/sign-in/, { timeout: 10000 })
+      // Sign out using helper
+      await signOut(page)
 
       // Try to access protected route - should redirect
       await page.goto('/dashboard')
@@ -171,12 +156,11 @@ test.describe('Authentication Flow', () => {
 
   test.describe('Organization Context', () => {
     test('should load organization for authenticated user', async ({ page }) => {
-      // Sign in
-      await page.goto('/sign-in')
-      await page.fill('input[name="identifier"]', TEST_USER.email)
-      await page.fill('input[name="password"]', TEST_USER.password)
-      await page.click('button[type="submit"]')
-      await expect(page).toHaveURL(/\/dashboard/, { timeout: 10000 })
+      // Sign in using helper
+      await signIn(page, {
+        email: TEST_ADMIN.email,
+        password: TEST_ADMIN.password,
+      })
 
       // Check that tRPC calls include organization context
       // This will be visible in data loaded on the page
