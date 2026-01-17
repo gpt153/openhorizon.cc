@@ -117,6 +117,42 @@ cd landing && npm run build
 cd app && npm run build
 ```
 
+### Smoke Tests
+
+Production smoke tests verify critical functionality after deployment.
+
+#### Running Smoke Tests
+
+```bash
+# Test against production
+npm run smoke-test:prod
+
+# Test against staging
+npm run smoke-test:staging
+
+# Test against local dev server (requires app running on :3000)
+npm run smoke-test
+```
+
+#### What Gets Tested
+
+The smoke test suite validates:
+
+- ✅ **Homepage Load** - HTTP 200, response time < 2s
+- ✅ **Authentication** - Clerk integration operational
+- ✅ **Authorization** - Protected routes enforce auth
+- ✅ **Database** - PostgreSQL connection healthy
+- ✅ **Background Jobs** - Inngest webhook endpoint responsive
+
+#### CI/CD Integration
+
+Smoke tests run automatically after production deployment. If any check fails:
+- ❌ Deployment marked as failed
+- 📋 Diagnostics automatically collected
+- 🚨 Alerts triggered (if configured)
+
+**Total execution time:** ~1-2 seconds
+
 ## 🐳 Docker Deployment
 
 ```bash
