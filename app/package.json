@@ -9,7 +9,9 @@
     "lint": "eslint",
     "test": "playwright test",
     "test:ui": "playwright test --ui",
-    "test:prod": "PLAYWRIGHT_TEST_BASE_URL=https://app.openhorizon.cc playwright test"
+    "test:prod": "PLAYWRIGHT_TEST_BASE_URL=https://app.openhorizon.cc playwright test",
+    "test:load": "K6_BIN=$HOME/bin/k6 ../scripts/load-test.sh",
+    "test:smoke": "BASE_URL=https://app.openhorizon.cc $HOME/bin/k6 run ../scripts/smoke-test.js"
   },
   "dependencies": {
     "@clerk/nextjs": "^6.36.3",
