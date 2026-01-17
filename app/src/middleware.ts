@@ -1,5 +1,6 @@
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'
 import { NextResponse } from 'next/server'
+import * as Sentry from '@sentry/nextjs'
 
 // Define public routes (accessible without authentication)
 const isPublicRoute = createRouteMatcher([
@@ -16,7 +17,7 @@ export default clerkMiddleware(async (auth, request) => {
   }
 
   // Protected routes - require authentication
-  const { userId } = await auth()
+  const { userId, orgId } = await auth()
 
   if (!userId) {
     // For API routes, return 401 Unauthorized
@@ -29,6 +30,27 @@ export default clerkMiddleware(async (auth, request) => {
     signInUrl.searchParams.set('redirect_url', request.url)
     return NextResponse.redirect(signInUrl)
   }
+
+  // Add user and organization context to Sentry
+  Sentry.setUser({
+    id: userId,
+  })
+
+  if (orgId) {
+    Sentry.setContext('organization', {
+      id: orgId,
+    })
+  }
+
+  // Add request context to Sentry
+  Sentry.setContext('request', {
+    url: request.url,
+    method: request.method,
+    headers: {
+      'user-agent': request.headers.get('user-agent'),
+      'referer': request.headers.get('referer'),
+    },
+  })
 
   // Authenticated - allow access
   return NextResponse.next()
