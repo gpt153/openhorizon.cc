@@ -16,6 +16,12 @@ Sentry.init({
   // Enable debug mode in development
   debug: process.env.NODE_ENV === 'development',
 
+  // Enhanced server-side integrations
+  integrations: [
+    new Sentry.Integrations.Http({ tracing: true }),
+    new Sentry.Integrations.Prisma({ client: undefined }), // Will be set when Prisma client is available
+  ],
+
   // Ignore certain errors
   beforeSend(event, hint) {
     // Filter out errors we don't care about
@@ -26,7 +32,27 @@ Sentry.init({
       if (error instanceof Error && error.message.includes('database') && process.env.CI) {
         return null;
       }
+
+      // Ignore Prisma errors during build
+      if (error instanceof Error && error.message.includes('PrismaClient') && process.env.CI) {
+        return null;
+      }
     }
+
+    // Add server context
+    event.contexts = {
+      ...event.contexts,
+      runtime: {
+        name: 'node',
+        version: process.version,
+      },
+      server: {
+        environment: process.env.NODE_ENV,
+        platform: process.platform,
+        uptime: process.uptime(),
+        memory: process.memoryUsage(),
+      },
+    };
 
     return event;
   },
