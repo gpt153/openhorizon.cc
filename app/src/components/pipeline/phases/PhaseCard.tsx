@@ -37,7 +37,7 @@ const phaseStatusColors: Record<string, string> = {
 }
 
 export function PhaseCard({ phase, projectId }: PhaseCardProps) {
-  const Icon = phaseIcons[phase.type] || phaseIcons.CUSTOM
+  const Icon = phaseIcons[phase.type as keyof typeof phaseIcons] || phaseIcons.CUSTOM
   const budgetAllocated = Number(phase.budgetAllocated)
   const budgetSpent = Number(phase.budgetSpent)
   const budgetPercentage = budgetAllocated > 0 ? (budgetSpent / budgetAllocated) * 100 : 0

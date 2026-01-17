@@ -1,0 +1,11 @@
+{
+  "issue": 97,
+  "status": "monitoring",
+  "scar_started": true,
+  "started_at": "2026-01-15T10:08:51Z",
+  "last_activity": "2026-01-15T10:08:31Z",
+  "last_comment": "⏱️ Still working... (2m 0s, 20 tool calls)",
+  "progress_estimate": "10%",
+  "retries": 0,
+  "errors": []
+}

@@ -2,19 +2,32 @@
 import { useState } from 'react'
 import { useMutation } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
-import { generateSeeds } from '../services/seeds.api'
+import { generateSeeds, createSeed } from '../services/seeds.api'
 import SeedGenerationForm from '../components/SeedGenerationForm'
 import toast from 'react-hot-toast'
 import type { GeneratedSeed } from '../types/seeds'
 
+type SeedWithState = GeneratedSeed & {
+  tempId: string
+  saved?: boolean
+  dismissed?: boolean
+}
+
 export default function SeedGeneration() {
   const navigate = useNavigate()
-  const [generatedSeeds, setGeneratedSeeds] = useState<GeneratedSeed[]>([])
+  const [generatedSeeds, setGeneratedSeeds] = useState<SeedWithState[]>([])
 
   const generateMutation = useMutation({
     mutationFn: generateSeeds,
     onSuccess: (data) => {
-      setGeneratedSeeds(data.seeds)
+      // Add temporary IDs to track seeds before they're saved
+      const seedsWithIds = data.seeds.map((seed, index) => ({
+        ...seed,
+        tempId: `temp-${Date.now()}-${index}`,
+        saved: false,
+        dismissed: false,
+      }))
+      setGeneratedSeeds(seedsWithIds)
       toast.success(`Generated ${data.seeds.length} seeds!`)
     },
     onError: (error: any) => {
@@ -22,13 +35,47 @@ export default function SeedGeneration() {
     },
   })
 
+  const saveMutation = useMutation({
+    mutationFn: createSeed,
+    onSuccess: () => {
+      toast.success('Seed saved to garden!')
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.error || 'Failed to save seed')
+    },
+  })
+
   const handleSubmit = (request: any) => {
     generateMutation.mutate(request)
+  }
+
+  const handleSaveSeed = (tempId: string) => {
+    const seed = generatedSeeds.find((s) => s.tempId === tempId)
+    if (!seed) return
+
+    // Save to backend
+    saveMutation.mutate(seed)
+
+    // Mark as saved in UI
+    setGeneratedSeeds((prev) =>
+      prev.map((s) => (s.tempId === tempId ? { ...s, saved: true } : s))
+    )
+  }
+
+  const handleDismissSeed = (tempId: string) => {
+    // Just mark as dismissed in UI (no backend call needed)
+    setGeneratedSeeds((prev) =>
+      prev.map((s) => (s.tempId === tempId ? { ...s, dismissed: true } : s))
+    )
+    toast.success('Seed dismissed')
   }
 
   const handleViewGarden = () => {
     navigate('/seeds')
   }
+
+  // Filter out dismissed seeds
+  const visibleSeeds = generatedSeeds.filter((s) => !s.dismissed)
 
   return (
     <div className="p-8">
@@ -53,11 +100,11 @@ export default function SeedGeneration() {
         </div>
 
         {/* Results */}
-        {generatedSeeds.length > 0 && (
+        {visibleSeeds.length > 0 && (
           <div className="space-y-6">
             <div className="flex items-center justify-between">
               <h2 className="text-2xl font-bold text-gray-900">
-                Generated Seeds ({generatedSeeds.length})
+                Generated Seeds ({visibleSeeds.length})
               </h2>
               <button
                 onClick={handleViewGarden}
@@ -68,9 +115,9 @@ export default function SeedGeneration() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {generatedSeeds.map((seed, index) => (
+              {visibleSeeds.map((seed) => (
                 <div
-                  key={index}
+                  key={seed.tempId}
                   className="bg-white rounded-lg shadow p-6 border border-gray-200"
                 >
                   <div className="space-y-4">
@@ -128,6 +175,32 @@ export default function SeedGeneration() {
                         </p>
                       </div>
                     </details>
+
+                    {/* Save/Dismiss Actions */}
+                    {!seed.saved && (
+                      <div className="flex gap-2 pt-2 border-t border-gray-100">
+                        <button
+                          onClick={() => handleSaveSeed(seed.tempId)}
+                          disabled={saveMutation.isPending}
+                          className="flex-1 px-4 py-2 text-sm font-medium text-green-700 bg-green-50 hover:bg-green-100 rounded transition-colors disabled:opacity-50"
+                        >
+                          Save to Garden
+                        </button>
+                        <button
+                          onClick={() => handleDismissSeed(seed.tempId)}
+                          className="px-4 py-2 text-sm font-medium text-gray-600 bg-gray-50 hover:bg-gray-100 rounded transition-colors"
+                        >
+                          Dismiss
+                        </button>
+                      </div>
+                    )}
+                    {seed.saved && (
+                      <div className="pt-2 border-t border-gray-100">
+                        <div className="px-4 py-2 text-sm font-medium text-green-700 bg-green-100 rounded text-center">
+                          ✓ Saved to Garden
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}

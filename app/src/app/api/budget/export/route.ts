@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import prisma from '@/lib/prisma'
 import { generateBudgetCSV } from '@/lib/budget/export'
-import { PipelinePhase } from '@prisma/client'
 
 export async function GET(request: NextRequest) {
   try {
@@ -36,12 +35,12 @@ export async function GET(request: NextRequest) {
     }
 
     // Generate phase map
-    const phasesMap = project.phases.reduce<Record<string, { name: string; type: string }>>(
-      (acc: Record<string, { name: string; type: string }>, phase: PipelinePhase) => {
+    const phasesMap = project.phases.reduce(
+      (acc: Record<string, { name: string; type: string }>, phase: any) => {
         acc[phase.id] = { name: phase.name, type: phase.type }
         return acc
       },
-      {}
+      {} as Record<string, { name: string; type: string }>
     )
 
     // Generate CSV

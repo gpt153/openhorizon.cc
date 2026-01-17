@@ -429,6 +429,13 @@ model PipelinePhase {
   budgetSpent     Decimal     @default(0) @map("budget_spent") @db.Decimal(12, 2)
   order           Int
 
+  // AI Agent results storage
+  agentSearchResults Json?    @map("agent_search_results") // Raw search data (hotels/flights/caterers)
+  agentAnalysis      Json?    @map("agent_analysis") // AI pros/cons for each option
+  selectedOptions    Json?    @map("selected_options") // User-selected options
+  quoteEmailsDrafts  Json?    @map("quote_emails_drafts") // Generated email drafts
+  quoteEmailsSent    Boolean? @default(false) @map("quote_emails_sent")
+
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
@@ -538,6 +545,16 @@ model Communication {
   sentAt             DateTime?              @map("sent_at")
   responseReceivedAt DateTime?              @map("response_received_at")
 
+  // SendGrid tracking fields
+  sendgridMessageId String?   @map("sendgrid_message_id")
+  deliveredAt       DateTime? @map("delivered_at")
+  openedAt          DateTime? @map("opened_at")
+  openCount         Int       @default(0) @map("open_count")
+  clickCount        Int       @default(0) @map("click_count")
+  bouncedAt         DateTime? @map("bounced_at")
+  bounceReason      String?   @map("bounce_reason")
+  trackingMetadata  Json?     @map("tracking_metadata")
+
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
@@ -551,6 +568,7 @@ model Communication {
   @@index([phaseId])
   @@index([vendorId])
   @@index([status])
+  @@index([sendgridMessageId])
   @@map("communications")
 }
 
@@ -658,8 +676,10 @@ enum CommunicationStatus {
   DRAFT
   SENT
   DELIVERED
+  OPENED
   RESPONDED
   FAILED
+  BOUNCED
 }
 
 enum QuoteStatus {
@@ -678,4 +698,46 @@ enum ExpenseCategory {
   INSURANCE
   EMERGENCY
   OTHER
+}
+
+// ============================================================================
+// BACKGROUND SEARCH JOBS (Epic 001)
+// ============================================================================
+
+model SearchJob {
+  id        String          @id @default(cuid())
+  type      SearchJobType
+  status    SearchJobStatus @default(PENDING)
+
+  // Multi-tenant isolation
+  organizationId String @map("organization_id") @db.Uuid
+  projectId      String @map("project_id")
+
+  // Search parameters (JSON)
+  searchParams Json @map("search_params")
+
+  // Results (JSON)
+  results Json?
+  error   String?
+
+  // Timestamps
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([organizationId, status])
+  @@index([id, organizationId])
+  @@map("search_jobs")
+}
+
+enum SearchJobType {
+  FOOD
+  ACCOMMODATION
+  TRAVEL
+}
+
+enum SearchJobStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
 }

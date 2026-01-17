@@ -85,6 +85,60 @@ Analyze all issues and create high-level roadmap:
 
 Save to: `.agents/supervision/session-$SESSION_TIME/meta-plan.md`
 
+### 1.4 Port Conflict Prevention Protocol
+
+**CRITICAL**: Before instructing SCAR to start ANY service (native or Docker), prevent port conflicts:
+
+**Check Ports First:**
+```bash
+# Always check which ports are in use before starting services
+netstat -tlnp | grep LISTEN 2>/dev/null || ss -tlnp | grep LISTEN
+# or
+lsof -i -P -n | grep LISTEN
+```
+
+**Common Default Ports to Check:**
+- 3000 (React, Next.js, Express)
+- 3001 (Alt web server)
+- 4000 (GraphQL, Alt API)
+- 5000 (Flask, Alt server)
+- 5432 (PostgreSQL)
+- 6379 (Redis)
+- 8000 (Django, FastAPI)
+- 8080 (Alt HTTP)
+- 9000 (Alt service)
+
+**Instruction Pattern for SCAR:**
+```markdown
+Before implementing, check for port conflicts:
+
+1. Run: `netstat -tlnp | grep LISTEN` or `lsof -i -P -n | grep LISTEN`
+2. Document which ports are in use
+3. If service defaults to port 3000 and it's taken → choose 3002, 3003, etc.
+4. Update configuration files (package.json, docker-compose.yml, .env) with chosen port
+5. Document the chosen port in implementation summary
+
+**Do NOT waste time debugging port conflicts after starting services.**
+```
+
+**Why This Matters:**
+- Port 3000 conflicts waste 5-15 minutes of debugging time
+- SCAR often discovers conflict AFTER implementation
+- Proactive checking takes 30 seconds, saves significant time
+
+**Track Port Allocations:**
+Maintain `.agents/supervision/port-allocations.json`:
+```json
+{
+  "allocations": {
+    "3000": "main-app",
+    "3001": "scar-remote-agent",
+    "3002": "health-agent-web"
+  },
+  "last_updated": "2026-01-09T08:30:00Z"
+}
+```
+
 ## Phase 2: Spawn Issue Monitors
 
 ### 2.1 Determine Which Issues to Start
@@ -143,16 +197,487 @@ Track in state:
 - Update project-state.json
 - Detect completions, blockers, errors
 
-### 3.2 Handle Completions
+### 3.2 Handle Completions and Merge Decisions
 
-When issue completes:
-1. Verify with `/verify-scar-phase`
-2. Move to completed_issues
-3. Check if dependent issues can now start
-4. Spawn new monitors for unblocked issues
-5. Update meta-plan
+When monitor reports issue VERIFIED_APPROVED:
 
-### 3.3 Handle Blockers
+#### Step 1: Receive Verification Report
+
+Monitor has already run `/verify-scar-phase` and reports:
+```json
+{
+  "issue": 42,
+  "status": "verified_approved",
+  "pr_number": 52,
+  "pr_url": "https://github.com/user/repo/pull/52",
+  "verification": "approved",
+  "files_changed": 5,
+  "tests_added": 12
+}
+```
+
+**Extract PR details from monitor report:**
+```bash
+ISSUE_NUM=42  # From report
+PR_NUM=52     # From report
+PR_URL="https://github.com/user/repo/pull/52"
+```
+
+#### Step 2: Assess Merge Safety (Strategic Decision)
+
+**You have full project context:**
+- All active issues and their PRs
+- Dependency graph from meta-plan
+- Main branch state
+- Other pending merges
+
+**Evaluate merge safety:**
+
+**1. Dependency Check** - Does any in-progress issue depend on current main?
+```bash
+# Check if any active issues would break
+for active_issue in "${!monitors[@]}"; do
+  if issue_depends_on_current_main "$active_issue"; then
+    DEPENDENCY_BLOCKER=true
+    BLOCKER_REASON="Issue #$active_issue building on current main"
+  fi
+done
+```
+
+**2. Conflict Check** - Are other approved PRs waiting to merge?
+```bash
+# List all PRs with verified_approved status
+APPROVED_PRS=$(jq -r '.monitors[] | select(.status=="verified_approved") | .pr_number' project-state.json)
+
+if [ $(echo "$APPROVED_PRS" | wc -l) -gt 1 ]; then
+  MULTIPLE_APPROVED=true
+  # Determine merge order based on dependencies
+fi
+```
+
+**3. Stability Check** - Is main branch currently stable?
+```bash
+# Check recent CI status on main
+MAIN_STATUS=$(gh run list --branch main --limit 1 --json conclusion -q '.[0].conclusion')
+
+if [ "$MAIN_STATUS" != "success" ]; then
+  MAIN_UNSTABLE=true
+  BLOCKER_REASON="Main branch CI failing"
+fi
+```
+
+**4. UI Deployment Check** - Is this a UI feature requiring tests?
+```bash
+# Check issue labels
+LABELS=$(gh issue view $ISSUE_NUM --json labels -q '.labels[].name')
+
+if echo "$LABELS" | grep -qE "frontend|ui|web|dashboard"; then
+  UI_FEATURE=true
+  # Check if UI testing complete (see 3.3)
+  UI_TEST_STATUS=$(jq -r ".ui_deployments.issue_$ISSUE_NUM.status" project-state.json)
+
+  if [ "$UI_TEST_STATUS" != "passed" ]; then
+    HOLD_FOR_UI_TESTS=true
+    BLOCKER_REASON="UI testing not complete"
+  fi
+fi
+```
+
+**Decision Matrix:**
+
+```bash
+# Determine action based on assessment
+if [ "$HOLD_FOR_UI_TESTS" = true ]; then
+  DECISION="HOLD"
+  REASON="Waiting for UI testing to complete"
+elif [ "$MAIN_UNSTABLE" = true ]; then
+  DECISION="HOLD"
+  REASON="Main branch unstable - waiting for fix"
+elif [ "$DEPENDENCY_BLOCKER" = true ]; then
+  DECISION="HOLD"
+  REASON="$BLOCKER_REASON"
+elif [ "$MULTIPLE_APPROVED" = true ]; then
+  # Check merge order - backend before frontend, etc.
+  if should_merge_first "$PR_NUM" "$APPROVED_PRS"; then
+    DECISION="MERGE_NOW"
+  else
+    DECISION="HOLD"
+    REASON="Other PR should merge first (dependency order)"
+  fi
+else
+  # No blockers - safe to merge
+  DECISION="MERGE_NOW"
+fi
+```
+
+#### Step 3: Execute Decision
+
+**If MERGE_NOW:**
+
+```bash
+echo "🔍 Merge Assessment for PR #$PR_NUM (Issue #$ISSUE_NUM):"
+echo "  ✅ Verification: APPROVED"
+echo "  ✅ Dependencies: None blocking"
+echo "  ✅ Main status: Stable"
+echo "  ✅ Other PRs: None waiting"
+echo "  ✅ Decision: MERGE NOW"
+echo ""
+
+# Get current PR merge status
+MERGE_STATUS=$(gh pr view $PR_NUM --json mergeStateStatus -q '.mergeStateStatus')
+
+# Handle PR state
+if [ "$MERGE_STATUS" = "BEHIND" ]; then
+  echo "PR behind main - rebasing first..."
+  gh pr checkout $PR_NUM
+  git fetch origin main
+  git rebase origin/main
+
+  if [ $? -ne 0 ]; then
+    echo "❌ Auto-rebase failed - manual conflict resolution needed"
+    git rebase --abort
+
+    # Post to issue
+    gh issue comment $ISSUE_NUM --body "## ⚠️ Merge Conflict
+
+PR #$PR_NUM has conflicts with main branch.
+
+**Action needed**: Manual conflict resolution required.
+
+Holding merge until conflicts resolved."
+
+    DECISION="HOLD"
+    REASON="Merge conflicts - needs manual resolution"
+  else
+    git push --force-with-lease
+    echo "✅ Rebased successfully"
+  fi
+fi
+
+# Execute merge (if still MERGE_NOW after rebase check)
+if [ "$DECISION" = "MERGE_NOW" ]; then
+  gh pr merge $PR_NUM --squash --delete-branch --admin
+
+  if [ $? -eq 0 ]; then
+    echo "✅ PR #$PR_NUM merged to main"
+
+    # Update project state
+    jq ".monitors.\"$ISSUE_NUM\".status = \"merged\" |
+        .monitors.\"$ISSUE_NUM\".merged_at = \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"" \
+        project-state.json > tmp.json && mv tmp.json project-state.json
+
+    # Proceed to Step 4
+  else
+    echo "❌ Merge failed - investigating..."
+    gh pr view $PR_NUM --json mergeStateStatus,statusCheckRollup
+
+    DECISION="HOLD"
+    REASON="Merge command failed - needs investigation"
+  fi
+fi
+```
+
+**If HOLD:**
+
+```bash
+echo "⏸️  Holding PR #$PR_NUM - merge later"
+echo "Reason: $REASON"
+echo ""
+
+# Update state to pending_merge
+jq ".monitors.\"$ISSUE_NUM\".status = \"pending_merge\" |
+    .monitors.\"$ISSUE_NUM\".hold_reason = \"$REASON\"" \
+    project-state.json > tmp.json && mv tmp.json project-state.json
+
+# Will be re-evaluated in next polling cycle
+echo "Will reassess in next cycle (2min)"
+```
+
+**If REJECT:**
+
+```bash
+echo "❌ Not merging PR #$PR_NUM"
+echo "Reason: $REASON"
+echo ""
+
+# Post to issue
+gh issue comment $ISSUE_NUM --body "## ❌ Merge Rejected
+
+**Reason**: $REASON
+
+**Action needed**: Address the issues before merge can proceed."
+
+# Update state
+jq ".monitors.\"$ISSUE_NUM\".status = \"merge_rejected\" |
+    .monitors.\"$ISSUE_NUM\".reject_reason = \"$REASON\"" \
+    project-state.json > tmp.json && mv tmp.json project-state.json
+```
+
+#### Step 4: Post-Merge Actions (After Successful Merge)
+
+**1. Update main branch locally:**
+```bash
+git checkout main
+git pull origin main
+
+echo "📥 Updated main to latest (includes PR #$PR_NUM)"
+```
+
+**2. Notify all active monitors about main update:**
+```bash
+# All active work needs to know main changed
+for issue in "${!monitors[@]}"; do
+  status=$(jq -r ".monitors.\"$issue\".status" project-state.json)
+
+  if [[ "$status" == "monitoring" || "$status" == "pending_merge" ]]; then
+    echo "🔔 Notifying monitor for issue #$issue: main updated"
+    # Monitors may need to rebase their PRs
+  fi
+done
+```
+
+**3. Check for UI deployment** (if applicable):
+- If UI feature, proceed to 3.3 (Automatic UI Testing)
+- Wait for UI tests to pass before marking truly complete
+
+**4. Move to completed_issues:**
+```bash
+# Only mark complete if NOT a UI feature awaiting tests
+if [ "$UI_FEATURE" != true ] || [ "$UI_TEST_STATUS" = "passed" ]; then
+  # Update project state
+  jq ".completed_issues += [$ISSUE_NUM] |
+      del(.monitors.\"$ISSUE_NUM\")" \
+      project-state.json > tmp.json && mv tmp.json project-state.json
+
+  echo "✅ Issue #$ISSUE_NUM moved to completed"
+fi
+```
+
+**5. Check if dependent issues can now start:**
+```bash
+# Check pending queue for issues that were blocked by this one
+PENDING=$(jq -r '.pending_issues[]' project-state.json)
+
+for pending_issue in $PENDING; do
+  # Check if dependencies now satisfied
+  DEPENDS_ON=$(gh issue view $pending_issue --json body -q '.body' | grep -oP 'Depends on #\K[0-9]+')
+
+  if [ "$DEPENDS_ON" = "$ISSUE_NUM" ]; then
+    echo "🚀 Issue #$pending_issue now unblocked - spawning monitor"
+
+    # Spawn monitor for newly unblocked issue
+    # (Use Task tool to spawn scar-monitor subagent)
+
+    # Remove from pending, add to active
+    jq ".pending_issues -= [$pending_issue]" project-state.json > tmp.json && mv tmp.json project-state.json
+  fi
+done
+```
+
+**6. Spawn new monitors for unblocked issues** (see step 5 above)
+
+**7. Update meta-plan:**
+```bash
+# Update meta-plan with progress
+cat >> .agents/supervision/session-$SESSION_TIME/meta-plan.md <<EOF
+
+## Updated $(date -u +%Y-%m-%dT%H:%M:%S)
+
+**Issue #$ISSUE_NUM**: ✅ Merged to main
+- PR #$PR_NUM merged
+- Dependencies unblocked: $(echo $UNBLOCKED_ISSUES | tr '\n' ', ')
+
+**Next**: $(echo $NEXT_ISSUES | head -1)
+
+EOF
+```
+
+#### Step 5: Report to User (Strategic Summary)
+
+```markdown
+## 📊 Supervision Update
+
+**Issue #$ISSUE_NUM**: {title} - ✅ **MERGED**
+  - Verification: APPROVED ✅
+  - Merge assessment: Safe (no conflicts, stable main)
+  - PR #$PR_NUM merged to main at $(date -u +%H:%M:%S)
+  - Files changed: {count}
+  - Tests added: {count}
+
+**Impact**:
+  - Main branch updated
+  - {N} issues now unblocked: {list}
+
+**Next**: Starting Issue #{next} (now unblocked)
+
+**Active**: {N} issues in progress
+**Pending**: {N} issues waiting on dependencies
+```
+
+### 3.3 Automatic UI Testing After Deployment
+
+**CRITICAL**: After deploying ANY UI (frontend, web app, dashboard), automatically trigger comprehensive testing.
+
+**Detection Triggers:**
+You deployed a UI if ANY of these apply:
+- Started/deployed a React, Next.js, Vue, Angular, or similar frontend app
+- Deployed a web interface to localhost, Docker, or production
+- Started a service on ports 3000-3999, 8000-8999 (common web ports)
+- SCAR completed a frontend implementation issue
+- Issue labels include: `frontend`, `ui`, `web`, `dashboard`
+- Issue mentions: "deploy", "start server", "npm run dev", "docker-compose up"
+
+**Automatic Testing Protocol:**
+
+When UI deployment detected:
+
+```bash
+# 1. Extract deployment details from your actions or SCAR's responses
+PROJECT_NAME=$(basename $PWD)  # e.g., "consilio"
+URL="<the URL you deployed to>"  # e.g., "http://localhost:3002"
+DEPLOY_TYPE="<docker|native|production>"  # How it was deployed
+
+# 2. Immediately spawn UI testing supervisor
+# DO NOT wait, DO NOT ask user - this is automatic
+```
+
+**Spawn UI Test Supervisor:**
+```markdown
+Spawning UI testing for deployed frontend:
+- Project: {project}
+- URL: {url}
+- Type: {deployment_type}
+
+Starting: /command-invoke ui-test-supervise {project} {url} {type}
+
+UI testing will run automatically. I'll report when complete.
+```
+
+**Wait for UI Testing Completion:**
+- UI Test Supervisor runs autonomously
+- Polls `.agents/ui-testing/test-state.json` for completion
+- Check every 5 minutes
+- Max wait: 3 hours (typical UI testing takes 2-3h)
+
+**Integration with Issue Tracking:**
+
+```json
+{
+  "monitors": {
+    "42": {
+      "status": "ui_testing",
+      "ui_testing": {
+        "started": "2026-01-11T18:00:00Z",
+        "url": "http://localhost:3002",
+        "type": "docker",
+        "session": "session-1736621400",
+        "status": "in_progress"
+      }
+    }
+  }
+}
+```
+
+**UI Testing Completion Handling:**
+
+```bash
+# Poll UI testing state
+UI_TEST_STATE=".agents/ui-testing/test-state.json"
+
+# When complete, read results
+if [ -f "$UI_TEST_STATE" ]; then
+  REGRESSION_STATUS=$(jq -r '.regression_test.status' $UI_TEST_STATE)
+
+  if [ "$REGRESSION_STATUS" = "passed" ]; then
+    echo "✅ UI Testing Complete - All tests passed"
+    # NOW mark issue as complete
+    # Move to completed_issues
+    # Continue supervision
+  else
+    echo "❌ UI Testing Found Bugs"
+    BUGS=$(jq -r '.regression_test.new_bugs[]' $UI_TEST_STATE)
+    echo "New issues created: $BUGS"
+    # Add bugs to supervision tracking
+    # Fix-Retest Monitors will handle them automatically
+    # Wait for all bugs to be fixed and retested
+    # Then mark original issue complete
+  fi
+fi
+```
+
+**Do NOT Mark UI Issues Complete Until:**
+- ✅ Implementation verified
+- ✅ UI deployed successfully
+- ✅ **UI testing complete with all tests passing**
+- ✅ No regressions detected
+
+**Common UI Deployment Scenarios:**
+
+1. **Docker Deployment:**
+   ```
+   URL: http://localhost:3002
+   Type: docker
+   Detection: docker-compose up, container started
+   ```
+
+2. **Native Deployment:**
+   ```
+   URL: http://localhost:3000
+   Type: native
+   Detection: npm run dev, npm start
+   ```
+
+3. **Production Deployment:**
+   ```
+   URL: https://app.example.com
+   Type: production
+   Detection: Cloud Run deploy, vercel deploy, netlify deploy
+   ```
+
+**State Updates:**
+
+Update project-state.json to track UI testing:
+```json
+{
+  "phase": "ui_testing",
+  "ui_deployments": {
+    "issue_42": {
+      "url": "http://localhost:3002",
+      "type": "docker",
+      "testing_session": "session-1736621400",
+      "status": "testing",
+      "started": "2026-01-11T18:00:00Z"
+    }
+  }
+}
+```
+
+**Progress Reporting:**
+
+Include UI testing in status updates:
+```markdown
+**Active Work**:
+- Issue #42: Frontend Implementation - ✅ Complete
+  - UI Testing: In Progress (15/20 features tested)
+  - Found 2 bugs (being fixed automatically)
+```
+
+**Why This Matters:**
+
+Without automatic UI testing:
+- ❌ Manual testing required (hours of user time)
+- ❌ Bugs discovered later in production
+- ❌ No systematic feature coverage
+- ❌ Regressions go undetected
+
+With automatic UI testing:
+- ✅ Every feature tested systematically
+- ✅ Bugs caught and fixed before completion
+- ✅ Regression detection automatic
+- ✅ Zero user intervention needed
+- ✅ Confidence in UI quality
+
+### 3.4 Handle Blockers
 
 When issue gets blocked:
 - Pause monitoring
@@ -162,7 +687,7 @@ When issue gets blocked:
   - SCAR error? → Retry with different approach
   - Unclear requirement? → Ask user for clarification
 
-### 3.4 Manage Dependencies
+### 3.5 Manage Dependencies
 
 **Dependency graph tracking**:
 ```markdown

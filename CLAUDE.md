@@ -1,74 +1,63 @@
 # openhorizon.cc
 
 **Repository:** https://github.com/gpt153/openhorizon.cc.git
+**Archon Project:** 
 **Workspace:** /home/samuel/.archon/workspaces/openhorizon.cc
 
 ## Project Overview
 
-Open Horizon is a Swedish nonprofit association creating meaningful international opportunities for young people through Erasmus+ projects. This repository contains two Next.js applications deployed to Google Cloud Run:
+openhorizon.cc - Workspace project
 
-- **Landing Page** (openhorizon.cc) - Marketing site for customers/partners
-- **Application** (app.openhorizon.cc) - Full AI-powered project management platform
+---
 
-## Tech Stack
+## 🎯 YOUR ROLE (SCAR Bot - Implementation Worker)
 
-- **Framework:** Next.js 15 with App Router
-- **Language:** TypeScript
-- **Styling:** Tailwind CSS
-- **Database:** PostgreSQL (Supabase)
-- **Auth:** Clerk
-- **AI:** OpenAI API
-- **Deployment:** Google Cloud Run (serverless)
+**You are the SCAR bot** - an AI coding assistant that implements features via GitHub issues.
 
-## Monorepo Structure
+**Your responsibilities:**
+- ✅ Implement features, write code, fix bugs
+- ✅ Create commits, pull requests, merge code
+- ✅ Run tests, validate implementations
+- ✅ Follow project patterns and conventions
+- ✅ Write production-quality code
 
-```
-openhorizon.cc/
-├── landing/              # Landing page → openhorizon.cc
-├── app/                  # Application → app.openhorizon.cc
-├── WORKFLOW.md           # Complete development workflow (READ THIS!)
-├── DEPLOYMENT.md         # Cloud Run deployment guide
-└── package.json          # Workspace root
-```
+**You are NOT a supervisor.** If the user runs `/supervise` or `/prime-supervisor`, different instructions will be injected. The default is implementation work.
+
+**Working context:**
+- You operate via `@scar` mentions in GitHub issues
+- You have write access to create branches, commits, and PRs
+- Your job is hands-on implementation, not strategic oversight
+
+---
 
 ## Development Workflow
 
-**⚠️ CRITICAL: Read `WORKFLOW.md` for complete workflow documentation.**
-
-This project follows a **Plan → Implement → Test → PR → Deploy** workflow managed by SCAR (Remote Coding Agent).
-
-### Quick Start for Features
-
-1. **Create GitHub Issue** describing the feature
-2. **Plan Feature:** Comment `@scar /command-invoke plan-feature-github "<feature description>"`
-3. **Implement:** Comment `@scar /command-invoke execute-github .agents/plans/<plan-file>.md feature-<branch>`
-4. **SCAR automatically:**
-   - Implements the feature
-   - Tests in local dev environment
-   - Iterates until all tests pass
-   - Creates PR to `staging` branch
+This project is configured with the Remote Coding Agent and includes:
+- **Archon MCP** - Task management and project tracking
+- **exp-piv-loop Commands** - Proven development workflows from Cole Medin
 
 ### Available Commands
 
-**Planning & Implementation:**
 - `/plan <feature>` - Deep implementation planning with codebase analysis
 - `/implement <plan-file>` - Execute implementation plans
 - `/commit [target]` - Quick commits with natural language targeting
-
-**GitHub Workflow:**
 - `/create-pr [base]` - Create pull request from current branch
 - `/review-pr <pr-number>` - Comprehensive PR code review
 - `/merge-pr [pr-number]` - Merge PR after validation
-
-**Debugging & Analysis:**
 - `/rca <issue>` - Root cause analysis for bugs
 - `/fix-rca <rca-file>` - Implement fixes from RCA report
-
-**Project Management:**
 - `/prd [filename]` - Create Product Requirements Document
 - `/worktree <branch>` - Create git worktrees for parallel development
 - `/changelog-entry <description>` - Add CHANGELOG entry
+- `/changelog-release [version]` - Promote changelog to release
 - `/release <version>` - Create GitHub release with tag
+
+**Autonomous Supervision Commands:**
+- `/prime-supervisor` - Load project context and initialize supervisor role
+- `/supervise` - Supervise entire project (all issues, dependencies, parallel work)
+- `/supervise-issue N` - Supervise single GitHub issue to completion
+
+See `docs/autonomous-supervision.md` for complete guide.
 
 ### Using Archon
 
@@ -86,293 +75,96 @@ manage_task("create", project_id="...", title="Fix bug", description="...")
 
 # Update task status
 manage_task("update", task_id="...", status="doing")
+
+# Get project info
+list_projects(project_id="...")
 ```
 
-## Testing Requirements (CRITICAL)
+### Port Conflict Prevention
 
-**Before creating any PR, you MUST:**
-
-### 1. Local Dev Server Test
+**CRITICAL**: Before starting any service (native or Docker), prevent port conflicts:
 
 ```bash
-# Navigate to app directory
-cd app
-
-# Start dev server in background
-npm run dev &
-DEV_PID=$!
-
-# Wait for server to be ready
-echo "Waiting for dev server to start..."
-for i in {1..30}; do
-  if curl -f -s http://localhost:3000 > /dev/null 2>&1; then
-    echo "✅ Dev server is running"
-    break
-  fi
-  if [ $i -eq 30 ]; then
-    echo "❌ Dev server failed to start after 60 seconds"
-    kill $DEV_PID 2>/dev/null
-    exit 1
-  fi
-  sleep 2
-done
-
-# Test that app loads
-curl -f http://localhost:3000 || {
-  echo "❌ App failed to load"
-  kill $DEV_PID
-  exit 1
-}
-
-echo "✅ App loads successfully"
-
-# Stop dev server
-kill $DEV_PID
-wait $DEV_PID 2>/dev/null
+# Check listening ports
+lsof -i -P -n | grep LISTEN
+# or
+netstat -tlnp | grep LISTEN
 ```
 
-**Expected:** Server starts, app loads at localhost:3000, no errors
+**If port is taken, choose an alternative immediately:**
+- Port 3000 taken → Use 3002, 3003, etc.
+- Port 8000 taken → Use 8001, 8002, etc.
+- Update ALL configs (package.json, docker-compose.yml, .env, README)
+- Document chosen port in commit message
 
-### 2. Code Quality
+**Do NOT debug port conflicts after the fact - prevent them upfront.**
+
+### Secrets Management
+
+**PROBLEM**: API keys provided early in sessions are forgotten after many tokens. Secrets not preserved across supervisor/SCAR context switches. Hours wasted debugging only to discover missing API key.
+
+**SOLUTION**: Centralized secrets storage in `~/.archon/.secrets/`
+
+**⚠️ CRITICAL: ALWAYS Check Secrets Before Implementation**
+
+Before implementing ANY feature that requires external services:
 
 ```bash
-# Linting
-npm run lint
-# Must exit with code 0
+# 1. Check if required secrets exist
+cat ~/.archon/.secrets/projects/$(basename $PWD).env 2>/dev/null
+cat ~/.archon/.secrets/global.env 2>/dev/null
 
-# TypeScript type checking
-npx tsc --noEmit
-# Must exit with code 0
+# 2. If secret is missing, ASK USER IMMEDIATELY
+/secret-set OPENAI_API_KEY sk-...
 ```
 
-### 3. Build Test
+**Common secrets by service:**
+- **OpenAI**: `OPENAI_API_KEY`
+- **Anthropic**: `ANTHROPIC_API_KEY`, `CLAUDE_CODE_OAUTH_TOKEN`
+- **Stripe**: `STRIPE_SECRET_KEY`, `STRIPE_PUBLISHABLE_KEY`
+- **Supabase**: `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_KEY`
+- **GitHub**: `GITHUB_TOKEN`, `GH_TOKEN`
+- **PostgreSQL**: `DATABASE_URL`
+- **Telegram**: `TELEGRAM_BOT_TOKEN`
+- **Google Cloud**: `GCP_PROJECT_ID`, `GCP_SERVICE_ACCOUNT_KEY`
 
+**Available Commands:**
 ```bash
-# Production build
-npm run build
-# Must complete without errors
+/secret-set OPENAI_API_KEY sk-proj-...        # Set project secret
+/secret-set --global GITHUB_TOKEN ghp_...     # Set global secret
+/secret-get OPENAI_API_KEY                    # View secret (masked)
+/secret-list                                  # List all secret keys
+/secret-sync                                  # Sync to .env.local
+/secret-check OPENAI_API_KEY STRIPE_KEY       # Verify secrets exist
 ```
 
-### 4. Playwright E2E Tests (CRITICAL)
+**Secret Resolution Order:**
+1. Project-specific (`~/.archon/.secrets/projects/[project].env`)
+2. Global (`~/.archon/.secrets/global.env`)
+3. Workspace `.env.local` (synced from above)
+
+**Full documentation:** `~/.archon/.secrets/README.md`
+
+### Using Playwright for E2E Testing
+
+If this project has Playwright configured, validate UI/UX functionality:
 
 ```bash
-# Run Playwright E2E tests
-cd app
+# Run all E2E tests
 npx playwright test
-# ALL tests must pass
+
+# Run in UI mode (interactive)
+npx playwright test --ui
+
+# Run specific test file
+npx playwright test e2e/feature.spec.ts
+
+# Debug mode (step through tests)
+npx playwright test --debug
 ```
 
-**Why This Is Critical:**
-- Validates actual UI/UX functionality, not just code compilation
-- Catches issues like:
-  - Buttons that don't appear on the page
-  - Click handlers that don't work
-  - Features that compile but don't function from user perspective
-- SCAR must verify features actually work before creating PR
+E2E tests validate actual user experience, not just code compilation.
 
-**Expected:** All tests pass, no UI errors, features work as intended
+## Project-Specific Notes
 
-## Iteration Protocol
-
-If ANY validation fails:
-
-1. **Identify the error** - Read error message carefully
-2. **Fix the code** - Address root cause
-3. **Commit the fix** - `git add . && git commit -m "fix: <description>"`
-4. **Rerun ALL validations** - Start from step 1 again
-5. **Repeat** until all pass (max 5 attempts)
-
-If still failing after 5 attempts:
-- Comment on GitHub issue with error details
-- Request manual intervention
-- Do NOT create PR with failing tests
-
-## Environment Configuration
-
-### Local Development (.env.local)
-
-```env
-# Database (Supabase dev instance)
-DATABASE_URL="postgresql://..."
-DIRECT_URL="postgresql://..."
-
-# Clerk (TEST keys only)
-NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY="pk_test_..."
-CLERK_SECRET_KEY="sk_test_..."
-
-# Supabase
-NEXT_PUBLIC_SUPABASE_URL="https://dev-project.supabase.co"
-NEXT_PUBLIC_SUPABASE_ANON_KEY="eyJ..."
-
-# OpenAI
-OPENAI_API_KEY="sk-proj-..."
-
-# App URL (local)
-NEXT_PUBLIC_APP_URL="http://localhost:3000"
-```
-
-### Production (.env.production)
-
-⚠️ **NEVER commit this file** - exists in repo already
-
-- Uses LIVE Clerk keys (pk_live_..., sk_live_...)
-- Uses production Supabase instance
-- Uses production app URL (https://app.openhorizon.cc)
-
-## Branch Strategy
-
-| Branch | Purpose | Auto-Deploy | Target Deployment |
-|--------|---------|-------------|-------------------|
-| `feature-*` | Feature development | No | Local dev only |
-| `staging` | Integration testing | No | Optional staging |
-| `main` | Production code | No | Cloud Run production |
-
-### PR Flow
-
-```
-feature-add-dark-mode → staging (SCAR creates this PR)
-                ↓
-            staging → main (You create this PR)
-                ↓
-          Production deployment
-```
-
-## Deployment
-
-See `DEPLOYMENT.md` for full Cloud Run deployment instructions.
-
-### Quick Production Deploy
-
-```bash
-# Deploy app
-cd app
-gcloud run deploy openhorizon-app \
-  --source . \
-  --region=europe-west1 \
-  --project=openhorizon-cc \
-  --allow-unauthenticated \
-  --memory=1Gi \
-  --cpu=1
-
-# Deploy landing
-cd ../landing
-gcloud run deploy openhorizon-landing \
-  --source . \
-  --region=europe-west1 \
-  --project=openhorizon-cc \
-  --allow-unauthenticated \
-  --memory=512Mi \
-  --cpu=1
-```
-
-## Project-Specific Conventions
-
-### Naming Patterns
-- Components: PascalCase (`DarkModeToggle.tsx`)
-- Utilities: camelCase (`formatDate.ts`)
-- Hooks: camelCase with `use` prefix (`useTheme.ts`)
-- Types: PascalCase (`UserProfile`)
-
-### File Organization
-- Pages: `/app/src/app/` (App Router)
-- Components: `/app/src/components/`
-- Utilities: `/app/src/lib/`
-- Types: `/app/src/types/`
-- API Routes: `/app/src/app/api/`
-
-### Error Handling
-```typescript
-// Use try-catch with specific error types
-try {
-  await action();
-} catch (error) {
-  if (error instanceof SpecificError) {
-    // Handle specific error
-  }
-  console.error('Operation failed:', error);
-  throw new Error('User-friendly message');
-}
-```
-
-### Logging Pattern
-```typescript
-// Use console methods appropriately
-console.log('[Component] Info message');     // Info
-console.warn('[Component] Warning message'); // Warnings
-console.error('[Component] Error:', error);  // Errors
-```
-
-## Common Issues & Solutions
-
-### Dev Server Port Conflict
-```bash
-# Kill process on port 3000
-lsof -i :3000
-kill -9 $(lsof -t -i :3000)
-```
-
-### Cache Issues
-```bash
-# Clear Next.js cache
-rm -rf .next
-rm -rf node_modules/.cache
-npm run dev
-```
-
-### TypeScript Errors
-```bash
-# Rebuild types
-npx tsc --noEmit
-# Check for missing @types packages
-```
-
-## Success Criteria
-
-Before marking any implementation complete:
-
-- [ ] All local dev tests pass
-- [ ] Code linting passes (`npm run lint`)
-- [ ] TypeScript types valid (`npx tsc --noEmit`)
-- [ ] Build succeeds (`npm run build`)
-- [ ] All tests pass (`npm test`)
-- [ ] PR created to `staging` branch
-- [ ] PR description includes validation results
-- [ ] No console errors or warnings
-
-## Additional Resources
-
-- [WORKFLOW.md](./WORKFLOW.md) - Complete development workflow
-- [DEPLOYMENT.md](./DEPLOYMENT.md) - Cloud Run deployment guide
-- [README.md](./README.md) - Project overview and setup
-- [Next.js Docs](https://nextjs.org/docs)
-- [Tailwind CSS Docs](https://tailwindcss.com/docs)
-- [Clerk Docs](https://clerk.com/docs)
-
----
-
-## 🎯 Autonomous Supervision System
-
-**WHEN TO USE:** Managing entire projects or complex multi-issue features autonomously.
-
-**Commands:**
-- `/prime-supervisor` - Load project context and initialize supervisor role
-- `/supervise` - Supervise entire project (all issues, dependencies, parallel work)
-- `/supervise-issue N` - Supervise single GitHub issue to completion
-
-**What it does:**
-- Decomposes complex features into manageable issues
-- Spawns monitoring subagents (max 5 concurrent) to track SCAR progress
-- Manages dependencies automatically (sequential vs parallel execution)
-- Verifies implementations via `/verify-scar-phase`
-- Provides strategic updates (NO CODE - user cannot code)
-- Handles context handoff seamlessly when limits approach
-
-**Working directory:** Run from **project workspace**.
-
-**Key principles:**
-- Use subagents extensively to minimize supervisor context usage
-- First principles thinking - challenge assumptions, provide cost-benefit analysis
-- Strategic communication only - links, lists, comparisons (NO code examples to user)
-- Brutal honesty about effort vs value
-
-**📖 Complete guide:** `docs/autonomous-supervision.md`
+Project-specific notes

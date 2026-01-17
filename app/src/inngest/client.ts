@@ -28,6 +28,36 @@ export type Events = {
       userId: string
     }
   }
+  'search/food.requested': {
+    data: {
+      jobId: string
+      searchParams: {
+        destination: string
+        dates: {
+          start: string
+          end: string
+        }
+        participantCount: number
+        projectName?: string
+        budgetAllocated?: number
+      }
+    }
+  }
+  'search/accommodation.requested': {
+    data: {
+      jobId: string
+      searchParams: {
+        destination: string
+        dates: {
+          start: string
+          end: string
+        }
+        participantCount: number
+        projectName?: string
+        budgetAllocated?: number
+      }
+    }
+  }
 }
 
 /**

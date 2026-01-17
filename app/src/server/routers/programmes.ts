@@ -5,7 +5,22 @@ import {
   generateDailyStructure,
   generateDaySessions,
 } from '@/lib/ai/chains/programme-generation'
-import type { ActivityType } from '@prisma/client'
+// Removed invalid Prisma type import from '@prisma/client'
+
+// ActivityType enum from Prisma schema
+// Defined locally to avoid Prisma client generation issues
+enum ActivityType {
+  ICEBREAKER = 'ICEBREAKER',
+  WORKSHOP = 'WORKSHOP',
+  REFLECTION = 'REFLECTION',
+  ENERGIZER = 'ENERGIZER',
+  FREE_TIME = 'FREE_TIME',
+  MEAL = 'MEAL',
+  PRESENTATION = 'PRESENTATION',
+  GROUP_WORK = 'GROUP_WORK',
+  OUTDOOR = 'OUTDOOR',
+  CULTURAL = 'CULTURAL',
+}
 
 export const programmesRouter = router({
   // Generate programme from project concept
@@ -262,30 +277,26 @@ function normalizeActivityType(type: string | undefined): ActivityType | undefin
   // Handle missing activity type with default
   if (!type || typeof type !== 'string') {
     console.warn(`Invalid activity type: ${type}, using default WORKSHOP`)
-    return 'WORKSHOP'
+    return ActivityType.WORKSHOP
   }
 
   const normalized = type.toUpperCase().replace(/[\s-]/g, '_')
 
   const validTypes: ActivityType[] = [
-    'ICEBREAKER',
-    'WORKSHOP',
-    'REFLECTION',
-    'ENERGIZER',
-    'FREE_TIME',
-    'MEAL',
-    'PRESENTATION',
-    'GROUP_WORK',
-    'OUTDOOR',
-    'CULTURAL',
-    'INTERCULTURAL',
-    'CREATIVE',
-    'SPORTS',
-    'DISCUSSION',
+    ActivityType.ICEBREAKER,
+    ActivityType.WORKSHOP,
+    ActivityType.REFLECTION,
+    ActivityType.ENERGIZER,
+    ActivityType.FREE_TIME,
+    ActivityType.MEAL,
+    ActivityType.PRESENTATION,
+    ActivityType.GROUP_WORK,
+    ActivityType.OUTDOOR,
+    ActivityType.CULTURAL,
   ]
 
   const found = validTypes.find((t) => t === normalized)
 
   // Return WORKSHOP as default if no match found
-  return found || 'WORKSHOP'
+  return found || ActivityType.WORKSHOP
 }

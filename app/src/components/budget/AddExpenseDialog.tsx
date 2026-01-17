@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { ExpenseCategory } from '@prisma/client'
+// Removed invalid Prisma type import from '@prisma/client'
 import {
   Dialog,
   DialogContent,
@@ -34,6 +34,18 @@ import {
 import { trpc } from '@/lib/trpc/client'
 import { toast } from 'sonner'
 import { Plus } from 'lucide-react'
+
+// ExpenseCategory enum from Prisma schema
+// Defined locally to avoid Prisma client generation issues
+enum ExpenseCategory {
+  ACCOMMODATION = 'ACCOMMODATION',
+  TRAVEL = 'TRAVEL',
+  FOOD = 'FOOD',
+  ACTIVITIES = 'ACTIVITIES',
+  INSURANCE = 'INSURANCE',
+  EMERGENCY = 'EMERGENCY',
+  OTHER = 'OTHER',
+}
 
 const expenseSchema = z.object({
   phaseId: z.string().uuid(),

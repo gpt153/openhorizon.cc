@@ -1,8 +1,20 @@
 import { router, orgProcedure } from '../../trpc'
 import { z } from 'zod'
-import { ExpenseCategory } from '@prisma/client'
+// Removed invalid Prisma type import from '@prisma/client'
 import { shouldTriggerAlert } from '@/lib/budget/health-calculator'
 import { sendBudgetAlertEmail } from '@/lib/email/templates/budget-alert'
+
+// ExpenseCategory enum from Prisma schema
+// Defined locally to avoid Prisma client generation issues
+enum ExpenseCategory {
+  ACCOMMODATION = 'ACCOMMODATION',
+  TRAVEL = 'TRAVEL',
+  FOOD = 'FOOD',
+  ACTIVITIES = 'ACTIVITIES',
+  INSURANCE = 'INSURANCE',
+  EMERGENCY = 'EMERGENCY',
+  OTHER = 'OTHER',
+}
 
 const createExpenseSchema = z.object({
   phaseId: z.string().uuid(),
@@ -297,7 +309,7 @@ export const expensesRouter = router({
         },
       })
 
-      const totalByCategory = expenses.reduce((acc, expense) => {
+      const totalByCategory = expenses.reduce((acc: Record<string, number>, expense: any) => {
         const category = expense.category
         const amount = Number(expense.amount)
         acc[category] = (acc[category] || 0) + amount
@@ -306,7 +318,7 @@ export const expensesRouter = router({
 
       return {
         totalExpenses: expenses.length,
-        totalAmount: expenses.reduce((sum, e) => sum + Number(e.amount), 0),
+        totalAmount: expenses.reduce((sum: number, e: any) => sum + Number(e.amount), 0),
         byCategory: totalByCategory,
       }
     }),

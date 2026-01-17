@@ -1,0 +1,142 @@
+### Page state
+- Page URL: http://localhost:5174/phases/phase-food-1
+- Page Title: frontend
+- Page Snapshot:
+```yaml
+- generic [ref=e3]:
+  - navigation [ref=e4]:
+    - generic [ref=e6]:
+      - generic [ref=e7]:
+        - link "Project Pipeline" [ref=e8] [cursor=pointer]:
+          - /url: /dashboard
+        - link "Dashboard" [ref=e9] [cursor=pointer]:
+          - /url: /dashboard
+        - link "Budget" [ref=e10] [cursor=pointer]:
+          - /url: /budget
+          - img [ref=e11]
+          - text: Budget
+        - link "AI Chat" [ref=e13] [cursor=pointer]:
+          - /url: /chat
+          - img [ref=e14]
+          - text: AI Chat
+        - link "Seeds" [ref=e16] [cursor=pointer]:
+          - /url: /seeds
+          - img [ref=e17]
+          - text: Seeds
+      - generic [ref=e19]:
+        - generic [ref=e20]: Test User
+        - generic [ref=e21]: COORDINATOR
+        - button "Logout" [ref=e22] [cursor=pointer]
+  - main [ref=e23]:
+    - generic [ref=e28]:
+      - navigation [ref=e29]:
+        - list [ref=e30]:
+          - listitem [ref=e31]:
+            - link "Dashboard" [ref=e32] [cursor=pointer]:
+              - /url: /dashboard
+          - listitem [ref=e33]: /
+          - listitem [ref=e34]:
+            - link "Test Youth Exchange Barcelona" [ref=e35] [cursor=pointer]:
+              - /url: /projects/test-proj-1
+          - listitem [ref=e36]: /
+          - listitem [ref=e37]: Catering
+      - generic [ref=e38]:
+        - generic [ref=e39]:
+          - generic [ref=e40]:
+            - heading "Catering" [level=1] [ref=e41]
+            - generic [ref=e42]:
+              - generic [ref=e43]: NOT STARTED
+              - generic [ref=e44]: FOOD
+          - generic [ref=e45]:
+            - button "Edit Phase" [ref=e46] [cursor=pointer]
+            - button "Back" [ref=e47] [cursor=pointer]
+        - generic [ref=e48]:
+          - generic [ref=e49]:
+            - generic [ref=e50]:
+              - generic [ref=e51]: Budget
+              - img [ref=e52]
+            - generic [ref=e54]: €0
+            - generic [ref=e55]: of €3000
+            - generic [ref=e57]: €3,000 remaining
+          - generic [ref=e58]:
+            - generic [ref=e59]:
+              - generic [ref=e60]: Timeline
+              - img [ref=e61]
+            - generic [ref=e63]:
+              - generic [ref=e64]: "Start: Jun 1, 2026"
+              - generic [ref=e65]: "End: Jun 10, 2026"
+          - generic [ref=e66]:
+            - generic [ref=e67]:
+              - generic [ref=e68]: Order
+              - img [ref=e69]
+            - generic [ref=e71]: "#2"
+            - generic [ref=e72]: in sequence
+          - generic [ref=e73]:
+            - generic [ref=e74]:
+              - generic [ref=e75]: Properties
+              - img [ref=e76]
+            - generic [ref=e78]:
+              - generic [ref=e80]: ✓ Editable
+              - generic [ref=e82]: ✓ Skippable
+      - generic [ref=e83]:
+        - generic [ref=e84]:
+          - heading "Quotes" [level=2] [ref=e85]
+          - button "Add Quote (Phase 6)" [disabled] [ref=e86]
+        - generic [ref=e87]:
+          - img [ref=e88]
+          - paragraph [ref=e90]: No quotes yet for this phase
+      - generic [ref=e91]:
+        - heading "Food Planning" [level=2] [ref=e92]
+        - generic [ref=e94]:
+          - heading "Search Food Options" [level=3] [ref=e96]
+          - generic [ref=e97]:
+            - generic [ref=e98]:
+              - generic [ref=e99]:
+                - generic [ref=e100]: Location
+                - textbox "Location" [ref=e101]:
+                  - /placeholder: e.g., Barcelona
+                  - text: Barcelona, Spain
+              - generic [ref=e102]:
+                - generic [ref=e103]: Number of Participants
+                - spinbutton "Number of Participants" [ref=e104]: "30"
+            - button "Search Food Options" [ref=e105] [cursor=pointer]:
+              - img [ref=e106]
+              - text: Search Food Options
+      - generic [ref=e108]:
+        - generic [ref=e109] [cursor=pointer]:
+          - generic [ref=e110]:
+            - heading "AI Assistant" [level=2] [ref=e111]
+            - generic [ref=e112]: Ask about food planning
+          - img [ref=e113]
+        - generic [ref=e116]:
+          - generic [ref=e282]:
+            - generic [ref=e283]:
+              - paragraph [ref=e284]:
+                - strong [ref=e285]: Food & Meal Agent
+              - generic [ref=e287]: Connected
+            - paragraph [ref=e289]: Get meal planning suggestions, restaurant recommendations, and catering options
+          - generic [ref=e290]:
+            - paragraph [ref=e291]: "Quick Start:"
+            - button "Suggest restaurants for group dining" [ref=e292] [cursor=pointer]
+            - button "What are local food options?" [ref=e293] [cursor=pointer]
+            - button "Plan meal budget" [ref=e294] [cursor=pointer]
+          - generic [ref=e295]:
+            - img [ref=e297]
+            - heading "Food & Meal Agent Ready" [level=3] [ref=e299]
+            - paragraph [ref=e300]: Get meal planning suggestions, restaurant recommendations, and catering options
+          - generic [ref=e302]:
+            - generic [ref=e304]:
+              - img [ref=e305]
+              - generic [ref=e307]: Chatting about Phase (phase-fo...)
+            - generic [ref=e309]:
+              - img [ref=e310]
+              - heading "Start a conversation" [level=3] [ref=e312]
+              - paragraph [ref=e313]: Ask questions about your projects, phases, budgets, or get help with planning
+            - generic [ref=e314]:
+              - generic [ref=e315]:
+                - textbox "Type your message... (Enter to send, Shift+Enter for new line)" [ref=e317]
+                - button "Send" [disabled] [ref=e318]:
+                  - img [ref=e319]
+                  - text: Send
+              - paragraph [ref=e321]: Press Enter to send, Shift+Enter for new line
+```

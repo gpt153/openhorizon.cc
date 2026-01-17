@@ -5,7 +5,22 @@ import {
   generateDailyStructure,
   generateDaySessions,
 } from '@/lib/ai/chains/programme-generation'
-import type { ActivityType } from '@prisma/client'
+// Removed invalid Prisma type import from '@prisma/client'
+
+// ActivityType enum from Prisma schema
+// Defined locally to avoid Prisma client generation issues
+enum ActivityType {
+  ICEBREAKER = 'ICEBREAKER',
+  WORKSHOP = 'WORKSHOP',
+  REFLECTION = 'REFLECTION',
+  ENERGIZER = 'ENERGIZER',
+  FREE_TIME = 'FREE_TIME',
+  MEAL = 'MEAL',
+  PRESENTATION = 'PRESENTATION',
+  GROUP_WORK = 'GROUP_WORK',
+  OUTDOOR = 'OUTDOOR',
+  CULTURAL = 'CULTURAL',
+}
 
 /**
  * Generate Programme from Project Concept - Background Job
@@ -46,7 +61,7 @@ export const generateProgramme = inngest.createFunction(
     // Step 3: Generate daily themes and structure
     const dailyStructure = await step.run('generate-daily-structure', async () => {
       console.log('🏗️  Generating daily structure...')
-      return await generateDailyStructure(requirements)
+      return await generateDailyStructure(requirements as any)
     })
 
     // Step 4: Generate detailed sessions for each day
@@ -55,7 +70,7 @@ export const generateProgramme = inngest.createFunction(
       const sessions = []
 
       for (const day of dailyStructure) {
-        const daySessions = await generateDaySessions(day, requirements)
+        const daySessions = await generateDaySessions(day, requirements as any)
         sessions.push({ dayNumber: day.day_number, sessions: daySessions })
       }
 
@@ -148,20 +163,16 @@ function normalizeActivityType(type: string): ActivityType | undefined {
   const normalized = type.toUpperCase().replace(/[\s-]/g, '_')
 
   const validTypes: ActivityType[] = [
-    'ICEBREAKER',
-    'WORKSHOP',
-    'REFLECTION',
-    'ENERGIZER',
-    'FREE_TIME',
-    'MEAL',
-    'PRESENTATION',
-    'GROUP_WORK',
-    'OUTDOOR',
-    'CULTURAL',
-    'INTERCULTURAL',
-    'CREATIVE',
-    'SPORTS',
-    'DISCUSSION',
+    ActivityType.ICEBREAKER,
+    ActivityType.WORKSHOP,
+    ActivityType.REFLECTION,
+    ActivityType.ENERGIZER,
+    ActivityType.FREE_TIME,
+    ActivityType.MEAL,
+    ActivityType.PRESENTATION,
+    ActivityType.GROUP_WORK,
+    ActivityType.OUTDOOR,
+    ActivityType.CULTURAL,
   ]
 
   return validTypes.find((t) => t === normalized)

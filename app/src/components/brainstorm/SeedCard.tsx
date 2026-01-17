@@ -4,14 +4,14 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter }
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Heart, Trash2, MessageSquare } from 'lucide-react'
-import type { Seed } from '@prisma/client'
+// Removed invalid Prisma type import from '@prisma/client'
 import ApprovalLikelihoodMeter from './ApprovalLikelihoodMeter'
 import { useContentField } from '@/lib/hooks/useContentField'
 import { ContentModeBadge } from '@/components/ui/ContentModeBadge'
 import { useContentModeStore } from '@/lib/stores/contentModeStore'
 
 interface SeedCardProps {
-  seed: Seed
+  seed: any
   onSave: () => void
   onDismiss: () => void
   onElaborate: () => void

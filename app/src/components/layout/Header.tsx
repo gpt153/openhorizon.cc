@@ -1,17 +1,27 @@
 'use client'
 
+import { UserButton } from '@clerk/nextjs'
 import { ContentModeToggle } from './ContentModeToggle'
 
 export function Header() {
   return (
     <header className="flex h-16 items-center justify-between border-b bg-white px-6 dark:bg-zinc-950">
       <div className="flex items-center gap-4">
-        <span className="text-sm text-zinc-600 dark:text-zinc-400">Open Horizon Project Companion</span>
+        <span className="text-sm text-zinc-600 dark:text-zinc-400">
+          Open Horizon Project Companion
+        </span>
       </div>
 
       <div className="flex items-center gap-4">
         <ContentModeToggle />
-        <span className="text-sm text-zinc-500">Auth Disabled - Development Mode</span>
+        <UserButton
+          afterSignOutUrl="/sign-in"
+          appearance={{
+            elements: {
+              avatarBox: 'w-8 h-8',
+            },
+          }}
+        />
       </div>
     </header>
   )

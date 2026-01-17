@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
+import { ClerkProvider } from '@clerk/nextjs'
 import { TRPCProvider } from '@/lib/trpc/Provider'
 import { Toaster } from 'sonner'
 import './globals.css'
@@ -37,13 +38,15 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en">
-      <body className={inter.className}>
-        <TRPCProvider>
-          {children}
-          <Toaster position="top-right" richColors closeButton />
-        </TRPCProvider>
-      </body>
-    </html>
+    <ClerkProvider>
+      <html lang="en">
+        <body className={inter.className}>
+          <TRPCProvider>
+            {children}
+            <Toaster position="top-right" richColors closeButton />
+          </TRPCProvider>
+        </body>
+      </html>
+    </ClerkProvider>
   )
 }

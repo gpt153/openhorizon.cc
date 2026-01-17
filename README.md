@@ -13,6 +13,29 @@ Swedish nonprofit association creating meaningful international opportunities fo
 - **Project Development Support** - Expert assistance for Erasmus+ applications
 - **Reporting & Compliance** - Complete documentation aligned with EU standards
 
+## 📖 Documentation
+
+### For Users
+
+**New to OpenHorizon?** Start here:
+- **[Getting Started Guide](docs/user-guide/getting-started.md)** - Your first project in 5 minutes
+- **[User Guide](docs/user-guide/README.md)** - Complete feature walkthrough
+- **[Troubleshooting](docs/user-guide/troubleshooting.md)** - Common issues and solutions
+
+**Feature Guides:**
+- [Seeds](docs/user-guide/features/seeds.md) - AI-powered project ideation
+- [Projects](docs/user-guide/features/projects.md) - Full project management
+- [Programmes](docs/user-guide/features/programmes.md) - Activity scheduling
+- [Budget](docs/user-guide/features/budget.md) - Erasmus+ budget calculator
+- [Vendor Search](docs/user-guide/features/vendor-search.md) - Find accommodation, travel & food
+- [Export](docs/user-guide/features/export.md) - Application-ready documents
+
+### For Developers
+
+- **[Technical Documentation](DOCUMENTATION.md)** - Complete documentation index
+- **[Quick Start](QUICKSTART.md)** - Development setup
+- **[Deployment Guide](DEPLOY_INSTRUCTIONS.md)** - Production deployment
+
 ## 🛠️ Tech Stack
 
 - **Framework:** Next.js 15 with App Router
@@ -134,6 +157,92 @@ gcloud run deploy openhorizon-app \
 
 See `DEPLOY_INSTRUCTIONS.md` for complete deployment guide.
 
+## 📊 Monitoring & Observability
+
+OpenHorizon uses **Google Cloud Monitoring** with **OpenTelemetry** for comprehensive observability.
+
+### Dashboard Access
+- **Production Dashboard:** [Cloud Monitoring Dashboard](https://console.cloud.google.com/monitoring/dashboards?project=openhorizon-cc)
+- **Alert Policies:** [Alerting](https://console.cloud.google.com/monitoring/alerting?project=openhorizon-cc)
+- **Logs:** [Cloud Run Logs](https://console.cloud.google.com/run/detail/europe-west1/openhorizon-app/logs?project=openhorizon-cc)
+
+### Key Metrics Tracked
+
+**System Performance:**
+- Request count (total, by endpoint)
+- Request latency (p50, p95, p99)
+- Error rate (5xx responses)
+- CPU/memory utilization
+- Autoscaling instances
+
+**Business Metrics:**
+- Projects created (daily/weekly count)
+- Searches completed (food, accommodation)
+- Documents exported (PDF, Excel, Word)
+- User signups
+
+**Inngest Background Jobs:**
+- Job completion rate (success vs. failed)
+- Job duration (average, p95)
+- Job failure rate (percentage)
+- Job retry count
+
+### Alert Notifications
+
+Alerts are sent to `alerts@openhorizon.cc` for:
+- ⚠️ Error rate > 1% (5 min sustained)
+- ⚠️ P95 latency > 1s (5 min sustained)
+- ⚠️ Inngest job failure rate > 10% (10 min sustained)
+- ⚠️ Service inactive > 1 hour
+
+### Setup Monitoring (First-Time)
+
+```bash
+# Run the monitoring setup script (one-time setup)
+./scripts/setup-monitoring.sh
+
+# This creates:
+# - Email notification channel
+# - 4 alert policies (error rate, latency, job failures, inactivity)
+```
+
+### Local Development
+
+Metrics are **disabled by default** in development. To enable:
+
+```bash
+# In .env.local
+GOOGLE_CLOUD_PROJECT=openhorizon-cc
+ENABLE_METRICS=true
+OTEL_SERVICE_NAME=openhorizon-app-dev
+```
+
+### Troubleshooting
+
+**Metrics not appearing:**
+- Check Cloud Logging for export errors
+- Verify `GOOGLE_CLOUD_PROJECT` and `ENABLE_METRICS` env vars
+- Wait 2-5 minutes for data propagation
+
+**Alerts not firing:**
+- Verify notification channels are configured
+- Check alert policy thresholds in Cloud Console
+- Ensure email address is verified
+
+**Dashboard empty:**
+- Ensure app has traffic (metrics only appear after requests)
+- Check that `ENABLE_METRICS=true` in production
+- Wait up to 5 minutes for initial data
+
+### Metrics Architecture
+
+- **Frontend (Next.js):** tRPC middleware tracks all API calls
+- **Backend (Fastify):** Plugin hooks track HTTP requests
+- **Background Jobs (Inngest):** Each function wrapped with metrics
+- **Export:** OpenTelemetry → Cloud Monitoring (60s interval)
+
+See [Implementation Plan](.plans/issue-134-monitoring-observability-plan.md) for technical details.
+
 ## 📁 Detailed Structure
 
 ### Landing Page (`landing/`)
@@ -159,6 +268,34 @@ See `DEPLOY_INSTRUCTIONS.md` for complete deployment guide.
 ## 🇪🇺 EU Compliance
 
 This project is co-funded by the European Union's Erasmus+ programme. All communications include required EU funding acknowledgments and comply with GDPR regulations.
+
+## ❓ Frequently Asked Questions
+
+**Q: How long does it take to create an Erasmus+ project with OpenHorizon?**
+A: 4-6 hours with OpenHorizon (vs 40-60 hours manually). Transform weeks of planning into days.
+
+**Q: Do I need technical knowledge to use OpenHorizon?**
+A: No! OpenHorizon is designed for project coordinators, not developers. If you can use a web browser, you can use OpenHorizon.
+
+**Q: What Erasmus+ actions are supported?**
+A: Currently KA1 (Learning Mobility) and KA2 (Cooperation Partnerships). KA3 support coming soon.
+
+**Q: Is my project data safe?**
+A: Yes. All data is encrypted, GDPR compliant, and stored securely on EU servers. We do not share data with third parties.
+
+**Q: Can I export to Word and PDF?**
+A: Yes! Export to PDF, DOCX (Word), and XLSX (Excel) formats. All exports include your complete project details and Erasmus+ application forms.
+
+**Q: Does OpenHorizon guarantee my application will be approved?**
+A: No. OpenHorizon helps you plan and document high-quality projects, but approval depends on many factors reviewed by National Agencies.
+
+**Q: Can I work on multiple projects simultaneously?**
+A: Yes! Create and manage unlimited projects at the same time.
+
+**Q: Is there a mobile app?**
+A: Not yet. The web app works on mobile browsers but is optimized for desktop and tablet use.
+
+For more questions, see our [User Guide](docs/user-guide/README.md) or [Troubleshooting Guide](docs/user-guide/troubleshooting.md).
 
 ## 📧 Contact
 

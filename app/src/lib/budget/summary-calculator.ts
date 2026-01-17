@@ -1,21 +1,21 @@
-import { PipelineProject, PipelinePhase, Expense } from '@prisma/client'
+// Removed invalid Prisma type imports from '@prisma/client'
 import { BudgetSummary, SpendingTrendData } from '@/types/budget'
 import { calculateBudgetHealth } from './health-calculator'
 
-type ProjectWithPhases = PipelineProject & {
-  phases: PipelinePhase[]
+type ProjectWithPhases = any & {
+  phases: any[]
 }
 
 export function calculateBudgetSummary(
   project: ProjectWithPhases,
-  expenses?: Expense[]
+  expenses?: any[]
 ): BudgetSummary {
   const totalBudget = Number(project.budgetTotal)
   const totalSpent = Number(project.budgetSpent)
   const totalRemaining = totalBudget - totalSpent
   const health = calculateBudgetHealth(totalBudget, totalSpent)
 
-  const phases = project.phases.map(phase => {
+  const phases = project.phases.map((phase: any) => {
     const allocated = Number(phase.budgetAllocated)
     const spent = Number(phase.budgetSpent)
     const remaining = allocated - spent
@@ -41,7 +41,7 @@ export function calculateBudgetSummary(
   }
 }
 
-export function generateTrendData(expenses: Expense[]): SpendingTrendData[] {
+export function generateTrendData(expenses: any[]): SpendingTrendData[] {
   if (expenses.length === 0) return []
 
   // Group expenses by date

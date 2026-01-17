@@ -9,10 +9,14 @@ import {
   listUserSeeds,
   getSeedById,
   elaborateSeedConversation,
+  createGeneratedSeed,
   saveSeed,
   dismissSeed,
   deleteSeed,
   convertSeedToProject,
+  startElaborationSession,
+  processElaborationAnswer,
+  getElaborationStatus
 } from './seeds.service.js'
 
 export async function registerSeedsRoutes(app: FastifyInstance) {
@@ -34,6 +38,22 @@ export async function registerSeedsRoutes(app: FastifyInstance) {
           details: error.errors
         })
       }
+      throw error
+    }
+  })
+
+  // POST /seeds/create - Create and save a generated seed
+  app.post('/seeds/create', {
+    onRequest: [app.authenticate]
+  }, async (request: FastifyRequest, reply: FastifyReply) => {
+    try {
+      const userId = (request.user as any).userId
+      const seed = request.body as any // GeneratedSeed from frontend
+
+      const savedSeed = await createGeneratedSeed(userId, seed)
+
+      return reply.code(201).send({ seed: savedSeed })
+    } catch (error) {
       throw error
     }
   })
@@ -179,6 +199,82 @@ export async function registerSeedsRoutes(app: FastifyInstance) {
       if (error instanceof Error && error.message === 'Seed not found') {
         return reply.code(404).send({ error: error.message })
       }
+      throw error
+    }
+  })
+
+  // ============================================================
+  // CONVERSATIONAL ELABORATION ROUTES
+  // ============================================================
+
+  // POST /seeds/:id/elaborate/start - Start conversational elaboration
+  app.post('/seeds/:id/elaborate/start', {
+    onRequest: [app.authenticate]
+  }, async (request: FastifyRequest, reply: FastifyReply) => {
+    try {
+      const userId = (request.user as any).userId
+      const { id } = request.params as { id: string }
+
+      const response = await startElaborationSession(id, userId)
+
+      return reply.send(response)
+    } catch (error) {
+      if (error instanceof Error && error.message === 'Seed not found') {
+        return reply.code(404).send({ error: error.message })
+      }
+      console.error('Error starting elaboration session:', error)
+      throw error
+    }
+  })
+
+  // POST /seeds/:id/elaborate/answer - Submit answer and get next question
+  app.post('/seeds/:id/elaborate/answer', {
+    onRequest: [app.authenticate]
+  }, async (request: FastifyRequest, reply: FastifyReply) => {
+    try {
+      const userId = (request.user as any).userId
+      const { id } = request.params as { id: string }
+      const { sessionId, answer } = request.body as { sessionId: string; answer: string }
+
+      if (!sessionId || !answer) {
+        return reply.code(400).send({
+          error: 'sessionId and answer are required'
+        })
+      }
+
+      const response = await processElaborationAnswer(id, userId, sessionId, answer)
+
+      return reply.send(response)
+    } catch (error) {
+      if (error instanceof Error) {
+        if (error.message === 'Seed not found') {
+          return reply.code(404).send({ error: error.message })
+        }
+        if (error.message === 'Invalid session ID' || error.message.includes('No elaboration session')) {
+          return reply.code(400).send({ error: error.message })
+        }
+      }
+      console.error('Error processing elaboration answer:', error)
+      throw error
+    }
+  })
+
+  // GET /seeds/:id/elaborate/status - Get elaboration progress
+  app.get('/seeds/:id/elaborate/status', {
+    onRequest: [app.authenticate]
+  }, async (request: FastifyRequest, reply: FastifyReply) => {
+    try {
+      const userId = (request.user as any).userId
+      const { id } = request.params as { id: string }
+
+      const status = await getElaborationStatus(id, userId)
+
+      return reply.send(status)
+    } catch (error) {
+      if (error instanceof Error && error.message === 'Seed not found') {
+        return reply.code(404).send({ error: error.message })
+      }
+      console.error('Error getting elaboration status:', error)
       throw error
     }
   })

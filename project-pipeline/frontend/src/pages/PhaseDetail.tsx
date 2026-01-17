@@ -7,6 +7,9 @@ import api from '../services/api'
 import type { Phase, Quote } from '../types'
 import LoadingSpinner from '../components/LoadingSpinner'
 import PhaseAgentChat from '../components/PhaseAgentChat'
+import { TravelSearchPanel } from '../components/TravelSearchPanel'
+import { FoodSearchPanel } from '../components/FoodSearchPanel'
+import { AccommodationSearchPanel } from '../components/AccommodationSearchPanel'
 
 export default function PhaseDetail() {
   const { phaseId } = useParams<{ phaseId: string }>()
@@ -362,6 +365,41 @@ export default function PhaseDetail() {
           </div>
         )}
       </div>
+
+      {/* Phase-Specific Search Panels */}
+      {phase.type === 'TRAVEL' && (
+        <div className="bg-white shadow rounded-lg p-6 mt-6">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Travel Planning</h2>
+          <TravelSearchPanel
+            phaseId={phaseId!}
+            defaultOrigin={phase.project?.location}
+            defaultDestination=""
+            defaultPassengers={phase.project?.participants_count}
+          />
+        </div>
+      )}
+
+      {phase.type === 'FOOD' && (
+        <div className="bg-white shadow rounded-lg p-6 mt-6">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Food Planning</h2>
+          <FoodSearchPanel
+            phaseId={phaseId!}
+            defaultLocation={phase.project?.location}
+            defaultParticipants={phase.project?.participants_count}
+          />
+        </div>
+      )}
+
+      {phase.type === 'ACCOMMODATION' && (
+        <div className="bg-white shadow rounded-lg p-6 mt-6">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Accommodation Planning</h2>
+          <AccommodationSearchPanel
+            phaseId={phaseId!}
+            defaultLocation={phase.project?.location}
+            defaultParticipants={phase.project?.participants_count}
+          />
+        </div>
+      )}
 
       {/* AI Assistant Section */}
       <div className="bg-white shadow rounded-lg p-6 mt-6">

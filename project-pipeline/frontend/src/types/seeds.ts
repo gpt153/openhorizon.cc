@@ -49,6 +49,13 @@ export interface ElaborationMessage {
   appliedChanges?: Partial<GeneratedSeed>
 }
 
+// Extended message type with edit capability
+export interface ElaborationMessageExtended extends ElaborationMessage {
+  id: string // Unique message ID for editing
+  isEdited?: boolean
+  originalContent?: string
+}
+
 export interface SeedSuggestion {
   id: string
   text: string
@@ -102,4 +109,38 @@ export interface ConvertSeedToProjectResponse {
     location: string
     created_at: string
   }
+}
+
+// Quick reply option for chat interface
+export interface QuickReply {
+  id: string
+  text: string
+  value: string
+  category?: string
+}
+
+// Metadata tracking for completeness
+export interface SeedMetadata {
+  // Core fields
+  title: string
+  description: string
+  theme?: string
+
+  // Project details
+  estimatedDuration?: number
+  estimatedParticipants?: number
+  targetAgeGroup?: string
+
+  // Scope
+  geographicScope?: string
+  projectType?: string
+
+  // Feasibility
+  budgetRange?: string
+  requiredResources?: string[]
+
+  // Completeness tracking
+  completedFields: string[]
+  totalFields: string[]
+  completenessPercentage: number
 }

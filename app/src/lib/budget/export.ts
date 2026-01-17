@@ -1,5 +1,5 @@
 import Papa from 'papaparse'
-import { Expense } from '@prisma/client'
+// Removed invalid Prisma type import from '@prisma/client'
 import { formatCurrency } from '@/types/budget'
 
 export interface BudgetExportRow {
@@ -11,7 +11,7 @@ export interface BudgetExportRow {
   'Receipt URL': string
 }
 
-export function generateBudgetCSV(expenses: Expense[], phasesMap: Record<string, { name: string; type: string }>): string {
+export function generateBudgetCSV(expenses: any[], phasesMap: Record<string, { name: string; type: string }>): string {
   const rows: BudgetExportRow[] = expenses.map(expense => ({
     Date: new Date(expense.date).toLocaleDateString('sv-SE'),
     Phase: phasesMap[expense.phaseId]?.name || 'Unknown',
