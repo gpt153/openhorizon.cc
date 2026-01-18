@@ -8,11 +8,10 @@ import { Textarea } from '@/components/ui/textarea'
 import { trpc } from '@/lib/trpc/client'
 import { Loader2, Send, ArrowRight, Sparkles } from 'lucide-react'
 import { toast } from 'sonner'
-import ApprovalLikelihoodMeter from '@/components/brainstorm/ApprovalLikelihoodMeter'
-import type { ElaborationMessage } from '@/lib/types/brainstorm'
-import { useContentField } from '@/lib/hooks/useContentField'
-import { ContentModeBadge } from '@/components/ui/ContentModeBadge'
-import { useContentModeStore } from '@/lib/stores/contentModeStore'
+import { ElaborationProgressIndicator } from '@/components/brainstorm/ElaborationProgressIndicator'
+import { QuickReplyButtons, generateQuickReplies } from '@/components/brainstorm/QuickReplyButtons'
+import { MetadataPreview } from '@/components/brainstorm/MetadataPreview'
+import type { ElaborationMessage, RichSeedMetadata } from '@/lib/types/brainstorm'
 
 export default function SeedElaborationPage() {
   const router = useRouter()
@@ -20,50 +19,65 @@ export default function SeedElaborationPage() {
   const seedId = params.id as string
 
   const [userMessage, setUserMessage] = useState('')
+  const [quickReplies, setQuickReplies] = useState<any[]>([])
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   const { data: seed, isLoading, refetch } = trpc.brainstorm.getSeedById.useQuery({ id: seedId })
   const elaborateMutation = trpc.brainstorm.elaborate.useMutation({
-    onSuccess: () => {
+    onSuccess: (response) => {
       setUserMessage('')
+      // Generate quick replies for next question
+      if (response.nextQuestionId) {
+        setQuickReplies(generateQuickReplies(response.nextQuestionId))
+      } else {
+        setQuickReplies([])
+      }
       refetch()
     },
   })
 
-  const currentVersion = seed?.currentVersion as any
   const conversationHistory = (seed?.elaborations?.[0]?.conversationHistory || []) as unknown as ElaborationMessage[]
-  const { mode } = useContentModeStore()
+  const metadata: RichSeedMetadata = (seed?.metadata as any) || { completeness: 0 }
+  const completeness = seed?.completeness ?? 0
 
-  // Use content field hook for working/formal mode switching
-  const displayTitle = useContentField(
-    currentVersion?.title || seed?.title,
-    currentVersion?.titleFormal || seed?.titleFormal
-  )
-  const displayDescription = useContentField(
-    currentVersion?.description || seed?.description,
-    currentVersion?.descriptionFormal || seed?.descriptionFormal
-  )
-
-  // Select approval likelihood based on mode
-  const displayLikelihood = mode === 'formal' && seed?.approvalLikelihoodFormal !== null
-    ? seed?.approvalLikelihoodFormal
-    : seed?.approvalLikelihood
+  // Generate initial quick replies on first load
+  useEffect(() => {
+    if (seed && quickReplies.length === 0 && completeness < 100) {
+      // Determine next question based on completeness
+      const answeredQuestions = Math.round((completeness / 100) * 7)
+      const nextQuestionId = Math.min(answeredQuestions + 1, 7)
+      setQuickReplies(generateQuickReplies(nextQuestionId))
+    }
+  }, [seed, completeness])
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [conversationHistory])
 
-  const handleSendMessage = async () => {
-    if (!userMessage.trim()) return
+  const handleSendMessage = async (message?: string) => {
+    const messageToSend = message || userMessage
+    if (!messageToSend.trim()) return
 
     try {
       await elaborateMutation.mutateAsync({
         seedId,
-        userMessage,
+        userMessage: messageToSend,
       })
     } catch (error) {
       toast.error('Failed to elaborate seed')
     }
+  }
+
+  const handleQuickReply = (value: string) => {
+    setUserMessage(value)
+    if (value) {
+      handleSendMessage(value)
+    }
+  }
+
+  const handleConvertToProject = () => {
+    // TODO: Implement conversion to project
+    router.push(`/projects/new?seedId=${seedId}`)
   }
 
   if (isLoading) {
@@ -82,61 +96,27 @@ export default function SeedElaborationPage() {
     <div className="mx-auto max-w-7xl">
       <div className="mb-4 flex items-center justify-between">
         <h1 className="text-2xl font-bold">Elaborate Seed</h1>
-        <Button onClick={() => router.push('/projects/new')} variant="default">
+        <Button onClick={handleConvertToProject} variant="default" disabled={completeness < 80}>
           <ArrowRight className="mr-2 h-5 w-5" />
-          Turn into Project
+          Turn into Project {completeness >= 80 ? '' : `(${completeness}%)`}
         </Button>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        {/* Preview Panel */}
-        <Card className="lg:sticky lg:top-6 lg:h-fit">
-          <CardHeader>
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
-                <CardTitle className="text-xl">Live Preview</CardTitle>
-                <ContentModeBadge formalValue={seed.titleFormal} />
-              </div>
-              <ApprovalLikelihoodMeter value={displayLikelihood || 0.5} size="md" showLabel />
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <label className="text-sm font-medium text-zinc-700">Title</label>
-              <p className="mt-1 text-lg font-semibold">{displayTitle}</p>
-            </div>
+      {/* Progress Indicator */}
+      <div className="mb-6">
+        <ElaborationProgressIndicator
+          completeness={completeness}
+          totalQuestions={7}
+        />
+      </div>
 
-            <div>
-              <label className="text-sm font-medium text-zinc-700">Description</label>
-              <p className="mt-1 text-sm leading-relaxed text-zinc-600">
-                {displayDescription}
-              </p>
-            </div>
-
-            {currentVersion?.suggestedTags && (
-              <div>
-                <label className="text-sm font-medium text-zinc-700">Tags</label>
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {currentVersion.suggestedTags.map((tag: string) => (
-                    <span
-                      key={tag}
-                      className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-medium text-zinc-700"
-                    >
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
+      <div className="grid gap-6 lg:grid-cols-3">
         {/* Chat Panel */}
-        <Card className="flex flex-col" style={{ height: '600px' }}>
+        <Card className="flex flex-col lg:col-span-2" style={{ height: '600px' }}>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Sparkles className="h-5 w-5 text-blue-600" />
-              Collaborate with AI
+              Answer Questions to Complete Your Seed
             </CardTitle>
           </CardHeader>
 
@@ -145,10 +125,10 @@ export default function SeedElaborationPage() {
             <div className="flex-1 space-y-4 overflow-y-auto pb-4">
               {conversationHistory.length === 0 && (
                 <div className="rounded-lg bg-blue-50 p-4 text-sm text-blue-900">
-                  <p className="font-medium">Start refining your seed!</p>
+                  <p className="font-medium">Welcome to the seed elaboration process!</p>
                   <p className="mt-1">
-                    Try: &quot;Make it more focused on digital skills&quot; or &quot;Add a sustainability angle&quot; or &quot;What activities
-                    would work for this?&quot;
+                    I'll ask you 7 questions to help build a complete project plan. You can answer in natural language,
+                    or use the quick reply buttons below. Let's start!
                   </p>
                 </div>
               )}
@@ -169,6 +149,15 @@ export default function SeedElaborationPage() {
               <div ref={messagesEndRef} />
             </div>
 
+            {/* Quick Replies */}
+            {quickReplies.length > 0 && (
+              <QuickReplyButtons
+                replies={quickReplies}
+                onSelect={handleQuickReply}
+                disabled={elaborateMutation.isPending}
+              />
+            )}
+
             {/* Input */}
             <div className="flex gap-2 border-t pt-4">
               <Textarea
@@ -179,12 +168,15 @@ export default function SeedElaborationPage() {
                     e.preventDefault()
                     handleSendMessage()
                   }
+                  if (e.key === 'Escape') {
+                    setUserMessage('')
+                  }
                 }}
-                placeholder="Ask for changes, suggestions, or ideas..."
+                placeholder="Answer the question or ask for changes..."
                 className="min-h-[80px] resize-none"
               />
               <Button
-                onClick={handleSendMessage}
+                onClick={() => handleSendMessage()}
                 disabled={!userMessage.trim() || elaborateMutation.isPending}
                 size="lg"
                 className="self-end"
@@ -198,6 +190,15 @@ export default function SeedElaborationPage() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Metadata Preview Panel */}
+        <div className="lg:col-span-1">
+          <MetadataPreview
+            metadata={metadata}
+            onConvert={handleConvertToProject}
+            isConvertEnabled={completeness >= 80}
+          />
+        </div>
       </div>
     </div>
   )

@@ -336,6 +336,8 @@ model Seed {
   // Elaboration tracking
   elaborationCount Int   @default(0) @map("elaboration_count")
   currentVersion   Json? @map("current_version") // Latest elaborated version
+  completeness     Int   @default(0) // Elaboration completeness (0-100%)
+  metadata         Json? // Rich seed metadata (PRD Section 1.2)
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
