@@ -38,6 +38,32 @@ Welcome to OpenHorizon! This guide will help you master the AI-powered Erasmus+ 
 - Approval likelihood scoring
 - Unlimited saves and elaborations
 
+#### 1b. Seed Elaboration - Guided Project Planning 🆕
+
+**[Complete Walkthrough →](features/seed-elaboration.md)**
+
+**What it does:**
+- Conversational AI interview (7 essential questions)
+- Extracts structured metadata from natural language
+- Auto-calculates budgets, timelines, visa requirements
+- Real-time completeness tracking (0-100%)
+- Enables project conversion at 80%+
+
+**When to use:**
+- Converting seeds to detailed projects
+- Validating against Erasmus+ requirements
+- Structuring vague ideas into concrete plans
+- Saving time on manual project setup
+
+**Key features:**
+- Natural language processing (GPT-4o)
+- Quick reply buttons for common answers
+- Smart default suggestions
+- Edit and refine answers
+- Auto-calculation of derived fields
+
+**Time investment:** 1-2 minutes from seed to complete project
+
 ---
 
 ### 2. Projects - Full Project Management
