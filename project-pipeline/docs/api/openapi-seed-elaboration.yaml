@@ -1,0 +1,771 @@
+openapi: 3.0.0
+info:
+  title: Seed Elaboration API
+  description: |
+    API endpoints for seed elaboration with conversational AI agent.
+
+    The Seed Elaboration API provides a structured, conversational interface for gathering
+    detailed project information from users. It guides users through a series of questions
+    to extract metadata about participants, timeline, budget, destination, and requirements.
+
+    **Features:**
+    - Conversational elaboration flow with intelligent question sequencing
+    - Real-time completeness tracking (0-100%)
+    - Extracted metadata validation
+    - Context-aware quick reply suggestions
+    - Session management with resume capability
+
+  version: 1.0.0
+  contact:
+    name: API Support
+    email: support@openhorizon.cc
+
+servers:
+  - url: http://localhost:3000
+    description: Local development server
+  - url: https://api.openhorizon.cc
+    description: Production server
+
+tags:
+  - name: Elaboration
+    description: Seed elaboration endpoints
+
+security:
+  - BearerAuth: []
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token obtained from /auth/login
+
+  schemas:
+    # Request Schemas
+    StartElaborationRequest:
+      type: object
+      properties:
+        seedId:
+          type: string
+          format: uuid
+          description: The ID of the seed to elaborate
+      required:
+        - seedId
+
+    SubmitAnswerRequest:
+      type: object
+      properties:
+        sessionId:
+          type: string
+          format: uuid
+          description: The elaboration session ID
+        answer:
+          type: string
+          minLength: 1
+          maxLength: 1000
+          description: User's answer to the current question
+      required:
+        - sessionId
+        - answer
+      example:
+        sessionId: "550e8400-e29b-41d4-a716-446655440000"
+        answer: "30 young people aged 18-25 from Turkey, Spain, and Germany"
+
+    # Response Schemas
+    StartSessionResponse:
+      type: object
+      properties:
+        sessionId:
+          type: string
+          format: uuid
+          description: Unique session identifier for this elaboration
+        question:
+          type: string
+          description: The first question to ask the user
+        questionNumber:
+          type: integer
+          minimum: 1
+          description: Current question number (1-based)
+        totalQuestions:
+          type: integer
+          minimum: 1
+          description: Total estimated questions (may adjust based on answers)
+        completeness:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 100
+          description: Percentage of required information collected (0-100)
+        suggestions:
+          type: array
+          items:
+            type: string
+          description: Quick reply suggestions for the current question
+        metadata:
+          $ref: '#/components/schemas/SeedMetadata'
+      required:
+        - sessionId
+        - question
+        - completeness
+        - metadata
+      example:
+        sessionId: "550e8400-e29b-41d4-a716-446655440000"
+        question: "Who will participate in this exchange? Please describe the participant profile."
+        questionNumber: 1
+        totalQuestions: 7
+        completeness: 0
+        suggestions:
+          - "Young people aged 18-30"
+          - "Students from universities"
+          - "Youth workers"
+
+    ProcessAnswerResponse:
+      type: object
+      properties:
+        sessionId:
+          type: string
+          format: uuid
+          description: The elaboration session ID
+        nextQuestion:
+          type: string
+          nullable: true
+          description: The next question (null if session is complete)
+        questionNumber:
+          type: integer
+          minimum: 1
+          description: Current question number
+        totalQuestions:
+          type: integer
+          minimum: 1
+          description: Total estimated questions
+        completeness:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 100
+          description: Percentage of required information collected (0-100)
+        complete:
+          type: boolean
+          description: Whether all required information has been collected
+        extractedMetadata:
+          type: object
+          description: Metadata extracted from the user's answer
+          additionalProperties: true
+        suggestions:
+          type: array
+          items:
+            type: string
+          description: Quick reply suggestions for the next question
+        validationErrors:
+          type: array
+          items:
+            type: string
+          description: Validation errors for the user's answer (if any)
+        metadata:
+          $ref: '#/components/schemas/SeedMetadata'
+      required:
+        - sessionId
+        - completeness
+        - complete
+        - metadata
+      example:
+        sessionId: "550e8400-e29b-41d4-a716-446655440000"
+        nextQuestion: "Where will the exchange take place? Please specify the destination city and country."
+        questionNumber: 2
+        totalQuestions: 7
+        completeness: 14
+        complete: false
+        extractedMetadata:
+          participantCount: 30
+          ageRange:
+            min: 18
+            max: 25
+          participantCountries: ["TR", "ES", "DE"]
+        suggestions:
+          - "Barcelona, Spain"
+          - "Berlin, Germany"
+          - "Istanbul, Turkey"
+
+    ElaborationStatusResponse:
+      type: object
+      properties:
+        completeness:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 100
+          description: Percentage of required information collected (0-100)
+        metadata:
+          $ref: '#/components/schemas/SeedMetadata'
+        missingFields:
+          type: array
+          items:
+            type: string
+          description: List of metadata fields that still need to be collected
+      required:
+        - completeness
+        - metadata
+        - missingFields
+      example:
+        completeness: 42
+        metadata:
+          participantCount: 30
+          participantCountries: ["TR", "ES", "DE"]
+          ageRange:
+            min: 18
+            max: 25
+          completeness: 42
+        missingFields:
+          - "duration"
+          - "startDate"
+          - "destination"
+          - "totalBudget"
+
+    SeedMetadata:
+      type: object
+      properties:
+        # Participant Information
+        participantCount:
+          type: integer
+          minimum: 16
+          maximum: 60
+          description: Total number of participants (Erasmus+ requirement 16-60)
+        participantCountries:
+          type: array
+          items:
+            type: string
+            pattern: '^[A-Z]{2}$'
+          description: ISO 3166-1 alpha-2 country codes of participating countries
+        ageRange:
+          type: object
+          properties:
+            min:
+              type: integer
+              minimum: 13
+              maximum: 100
+            max:
+              type: integer
+              minimum: 13
+              maximum: 100
+          description: Age range of participants
+
+        # Timeline
+        duration:
+          type: integer
+          minimum: 5
+          maximum: 21
+          description: Exchange duration in days (typical Erasmus+ range)
+        startDate:
+          type: string
+          format: date
+          description: Exchange start date
+        endDate:
+          type: string
+          format: date
+          description: Exchange end date
+
+        # Budget
+        totalBudget:
+          type: number
+          format: float
+          minimum: 0
+          description: Total budget in EUR
+        budgetPerParticipant:
+          type: number
+          format: float
+          minimum: 0
+          description: Budget per participant in EUR (suggested 300-500)
+
+        # Destination
+        destination:
+          type: object
+          properties:
+            country:
+              type: string
+              pattern: '^[A-Z]{2}$'
+              description: ISO 3166-1 alpha-2 country code
+            city:
+              type: string
+              description: Destination city name
+            venue:
+              type: string
+              description: Venue name (optional)
+            accessibility:
+              type: string
+              description: Accessibility notes
+
+        # Requirements
+        requirements:
+          type: object
+          properties:
+            visas:
+              type: array
+              items:
+                type: object
+                properties:
+                  country:
+                    type: string
+                    pattern: '^[A-Z]{2}$'
+                  needed:
+                    type: boolean
+                  estimatedCost:
+                    type: number
+                    format: float
+            insurance:
+              type: boolean
+              description: Whether travel insurance is required
+            permits:
+              type: array
+              items:
+                type: string
+              description: List of required permits
+            accessibility:
+              type: array
+              items:
+                type: string
+              description: Accessibility requirements
+
+        # Activities
+        activities:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+              duration:
+                type: string
+                description: Duration string (e.g., "2 days", "4 hours")
+              budget:
+                type: number
+                format: float
+              learningOutcomes:
+                type: array
+                items:
+                  type: string
+
+        # EU Alignment
+        erasmusPriorities:
+          type: array
+          items:
+            type: string
+          description: Erasmus+ priorities (e.g., "Inclusion", "Green", "Digital")
+        learningObjectives:
+          type: array
+          items:
+            type: string
+          description: Learning objectives aligned with Erasmus+
+
+        # Completeness Tracking
+        completeness:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 100
+          description: Percentage of required information collected
+        missingFields:
+          type: array
+          items:
+            type: string
+          description: List of fields still needed
+
+        # Session Tracking
+        sessionId:
+          type: string
+          format: uuid
+          description: Current session ID
+        currentQuestionIndex:
+          type: integer
+          minimum: 0
+          description: Index of current question in sequence
+
+    # Error Schemas
+    Error:
+      type: object
+      properties:
+        statusCode:
+          type: integer
+        error:
+          type: string
+        message:
+          type: string
+      required:
+        - statusCode
+        - error
+        - message
+
+    ValidationError:
+      type: object
+      properties:
+        statusCode:
+          type: integer
+          example: 400
+        error:
+          type: string
+          example: "Validation error"
+        details:
+          type: array
+          items:
+            type: object
+            properties:
+              path:
+                type: array
+                items:
+                  type: string
+              message:
+                type: string
+              code:
+                type: string
+      required:
+        - statusCode
+        - error
+
+paths:
+  /seeds/{id}/elaborate/start:
+    post:
+      tags:
+        - Elaboration
+      summary: Start elaboration session
+      description: |
+        Start a new conversational elaboration session for a seed. This endpoint
+        initializes the session and returns the first question to ask the user.
+
+        The agent will guide the user through a series of questions to gather:
+        - Participant information (count, countries, age range)
+        - Timeline (duration, start/end dates)
+        - Budget (total, per-participant)
+        - Destination (country, city, venue)
+        - Requirements (visas, insurance, permits, accessibility)
+        - Activities and learning objectives
+
+        The session can be resumed later using the returned sessionId.
+
+      operationId: startElaborationSession
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          description: Seed ID (UUID)
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Session started successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StartSessionResponse'
+              examples:
+                initial_question:
+                  summary: Initial question about participants
+                  value:
+                    sessionId: "550e8400-e29b-41d4-a716-446655440000"
+                    question: "Who will participate in this exchange? Please describe the participant profile, including approximate count and age range."
+                    questionNumber: 1
+                    totalQuestions: 7
+                    completeness: 0
+                    suggestions:
+                      - "30 young people aged 18-25"
+                      - "Students from 3 countries"
+                      - "Youth workers and educators"
+                    metadata:
+                      completeness: 0
+        '401':
+          description: Unauthorized - Invalid or missing JWT token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                statusCode: 401
+                error: "Unauthorized"
+                message: "Invalid or missing authentication token"
+        '404':
+          description: Seed not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                statusCode: 404
+                error: "Not Found"
+                message: "Seed not found"
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                statusCode: 500
+                error: "Internal Server Error"
+                message: "Failed to start elaboration session"
+
+  /seeds/{id}/elaborate/answer:
+    post:
+      tags:
+        - Elaboration
+      summary: Submit answer to current question
+      description: |
+        Submit the user's answer to the current question and receive the next question.
+
+        The AI agent will:
+        1. Extract structured metadata from the natural language answer
+        2. Validate the extracted information
+        3. Update the completeness percentage
+        4. Generate the next question or indicate completion
+        5. Provide quick reply suggestions for the next question
+
+        If the session is complete (all required information collected), the
+        `complete` field will be `true` and `nextQuestion` will be `null`.
+
+      operationId: processElaborationAnswer
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          description: Seed ID (UUID)
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubmitAnswerRequest'
+            examples:
+              participant_answer:
+                summary: Answer about participants
+                value:
+                  sessionId: "550e8400-e29b-41d4-a716-446655440000"
+                  answer: "30 young people aged 18-25 from Turkey, Spain, and Germany"
+              destination_answer:
+                summary: Answer about destination
+                value:
+                  sessionId: "550e8400-e29b-41d4-a716-446655440000"
+                  answer: "Barcelona, Spain, at the Youth Hostel Barcelona"
+              duration_answer:
+                summary: Answer about duration
+                value:
+                  sessionId: "550e8400-e29b-41d4-a716-446655440000"
+                  answer: "7 days, from July 15 to July 21, 2024"
+      responses:
+        '200':
+          description: Answer processed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProcessAnswerResponse'
+              examples:
+                next_question:
+                  summary: Answer processed, next question returned
+                  value:
+                    sessionId: "550e8400-e29b-41d4-a716-446655440000"
+                    nextQuestion: "Where will the exchange take place? Please specify the destination city and country."
+                    questionNumber: 2
+                    totalQuestions: 7
+                    completeness: 14
+                    complete: false
+                    extractedMetadata:
+                      participantCount: 30
+                      ageRange:
+                        min: 18
+                        max: 25
+                      participantCountries: ["TR", "ES", "DE"]
+                    suggestions:
+                      - "Barcelona, Spain"
+                      - "Berlin, Germany"
+                      - "Istanbul, Turkey"
+                    metadata:
+                      participantCount: 30
+                      ageRange:
+                        min: 18
+                        max: 25
+                      participantCountries: ["TR", "ES", "DE"]
+                      completeness: 14
+                session_complete:
+                  summary: All information collected, session complete
+                  value:
+                    sessionId: "550e8400-e29b-41d4-a716-446655440000"
+                    nextQuestion: null
+                    questionNumber: 7
+                    totalQuestions: 7
+                    completeness: 100
+                    complete: true
+                    extractedMetadata:
+                      erasmusPriorities: ["Inclusion", "Green"]
+                    metadata:
+                      participantCount: 30
+                      participantCountries: ["TR", "ES", "DE"]
+                      ageRange:
+                        min: 18
+                        max: 25
+                      duration: 7
+                      startDate: "2024-07-15"
+                      endDate: "2024-07-21"
+                      totalBudget: 15000
+                      destination:
+                        country: "ES"
+                        city: "Barcelona"
+                        venue: "Youth Hostel Barcelona"
+                      completeness: 100
+        '400':
+          description: Bad request - Missing fields or invalid session
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                missing_fields:
+                  summary: Missing required fields
+                  value:
+                    statusCode: 400
+                    error: "Bad Request"
+                    message: "sessionId and answer are required"
+                invalid_session:
+                  summary: Invalid session ID
+                  value:
+                    statusCode: 400
+                    error: "Bad Request"
+                    message: "Invalid session ID"
+        '401':
+          description: Unauthorized - Invalid or missing JWT token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Seed not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                statusCode: 404
+                error: "Not Found"
+                message: "Seed not found"
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /seeds/{id}/elaborate/status:
+    get:
+      tags:
+        - Elaboration
+      summary: Get elaboration progress
+      description: |
+        Get the current elaboration status and progress for a seed.
+
+        Returns:
+        - Completeness percentage (0-100%)
+        - All collected metadata
+        - List of missing fields that still need to be gathered
+
+        Useful for:
+        - Showing progress indicators in the UI
+        - Resuming interrupted sessions
+        - Validating that all required information has been collected
+
+      operationId: getElaborationStatus
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          description: Seed ID (UUID)
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Elaboration status retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ElaborationStatusResponse'
+              examples:
+                partial_completion:
+                  summary: Partially completed elaboration
+                  value:
+                    completeness: 42
+                    metadata:
+                      participantCount: 30
+                      participantCountries: ["TR", "ES", "DE"]
+                      ageRange:
+                        min: 18
+                        max: 25
+                      destination:
+                        country: "ES"
+                        city: "Barcelona"
+                      completeness: 42
+                    missingFields:
+                      - "duration"
+                      - "startDate"
+                      - "endDate"
+                      - "totalBudget"
+                      - "activities"
+                complete:
+                  summary: Fully completed elaboration
+                  value:
+                    completeness: 100
+                    metadata:
+                      participantCount: 30
+                      participantCountries: ["TR", "ES", "DE"]
+                      ageRange:
+                        min: 18
+                        max: 25
+                      duration: 7
+                      startDate: "2024-07-15"
+                      endDate: "2024-07-21"
+                      totalBudget: 15000
+                      destination:
+                        country: "ES"
+                        city: "Barcelona"
+                        venue: "Youth Hostel Barcelona"
+                      activities:
+                        - name: "Cultural workshop"
+                          duration: "2 days"
+                      erasmusPriorities: ["Inclusion", "Green"]
+                      completeness: 100
+                    missingFields: []
+                no_elaboration:
+                  summary: No elaboration session started
+                  value:
+                    completeness: 0
+                    metadata:
+                      completeness: 0
+                    missingFields:
+                      - "all"
+        '401':
+          description: Unauthorized - Invalid or missing JWT token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Seed not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                statusCode: 404
+                error: "Not Found"
+                message: "Seed not found"
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
