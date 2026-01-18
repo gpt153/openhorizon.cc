@@ -47,6 +47,23 @@ export interface ElaborationResponse {
   updatedSeed: GeneratedSeed
   updatedApprovalLikelihood: number
   updatedApprovalLikelihoodFormal: number
+  metadata?: RichSeedMetadata
+  completeness?: number
+  nextQuestionId?: number
+}
+
+export interface RichSeedMetadata {
+  participantCount?: number
+  duration?: number
+  destination?: {
+    country: string
+    city: string
+  }
+  participantCountries?: string[]
+  totalBudget?: number
+  activities?: string[]
+  theme?: string
+  completeness: number
 }
 
 export interface SeedSuggestion {

@@ -3,7 +3,15 @@ import { z } from 'zod'
 import { BrainstormInputSchema, SeedElaborationInputSchema } from '@/lib/schemas/brainstorm'
 import { generateBrainstormSession, getBrainstormStatus } from '../services/brainstorm-generator'
 import { elaborateSeed } from '@/lib/ai/chains/seed-elaboration'
-import type { ElaborationMessage } from '@/lib/types/brainstorm'
+import type { ElaborationMessage, RichSeedMetadata } from '@/lib/types/brainstorm'
+import {
+  getNextQuestion,
+  calculateCompleteness,
+  parseAnswer,
+  validateAnswer,
+  canConvertToProject,
+  type ElaborationQuestion
+} from '@/lib/ai/chains/seed-elaboration-structured'
 
 export const brainstormRouter = router({
   // Generate new brainstorm session
@@ -142,6 +150,12 @@ export const brainstormRouter = router({
         })
       }
 
+      // Get current metadata
+      const currentMetadata: RichSeedMetadata = (seed.metadata as any) || { completeness: 0 }
+
+      // Get next question to ask
+      const nextQuestion = getNextQuestion(currentMetadata)
+
       // Run AI elaboration
       const currentSeed = elaboration.currentSeedState as any
       const history = elaboration.conversationHistory as unknown as ElaborationMessage[]
@@ -151,6 +165,28 @@ export const brainstormRouter = router({
         history,
         input.userMessage
       )
+
+      // If we have a next question, extract structured data from the answer
+      let updatedMetadata = { ...currentMetadata }
+      if (nextQuestion) {
+        const parsedAnswer = parseAnswer(nextQuestion, input.userMessage)
+        const validation = validateAnswer(nextQuestion, parsedAnswer)
+
+        if (validation.valid && parsedAnswer !== null) {
+          // Update metadata with parsed answer
+          updatedMetadata = {
+            ...updatedMetadata,
+            [nextQuestion.field]: parsedAnswer
+          }
+        }
+      }
+
+      // Calculate completeness
+      const completeness = calculateCompleteness(updatedMetadata)
+      updatedMetadata.completeness = completeness
+
+      // Get the next question to ask
+      const newNextQuestion = getNextQuestion(updatedMetadata)
 
       // Update conversation history
       const updatedHistory = [
@@ -191,10 +227,18 @@ export const brainstormRouter = router({
           descriptionFormal: response.updatedSeed.descriptionFormal,
           approvalLikelihoodFormal: response.updatedApprovalLikelihoodFormal,
           elaborationCount: { increment: 1 },
+          // NEW: Metadata and completeness tracking
+          metadata: updatedMetadata as any,
+          completeness: completeness,
         },
       })
 
-      return response
+      return {
+        ...response,
+        metadata: updatedMetadata,
+        completeness: completeness,
+        nextQuestionId: newNextQuestion?.id,
+      }
     }),
 
   // Delete a seed
