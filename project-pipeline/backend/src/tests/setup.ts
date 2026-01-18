@@ -11,97 +11,93 @@ import dotenv from 'dotenv'
 dotenv.config({ path: '.env.test' })
 
 // Mock external services to avoid real API calls during testing
-beforeAll(() => {
-  // Mock Anthropic/Claude API
-  vi.mock('@langchain/anthropic', () => ({
-    ChatAnthropic: vi.fn().mockImplementation(() => ({
-      invoke: vi.fn().mockResolvedValue({
-        content: 'Mocked AI response'
-      })
-    }))
+// IMPORTANT: Mocks must be at module level, not inside beforeAll
+vi.mock('@langchain/anthropic', () => ({
+  ChatAnthropic: vi.fn().mockImplementation(() => ({
+    invoke: vi.fn().mockResolvedValue({
+      content: 'Mocked AI response'
+    })
   }))
+}))
 
-  // Mock OpenAI API
-  vi.mock('@langchain/openai', () => ({
-    OpenAIEmbeddings: vi.fn().mockImplementation(() => ({
-      embedQuery: vi.fn().mockResolvedValue([0.1, 0.2, 0.3, /* ...768 dims */])
-    })),
-    ChatOpenAI: vi.fn().mockImplementation(() => ({
-      invoke: vi.fn().mockResolvedValue({
-        content: 'Mocked AI response'
-      }),
-      call: vi.fn().mockResolvedValue({
-        content: 'Mocked AI response'
-      })
-    }))
+vi.mock('@langchain/openai', () => ({
+  OpenAIEmbeddings: vi.fn().mockImplementation(() => ({
+    embedQuery: vi.fn().mockResolvedValue([0.1, 0.2, 0.3])
+  })),
+  ChatOpenAI: vi.fn().mockImplementation(() => ({
+    invoke: vi.fn().mockResolvedValue({
+      content: 'Mocked AI response'
+    }),
+    call: vi.fn().mockResolvedValue({
+      content: 'Mocked AI response'
+    })
   }))
+}))
 
-  // Mock SendGrid
-  vi.mock('@sendgrid/mail', () => ({
-    setApiKey: vi.fn(),
-    send: vi.fn().mockResolvedValue([{
-      statusCode: 202,
-      body: '',
-      headers: {}
-    }])
-  }))
+vi.mock('@sendgrid/mail', () => ({
+  setApiKey: vi.fn(),
+  send: vi.fn().mockResolvedValue([{
+    statusCode: 202,
+    body: '',
+    headers: {}
+  }])
+}))
 
-  // Mock Playwright for web scraping
-  vi.mock('playwright', () => ({
-    chromium: {
-      launch: vi.fn().mockResolvedValue({
-        newPage: vi.fn().mockResolvedValue({
-          goto: vi.fn(),
-          evaluate: vi.fn().mockResolvedValue([]),
-          close: vi.fn()
-        }),
+vi.mock('playwright', () => ({
+  chromium: {
+    launch: vi.fn().mockResolvedValue({
+      newPage: vi.fn().mockResolvedValue({
+        goto: vi.fn(),
+        evaluate: vi.fn().mockResolvedValue([]),
         close: vi.fn()
-      })
-    }
-  }))
+      }),
+      close: vi.fn()
+    })
+  }
+}))
 
-  // Mock Weaviate client
-  vi.mock('weaviate-ts-client', () => ({
-    default: {
-      client: vi.fn().mockReturnValue({
-        schema: {
-          classCreator: vi.fn().mockReturnValue({
-            withClass: vi.fn().mockReturnThis(),
-            do: vi.fn().mockResolvedValue({})
-          })
-        },
-        data: {
-          creator: vi.fn().mockReturnValue({
-            withClassName: vi.fn().mockReturnThis(),
-            withProperties: vi.fn().mockReturnThis(),
-            withVector: vi.fn().mockReturnThis(),
-            do: vi.fn().mockResolvedValue({ id: 'mock-id' })
-          }),
-          getterById: vi.fn().mockReturnValue({
-            withId: vi.fn().mockReturnThis(),
-            withClassName: vi.fn().mockReturnThis(),
-            do: vi.fn().mockResolvedValue({})
-          })
-        },
-        graphql: {
-          get: vi.fn().mockReturnValue({
-            withClassName: vi.fn().mockReturnThis(),
-            withFields: vi.fn().mockReturnThis(),
-            withNearVector: vi.fn().mockReturnThis(),
-            withLimit: vi.fn().mockReturnThis(),
-            do: vi.fn().mockResolvedValue({
-              data: {
-                Get: {
-                  LearningPattern: []
-                }
+vi.mock('weaviate-ts-client', () => ({
+  default: {
+    client: vi.fn().mockReturnValue({
+      schema: {
+        classCreator: vi.fn().mockReturnValue({
+          withClass: vi.fn().mockReturnThis(),
+          do: vi.fn().mockResolvedValue({})
+        })
+      },
+      data: {
+        creator: vi.fn().mockReturnValue({
+          withClassName: vi.fn().mockReturnThis(),
+          withProperties: vi.fn().mockReturnThis(),
+          withVector: vi.fn().mockReturnThis(),
+          do: vi.fn().mockResolvedValue({ id: 'mock-id' })
+        }),
+        getterById: vi.fn().mockReturnValue({
+          withId: vi.fn().mockReturnThis(),
+          withClassName: vi.fn().mockReturnThis(),
+          do: vi.fn().mockResolvedValue({})
+        })
+      },
+      graphql: {
+        get: vi.fn().mockReturnValue({
+          withClassName: vi.fn().mockReturnThis(),
+          withFields: vi.fn().mockReturnThis(),
+          withNearVector: vi.fn().mockReturnThis(),
+          withLimit: vi.fn().mockReturnThis(),
+          do: vi.fn().mockResolvedValue({
+            data: {
+              Get: {
+                LearningPattern: []
               }
-            })
+            }
           })
-        }
-      })
-    }
-  }))
+        })
+      }
+    })
+  }
+}))
 
+beforeAll(() => {
   console.log('✅ Test environment initialized')
 })
 
