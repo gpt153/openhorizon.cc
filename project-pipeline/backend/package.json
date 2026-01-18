@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/app.ts",
-    "build": "tsc",
+    "build": "NODE_OPTIONS='--max-old-space-size=4096' tsc",
     "start": "node dist/app.js",
     "test": "vitest",
     "test:coverage": "vitest run --coverage",
@@ -44,7 +44,7 @@
     "langchain": "^0.3.37",
     "playwright": "^1.57.0",
     "socket.io": "^4.8.3",
-    "uuid": "^13.0.0",
+    "uuid": "^11.0.5",
     "weaviate-ts-client": "^2.2.0",
     "zod": "^3.23.8"
   },

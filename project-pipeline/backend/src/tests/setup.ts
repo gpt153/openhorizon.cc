@@ -25,6 +25,14 @@ beforeAll(() => {
   vi.mock('@langchain/openai', () => ({
     OpenAIEmbeddings: vi.fn().mockImplementation(() => ({
       embedQuery: vi.fn().mockResolvedValue([0.1, 0.2, 0.3, /* ...768 dims */])
+    })),
+    ChatOpenAI: vi.fn().mockImplementation(() => ({
+      invoke: vi.fn().mockResolvedValue({
+        content: 'Mocked AI response'
+      }),
+      call: vi.fn().mockResolvedValue({
+        content: 'Mocked AI response'
+      })
     }))
   }))
 
