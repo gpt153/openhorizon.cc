@@ -3,6 +3,14 @@
 **Issue**: #97 - Backend: Conversational Seed Elaboration Agent
 **Part of**: #96 - Intelligent Seed Elaboration System (Part 1/4)
 
+## Documentation
+
+**📖 For users:** See **[User Documentation - Seed Elaboration Walkthrough](docs/user-guide/features/seed-elaboration.md)** for a complete guide with screenshots, examples, and FAQ.
+
+**👨‍💻 For developers:** Continue reading for technical implementation details.
+
+---
+
 ## Overview
 
 The Conversational Seed Elaboration Agent is an AI-powered system that progressively gathers project requirements through natural dialogue, extracts structured metadata, validates against Erasmus+ requirements, and calculates completeness scores.

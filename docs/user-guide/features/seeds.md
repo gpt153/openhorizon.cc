@@ -91,12 +91,41 @@ For each seed, you have three options:
 
 ## Elaborating Seeds
 
-Elaboration is a conversational refinement process where you work with AI to perfect your seed.
+Elaboration is an AI-powered conversational interview that transforms your seed into structured, Erasmus+-ready project data in under 2 minutes.
 
-### When to Elaborate
+### Two Types of Elaboration
 
-Elaborate when:
-- The seed is close but needs tweaking
+**1. Conversational Elaboration (Recommended)** 🆕
+- AI guides you through **7 essential questions**
+- Extracts structured metadata from natural language
+- Auto-calculates budgets, timelines, visa requirements
+- Real-time completeness tracking (0-100%)
+- Enables project conversion at 80%+
+- **Time: 1-2 minutes**
+
+**[→ See Complete Walkthrough Guide](seed-elaboration.md)** for detailed instructions with examples and screenshots.
+
+**2. Free-Form Elaboration (Advanced)**
+- Conversational refinement for specific tweaks
+- Ask AI to adjust target groups, activities, objectives
+- Build iteratively through back-and-forth discussion
+- Best for minor refinements to well-formed seeds
+
+---
+
+### When to Use Conversational Elaboration
+
+Use the **7-question guided elaboration** when:
+- ✅ You need structured project data for conversion
+- ✅ You want to validate against Erasmus+ requirements
+- ✅ You're uncertain about project parameters
+- ✅ You want AI to auto-calculate budgets and visa needs
+- ✅ You need quick results (<2 minutes)
+
+### When to Use Free-Form Elaboration
+
+Use **free-form elaboration** when:
+- The seed is close but needs minor tweaking
 - You want to explore specific activity types
 - Target group needs adjustment
 - Learning objectives aren't quite right
