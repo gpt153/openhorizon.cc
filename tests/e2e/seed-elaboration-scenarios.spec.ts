@@ -1,461 +1,437 @@
 import { test, expect } from '@playwright/test'
+import { getTestPrismaClient } from '../helpers/database'
+import {
+  ALL_SCENARIOS,
+  createScenarioSeed,
+  type ScenarioSeedData
+} from '../fixtures/scenario-seeds'
+import {
+  assertTimelineValid,
+  assertBudgetValid,
+  assertVisaRequirementsValid,
+  assertChecklistValid,
+  assertPerformanceValid,
+  assertPhaseStructureValid,
+  assertBudgetBreakdownValid
+} from '../helpers/assertions'
+
+// Import convertSeedToProject from backend
+import { convertSeedToProject } from '../../project-pipeline/backend/src/seeds/seeds.service'
 
 /**
- * E2E Test Suite: Seed Elaboration - 5 Production Scenarios
+ * E2E Test Suite: Seed Elaboration - 5 Project Scenarios
  *
- * Tests realistic end-to-end scenarios from Issue #177 to validate
- * the seed elaboration feature handles different project types correctly.
+ * Tests complete seed → project conversion across different project types
+ * to validate all generators work correctly with varying inputs.
  *
- * Part of Issue #180: Deployment Validation - Staging Environment Testing
- * Related: Issue #177: 5 E2E Scenarios for Seed Elaboration
+ * Part of Epic 001: Seed Elaboration Validation
+ * Related: Issue #177 (E2E Testing - Various Project Scenarios)
+ *
+ * Test Scenarios:
+ * 1. Small Project (20 participants, 5 days, €10k, Germany)
+ * 2. Large Project (60 participants, 14 days, €50k, Spain)
+ * 3. Long-Distance Travel (30 participants, 10 days, €35k, Morocco)
+ * 4. Workshop-Heavy Program (40 participants, 7 days, €25k, Netherlands)
+ * 5. Short Duration (25 participants, 3 days, €8k, France)
+ *
+ * Acceptance Criteria:
+ * - All 5 scenarios complete without errors
+ * - Generated projects have valid timelines (sequential phases, no overlaps)
+ * - Budget allocations sum to 100% for all scenarios
+ * - Visa requirements correctly identified for non-EU destinations
+ * - Checklists include all mandatory items
+ * - No crashes or validation errors
+ * - Performance: Each scenario completes in <60 seconds
  */
 
-const APP_URL = process.env.APP_URL || 'http://localhost:5174'
-const ELABORATION_TIMEOUT = 60000 // 60 seconds for full elaboration
+test.describe('Seed Elaboration - 5 Project Scenarios', () => {
+  let prisma: ReturnType<typeof getTestPrismaClient>
+  let testUserId: string
+  let testTenantId: string
 
-interface ScenarioMetrics {
-  startTime: number
-  endTime: number
-  duration: number
-  questionResponseTimes: number[]
-  completeness: number
-  questionsAnswered: number
-}
+  test.beforeAll(async () => {
+    prisma = getTestPrismaClient()
 
-/**
- * Helper: Wait for AI response
- */
-async function waitForAIResponse(page: any, previousMessageCount: number): Promise<void> {
-  await page.waitForFunction(
-    (prevCount: number) => {
-      const messages = document.querySelectorAll('[data-testid="ai-message"], .assistant-message')
-      return messages.length > prevCount
-    },
-    previousMessageCount,
-    { timeout: 15000 }
-  )
-}
+    // Create test user
+    const testUser = await prisma.user.create({
+      data: {
+        clerkId: `clerk_scenario_test_${Date.now()}`,
+        email: `scenario-test-${Date.now()}@example.com`,
+        firstName: 'Scenario',
+        lastName: 'Test User'
+      }
+    })
 
-/**
- * Helper: Send answer and measure response time
- */
-async function sendAnswer(
-  page: any,
-  answer: string
-): Promise<{ responseTime: number; aiMessageCount: number }> {
-  const startTime = Date.now()
+    testUserId = testUser.id
 
-  // Get current AI message count
-  const aiMessages = page.locator('[data-testid="ai-message"], .assistant-message')
-  const previousCount = await aiMessages.count()
+    // Create test tenant
+    const testTenant = await prisma.tenant.create({
+      data: {
+        name: `Scenario Test Org ${Date.now()}`,
+        slug: `scenario-test-${Date.now()}`
+      }
+    })
 
-  // Find and fill input
-  const messageInput = page.locator('textarea, input[type="text"]').last()
-  await messageInput.fill(answer)
+    testTenantId = testTenant.id
 
-  // Send
-  const sendButton = page.locator('button:has-text("Send"), button[type="submit"]').last()
-  await sendButton.click()
-
-  // Wait for AI response
-  await waitForAIResponse(page, previousCount)
-
-  const responseTime = Date.now() - startTime
-  const newCount = await aiMessages.count()
-
-  return { responseTime, aiMessageCount: newCount }
-}
-
-/**
- * Helper: Start elaboration session
- */
-async function startElaboration(page: any): Promise<void> {
-  // Navigate to seeds page
-  await page.goto(`${APP_URL}/seeds`)
-  await page.waitForLoadState('networkidle')
-
-  // Check if we have seeds, if not create one
-  const seedCards = page.locator('[data-testid="seed-card"], .seed-card')
-  const seedCount = await seedCards.count()
-
-  if (seedCount === 0) {
-    // Create a basic seed
-    await page.goto(`${APP_URL}/seeds/generate`)
-    await page
-      .locator('textarea[name="prompt"], input[name="prompt"]')
-      .fill('Youth exchange project for cultural learning')
-    await page.locator('button:has-text("Generate"), button:has-text("Brainstorm")').click()
-
-    const generatedSeed = page.locator('[data-testid="seed-card"], .seed-card').first()
-    await expect(generatedSeed).toBeVisible({ timeout: 30000 })
-
-    // Save it if needed
-    const saveButton = generatedSeed.locator('button:has-text("Save")')
-    if (await saveButton.isVisible({ timeout: 2000 }).catch(() => false)) {
-      await saveButton.click()
-      await page.waitForTimeout(1000)
-    }
-
-    await page.goto(`${APP_URL}/seeds`)
-    await page.waitForLoadState('networkidle')
-  }
-
-  // Click first seed to go to detail page
-  const firstSeed = page.locator('[data-testid="seed-card"], .seed-card').first()
-  await expect(firstSeed).toBeVisible()
-  await firstSeed.click()
-
-  await page.waitForLoadState('networkidle')
-
-  // Start elaboration
-  const elaborateButton = page.locator(
-    'button:has-text("Elaborate"), button:has-text("Start Elaboration")'
-  )
-
-  if (await elaborateButton.isVisible({ timeout: 5000 }).catch(() => false)) {
-    await elaborateButton.click()
-    await page.waitForTimeout(1000)
-
-    // Wait for first AI message
-    const aiMessage = page.locator('[data-testid="ai-message"], .assistant-message').first()
-    await expect(aiMessage).toBeVisible({ timeout: 10000 })
-  } else {
-    throw new Error('Elaborate button not found')
-  }
-}
-
-/**
- * Helper: Get completeness percentage
- */
-async function getCompleteness(page: any): Promise<number> {
-  const progressIndicator = page.locator(
-    '[data-testid="progress"], .progress-bar, text=/\\d+%|progress|completeness/i'
-  )
-
-  if (await progressIndicator.isVisible({ timeout: 2000 }).catch(() => false)) {
-    const progressText = await progressIndicator.innerText()
-    const match = progressText.match(/(\d+)%/)
-    if (match) {
-      return parseInt(match[1])
-    }
-  }
-
-  return 0
-}
-
-test.describe('Issue #177: 5 E2E Scenarios for Seed Elaboration', () => {
-  test.setTimeout(ELABORATION_TIMEOUT)
-
-  test('Scenario 1: Small project (20 participants, 5 days, €10k)', async ({ page }) => {
-    console.log('🧪 Testing Scenario 1: Small Project')
-
-    const metrics: ScenarioMetrics = {
-      startTime: Date.now(),
-      endTime: 0,
-      duration: 0,
-      questionResponseTimes: [],
-      completeness: 0,
-      questionsAnswered: 0
-    }
-
-    await startElaboration(page)
-
-    // Define scenario 1 answers
-    const answers = [
-      '20 participants from Spain, France, and Italy',
-      '5 days from June 1-5, 2026 in Barcelona, Spain',
-      'Cultural exchange and language learning workshops',
-      'Youth aged 18-25 interested in European culture',
-      '€10,000 total budget, covering accommodation, food, and activities',
-      'Spanish Ministry of Youth and Education',
-      'Improve intercultural competences and language skills'
-    ]
-
-    // Answer each question
-    for (const answer of answers) {
-      const { responseTime } = await sendAnswer(page, answer)
-      metrics.questionResponseTimes.push(responseTime)
-      metrics.questionsAnswered++
-
-      console.log(`   Question ${metrics.questionsAnswered}: ${responseTime}ms`)
-
-      // Check if response time meets target (<5s = 5000ms)
-      expect(responseTime).toBeLessThan(5000)
-
-      await page.waitForTimeout(500) // Brief pause between questions
-    }
-
-    // Get final completeness
-    metrics.completeness = await getCompleteness(page)
-    metrics.endTime = Date.now()
-    metrics.duration = metrics.endTime - metrics.startTime
-
-    // Assertions
-    console.log(`\n   📊 Metrics:`)
-    console.log(`      Total duration: ${metrics.duration}ms`)
-    console.log(`      Questions answered: ${metrics.questionsAnswered}`)
-    console.log(`      Completeness: ${metrics.completeness}%`)
-    console.log(`      Avg response time: ${Math.round(metrics.questionResponseTimes.reduce((a, b) => a + b, 0) / metrics.questionResponseTimes.length)}ms`)
-
-    // Performance targets
-    expect(metrics.duration).toBeLessThan(40000) // <40s total
-    expect(metrics.completeness).toBeGreaterThanOrEqual(90) // At least 90% complete
-    expect(metrics.questionsAnswered).toBeGreaterThanOrEqual(5) // At least 5 questions
-
-    // Verify metadata was extracted
-    const metadataSection = page.locator('[data-testid="metadata"], .metadata')
-    if (await metadataSection.isVisible({ timeout: 2000 }).catch(() => false)) {
-      const metadataText = await metadataSection.innerText()
-
-      // Should contain key information
-      expect(metadataText).toContain('20')
-      expect(metadataText.toLowerCase()).toMatch(/participant|spain|barcelona/i)
-    }
-
-    console.log('   ✅ Scenario 1 completed successfully')
+    console.log(`\n🧪 Test User ID: ${testUserId}`)
+    console.log(`🧪 Test Tenant ID: ${testTenantId}\n`)
   })
 
-  test('Scenario 2: Large project (60 participants, 14 days, €50k)', async ({ page }) => {
-    console.log('🧪 Testing Scenario 2: Large Project')
+  test.afterAll(async () => {
+    // Cleanup: Delete all test data in reverse order due to foreign keys
+    await prisma.phase.deleteMany({
+      where: { project: { userId: testUserId } }
+    })
+    await prisma.project.deleteMany({
+      where: { userId: testUserId }
+    })
+    await prisma.seed.deleteMany({
+      where: { userId: testUserId }
+    })
+    await prisma.brainstormSession.deleteMany({
+      where: { userId: testUserId }
+    })
+    await prisma.user.delete({
+      where: { id: testUserId }
+    })
+    await prisma.tenant.delete({
+      where: { id: testTenantId }
+    })
 
-    const metrics: ScenarioMetrics = {
-      startTime: Date.now(),
-      endTime: 0,
-      duration: 0,
-      questionResponseTimes: [],
-      completeness: 0,
-      questionsAnswered: 0
-    }
-
-    await startElaboration(page)
-
-    const answers = [
-      '60 participants from 12 different European countries including Spain, France, Germany, Poland, Romania, Italy, Greece, Portugal, Netherlands, Belgium, Austria, and Sweden',
-      '14 days from July 10-23, 2026 in Prague, Czech Republic',
-      'Intensive workshops on climate action, sustainability, and green entrepreneurship with 8 different workshop sessions',
-      'Young professionals and university students aged 20-30 with interest in environmental activism',
-      '€50,000 budget covering international travel, accommodation, meals, workshop materials, and local transportation',
-      'European Commission Erasmus+ KA1 Youth Exchange grant',
-      'Empower young people to become climate leaders and develop sustainable business ideas for their communities'
-    ]
-
-    for (const answer of answers) {
-      const { responseTime } = await sendAnswer(page, answer)
-      metrics.questionResponseTimes.push(responseTime)
-      metrics.questionsAnswered++
-
-      console.log(`   Question ${metrics.questionsAnswered}: ${responseTime}ms`)
-      expect(responseTime).toBeLessThan(5000)
-
-      await page.waitForTimeout(500)
-    }
-
-    metrics.completeness = await getCompleteness(page)
-    metrics.endTime = Date.now()
-    metrics.duration = metrics.endTime - metrics.startTime
-
-    console.log(`\n   📊 Metrics:`)
-    console.log(`      Total duration: ${metrics.duration}ms`)
-    console.log(`      Completeness: ${metrics.completeness}%`)
-    console.log(`      Avg response time: ${Math.round(metrics.questionResponseTimes.reduce((a, b) => a + b, 0) / metrics.questionResponseTimes.length)}ms`)
-
-    // Allow more time for large project (60s)
-    expect(metrics.duration).toBeLessThan(60000)
-    expect(metrics.completeness).toBeGreaterThanOrEqual(90)
-
-    const metadataSection = page.locator('[data-testid="metadata"], .metadata')
-    if (await metadataSection.isVisible({ timeout: 2000 }).catch(() => false)) {
-      const metadataText = await metadataSection.innerText()
-      expect(metadataText).toContain('60')
-      expect(metadataText.toLowerCase()).toMatch(/prague|czech|climate|sustainability/i)
-    }
-
-    console.log('   ✅ Scenario 2 completed successfully')
+    console.log('\n✅ Test cleanup complete\n')
   })
 
-  test('Scenario 3: Long-distance travel (Morocco, visas)', async ({ page }) => {
-    console.log('🧪 Testing Scenario 3: Long-Distance Travel')
+  // ==========================================================================
+  // SCENARIO 1: SMALL PROJECT (Germany)
+  // ==========================================================================
 
-    const metrics: ScenarioMetrics = {
-      startTime: Date.now(),
-      endTime: 0,
-      duration: 0,
-      questionResponseTimes: [],
-      completeness: 0,
-      questionsAnswered: 0
-    }
+  test('Scenario 1: Small Project - Basic requirements', async () => {
+    const startTime = Date.now()
+    const scenario = ALL_SCENARIOS[0]
 
-    await startElaboration(page)
+    console.log(`\n🧪 Testing ${scenario.name}...`)
 
-    const answers = [
-      '30 participants from Spain, France, and Portugal traveling to Morocco',
-      '10 days from September 5-14, 2026 in Marrakech, Morocco',
-      'Cultural immersion program with Arabic language workshops, traditional arts and crafts, and intercultural dialogue sessions',
-      'Youth aged 18-30 interested in North African culture and Arabic language',
-      '€35,000 covering flights, visas, accommodation, local transportation, and workshop materials',
-      'Spanish Agency for International Development Cooperation and Erasmus+ partner country grant',
-      'Foster Mediterranean cultural understanding and develop language competencies in Arabic and intercultural communication skills'
-    ]
+    // 1. Create seed
+    const seed = await createScenarioSeed(prisma, testUserId, testTenantId, scenario.data)
 
-    for (const answer of answers) {
-      const { responseTime } = await sendAnswer(page, answer)
-      metrics.questionResponseTimes.push(responseTime)
-      metrics.questionsAnswered++
+    // 2. Convert to project
+    const result = await convertSeedToProject(seed.id, testUserId)
 
-      console.log(`   Question ${metrics.questionsAnswered}: ${responseTime}ms`)
-      expect(responseTime).toBeLessThan(5000)
+    const endTime = Date.now()
 
-      await page.waitForTimeout(500)
-    }
+    // 3. Validate project created
+    expect(result.project).toBeDefined()
+    expect(result.project.participantsCount).toBe(20)
+    expect(Number(result.project.budgetTotal)).toBe(10000)
 
-    metrics.completeness = await getCompleteness(page)
-    metrics.endTime = Date.now()
-    metrics.duration = metrics.endTime - metrics.startTime
+    // 4. Validate timeline (short preparation for small project)
+    expect(result.timeline.preparation.durationWeeks).toBe(8)
+    assertTimelineValid(result.phases)
 
-    console.log(`\n   📊 Metrics:`)
-    console.log(`      Total duration: ${metrics.duration}ms`)
-    console.log(`      Completeness: ${metrics.completeness}%`)
+    // 5. Validate budget (100% allocated)
+    assertBudgetValid(result.project, result.phases)
 
-    expect(metrics.duration).toBeLessThan(60000)
-    expect(metrics.completeness).toBeGreaterThanOrEqual(90)
+    // 6. Validate no visa requirements (EU-to-EU)
+    assertVisaRequirementsValid(result.project, false)
 
-    // Verify visa information was captured
-    const metadataSection = page.locator('[data-testid="metadata"], .metadata')
-    if (await metadataSection.isVisible({ timeout: 2000 }).catch(() => false)) {
-      const metadataText = await metadataSection.innerText()
-      expect(metadataText.toLowerCase()).toMatch(/morocco|marrakech|visa|arabic/i)
-    }
+    // 7. Validate phase structure
+    assertPhaseStructureValid(result.phases)
 
-    console.log('   ✅ Scenario 3 completed successfully')
+    // 8. Validate checklists exist
+    assertChecklistValid(result.phases)
+
+    // 9. Validate performance (<60s)
+    assertPerformanceValid(startTime, endTime, 60000)
+
+    console.log(`✅ ${scenario.name} completed in ${endTime - startTime}ms`)
   })
 
-  test('Scenario 4: Workshop-heavy program (5+ workshops)', async ({ page }) => {
-    console.log('🧪 Testing Scenario 4: Workshop-Heavy Program')
+  // ==========================================================================
+  // SCENARIO 2: LARGE PROJECT (Spain)
+  // ==========================================================================
 
-    const metrics: ScenarioMetrics = {
-      startTime: Date.now(),
-      endTime: 0,
-      duration: 0,
-      questionResponseTimes: [],
-      completeness: 0,
-      questionsAnswered: 0
-    }
+  test('Scenario 2: Large Project - Maximum capacity', async () => {
+    const startTime = Date.now()
+    const scenario = ALL_SCENARIOS[1]
 
-    await startElaboration(page)
+    console.log(`\n🧪 Testing ${scenario.name}...`)
 
-    const answers = [
-      '40 participants from Germany, Poland, Czech Republic, and Slovakia',
-      '7 days from August 15-21, 2026 in Berlin, Germany',
-      '6 different workshops: Digital storytelling, Video production, Social media advocacy, Graphic design, Photography basics, and Content creation for social change',
-      'Young activists and content creators aged 19-28 with interest in digital media',
-      '€28,000 covering accommodation, workshop materials, professional trainers, equipment rental, and meals',
-      'German Federal Agency for Civic Education and Robert Bosch Foundation',
-      'Equip young people with digital media skills to amplify social causes and create impactful online campaigns'
-    ]
+    const seed = await createScenarioSeed(prisma, testUserId, testTenantId, scenario.data)
+    const result = await convertSeedToProject(seed.id, testUserId)
 
-    for (const answer of answers) {
-      const { responseTime } = await sendAnswer(page, answer)
-      metrics.questionResponseTimes.push(responseTime)
-      metrics.questionsAnswered++
+    const endTime = Date.now()
 
-      console.log(`   Question ${metrics.questionsAnswered}: ${responseTime}ms`)
-      expect(responseTime).toBeLessThan(5000)
+    // Validate large project handling
+    expect(result.project.participantsCount).toBe(60)
+    expect(Number(result.project.budgetTotal)).toBe(50000)
 
-      await page.waitForTimeout(500)
-    }
+    // Extended preparation for large project
+    expect(result.timeline.preparation.durationWeeks).toBe(12)
 
-    metrics.completeness = await getCompleteness(page)
-    metrics.endTime = Date.now()
-    metrics.duration = metrics.endTime - metrics.startTime
+    // Timeline valid
+    assertTimelineValid(result.phases)
 
-    console.log(`\n   📊 Metrics:`)
-    console.log(`      Total duration: ${metrics.duration}ms`)
-    console.log(`      Completeness: ${metrics.completeness}%`)
+    // Budget allocated
+    assertBudgetValid(result.project, result.phases)
 
-    expect(metrics.duration).toBeLessThan(60000)
-    expect(metrics.completeness).toBeGreaterThanOrEqual(90)
+    // No visa (EU-to-EU)
+    assertVisaRequirementsValid(result.project, false)
 
-    // Verify all workshops were captured
-    const metadataSection = page.locator('[data-testid="metadata"], .metadata')
-    if (await metadataSection.isVisible({ timeout: 2000 }).catch(() => false)) {
-      const metadataText = await metadataSection.innerText()
-      // Should mention workshops or the number 6
-      expect(metadataText.toLowerCase()).toMatch(/workshop|digital|storytelling|video|media/i)
-    }
+    // More phases for large project (7+ activities)
+    const activityPhases = result.phases.filter(p => p.type === 'ACTIVITIES')
+    expect(activityPhases.length).toBeGreaterThanOrEqual(7)
 
-    console.log('   ✅ Scenario 4 completed successfully')
+    // Phase structure valid
+    assertPhaseStructureValid(result.phases)
+
+    // Checklists comprehensive for large project
+    assertChecklistValid(result.phases)
+
+    // Performance
+    assertPerformanceValid(startTime, endTime, 60000)
+
+    console.log(`✅ ${scenario.name} completed in ${endTime - startTime}ms`)
   })
 
-  test('Scenario 5: Short duration (3 days, intensive)', async ({ page }) => {
-    console.log('🧪 Testing Scenario 5: Short Duration')
+  // ==========================================================================
+  // SCENARIO 3: LONG-DISTANCE TRAVEL (Morocco)
+  // ==========================================================================
 
-    const metrics: ScenarioMetrics = {
-      startTime: Date.now(),
-      endTime: 0,
-      duration: 0,
-      questionResponseTimes: [],
-      completeness: 0,
-      questionsAnswered: 0
-    }
+  test('Scenario 3: Long-Distance Travel - Visa requirements', async () => {
+    const startTime = Date.now()
+    const scenario = ALL_SCENARIOS[2]
 
-    await startElaboration(page)
+    console.log(`\n🧪 Testing ${scenario.name}...`)
 
-    const answers = [
-      '25 participants from Belgium, Netherlands, and Luxembourg',
-      '3 days from October 20-22, 2026 in Brussels, Belgium',
-      'Intensive entrepreneurship bootcamp with startup pitch training, business model canvas workshops, and investor networking sessions',
-      'Young entrepreneurs and aspiring business founders aged 22-35',
-      '€15,000 covering venue rental, expert mentors, meals, and networking event',
-      'Belgian Federal Public Service Economy and Brussels Capital Region startup fund',
-      'Accelerate startup ideas and connect young entrepreneurs with investors and mentors in the Benelux region'
-    ]
+    const seed = await createScenarioSeed(prisma, testUserId, testTenantId, scenario.data)
+    const result = await convertSeedToProject(seed.id, testUserId)
 
-    for (const answer of answers) {
-      const { responseTime } = await sendAnswer(page, answer)
-      metrics.questionResponseTimes.push(responseTime)
-      metrics.questionsAnswered++
+    const endTime = Date.now()
 
-      console.log(`   Question ${metrics.questionsAnswered}: ${responseTime}ms`)
-      expect(responseTime).toBeLessThan(5000)
+    // Validate project
+    expect(result.project.participantsCount).toBe(30)
+    expect(Number(result.project.budgetTotal)).toBe(35000)
 
-      await page.waitForTimeout(500)
-    }
+    // Visa requirements detected (non-EU destination)
+    // Morocco requires visas for EU citizens in some cases
+    assertVisaRequirementsValid(result.project, true, ['ES', 'FR', 'IT', 'DE'])
 
-    metrics.completeness = await getCompleteness(page)
-    metrics.endTime = Date.now()
-    metrics.duration = metrics.endTime - metrics.startTime
+    // Higher travel budget for long-distance
+    assertBudgetBreakdownValid(result.project, {
+      expectedTravelPercentage: { min: 40, max: 60 }
+    })
 
-    console.log(`\n   📊 Metrics:`)
-    console.log(`      Total duration: ${metrics.duration}ms`)
-    console.log(`      Completeness: ${metrics.completeness}%`)
+    // Visa/permit phase should exist
+    const visaOrPermitPhases = result.phases.filter(
+      p => p.type === 'PERMITS' || p.name.toLowerCase().includes('visa')
+    )
+    expect(visaOrPermitPhases.length).toBeGreaterThan(0)
 
-    // Short program should complete faster
-    expect(metrics.duration).toBeLessThan(40000)
-    expect(metrics.completeness).toBeGreaterThanOrEqual(90)
+    // Timeline valid
+    assertTimelineValid(result.phases)
 
-    // Verify intensive/short program was recognized
-    const metadataSection = page.locator('[data-testid="metadata"], .metadata')
-    if (await metadataSection.isVisible({ timeout: 2000 }).catch(() => false)) {
-      const metadataText = await metadataSection.innerText()
-      expect(metadataText).toContain('3')
-      expect(metadataText.toLowerCase()).toMatch(/brussels|belgium|entrepreneur|startup/i)
-    }
+    // Budget valid
+    assertBudgetValid(result.project, result.phases)
 
-    console.log('   ✅ Scenario 5 completed successfully')
+    // Phase structure
+    assertPhaseStructureValid(result.phases)
+
+    // Checklists include visa/travel items
+    assertChecklistValid(result.phases)
+
+    // Performance
+    assertPerformanceValid(startTime, endTime, 60000)
+
+    console.log(`✅ ${scenario.name} completed in ${endTime - startTime}ms`)
   })
-})
 
-test.describe('Scenario Summary Report', () => {
-  test('should generate performance summary', async ({ page }) => {
-    console.log('\n📊 Scenario Test Summary')
-    console.log('━'.repeat(70))
-    console.log('All 5 scenarios from Issue #177 tested successfully:')
-    console.log('  ✅ Scenario 1: Small project (20 participants, 5 days, €10k)')
-    console.log('  ✅ Scenario 2: Large project (60 participants, 14 days, €50k)')
-    console.log('  ✅ Scenario 3: Long-distance travel (Morocco, visas)')
-    console.log('  ✅ Scenario 4: Workshop-heavy program (5+ workshops)')
-    console.log('  ✅ Scenario 5: Short duration (3 days, intensive)')
-    console.log('━'.repeat(70))
-    console.log('\n✅ All scenarios validated for production deployment')
+  // ==========================================================================
+  // SCENARIO 4: WORKSHOP-HEAVY PROGRAM (Netherlands)
+  // ==========================================================================
+
+  test('Scenario 4: Workshop-Heavy - Activities budget boost', async () => {
+    const startTime = Date.now()
+    const scenario = ALL_SCENARIOS[3]
+
+    console.log(`\n🧪 Testing ${scenario.name}...`)
+
+    const seed = await createScenarioSeed(prisma, testUserId, testTenantId, scenario.data)
+    const result = await convertSeedToProject(seed.id, testUserId)
+
+    const endTime = Date.now()
+
+    // Validate project
+    expect(result.project.participantsCount).toBe(40)
+    expect(Number(result.project.budgetTotal)).toBe(25000)
+
+    // Activities budget increased for workshops
+    assertBudgetBreakdownValid(result.project, {
+      expectedActivitiesPercentage: { min: 15, max: 25 }
+    })
+
+    // 5+ workshop-related activity phases
+    const workshopPhases = result.phases.filter(
+      p =>
+        p.type === 'ACTIVITIES' &&
+        (p.name.toLowerCase().includes('workshop') || p.name.toLowerCase().includes('training'))
+    )
+    expect(workshopPhases.length).toBeGreaterThanOrEqual(5)
+
+    // Timeline valid
+    assertTimelineValid(result.phases)
+
+    // Budget valid
+    assertBudgetValid(result.project, result.phases)
+
+    // No visa (EU-to-EU)
+    assertVisaRequirementsValid(result.project, false)
+
+    // Phase structure
+    assertPhaseStructureValid(result.phases)
+
+    // Checklists include workshop-specific items
+    assertChecklistValid(result.phases)
+
+    // Check for facilitator-related tasks in workshop checklists
+    if (workshopPhases.length > 0) {
+      const workshopChecklist = workshopPhases[0].checklist as any
+      const hasFacilitatorTask = workshopChecklist.tasks.some((t: any) =>
+        t.description.toLowerCase().includes('facilitator')
+      )
+      expect(hasFacilitatorTask).toBe(true)
+    }
+
+    // Performance
+    assertPerformanceValid(startTime, endTime, 60000)
+
+    console.log(`✅ ${scenario.name} completed in ${endTime - startTime}ms`)
+  })
+
+  // ==========================================================================
+  // SCENARIO 5: SHORT DURATION (France)
+  // ==========================================================================
+
+  test('Scenario 5: Short Duration - Accelerated timeline', async () => {
+    const startTime = Date.now()
+    const scenario = ALL_SCENARIOS[4]
+
+    console.log(`\n🧪 Testing ${scenario.name}...`)
+
+    const seed = await createScenarioSeed(prisma, testUserId, testTenantId, scenario.data)
+    const result = await convertSeedToProject(seed.id, testUserId)
+
+    const endTime = Date.now()
+
+    // Validate project
+    expect(result.project.participantsCount).toBe(25)
+    expect(Number(result.project.budgetTotal)).toBe(8000)
+
+    // Short preparation for quick project
+    expect(result.timeline.preparation.durationWeeks).toBe(6)
+
+    // Exchange duration matches (3 days)
+    expect(result.timeline.exchange.durationDays).toBe(3)
+
+    // Optimized budgets for short duration
+    const metadata = result.project.metadata as any
+    const foodBudget = metadata.budgetBreakdown.food
+    const totalBudget = Number(result.project.budgetTotal)
+    const foodPct = (foodBudget / totalBudget) * 100
+
+    // Food budget should be lower for short stay
+    expect(foodPct).toBeLessThan(20)
+
+    // Timeline valid
+    assertTimelineValid(result.phases)
+
+    // Budget valid
+    assertBudgetValid(result.project, result.phases)
+
+    // No visa (EU-to-EU)
+    assertVisaRequirementsValid(result.project, false)
+
+    // Phase structure (streamlined for short project)
+    assertPhaseStructureValid(result.phases)
+
+    // Checklists condensed but complete
+    assertChecklistValid(result.phases)
+
+    // Performance
+    assertPerformanceValid(startTime, endTime, 60000)
+
+    console.log(`✅ ${scenario.name} completed in ${endTime - startTime}ms`)
+  })
+
+  // ==========================================================================
+  // CROSS-SCENARIO VALIDATION
+  // ==========================================================================
+
+  test('All scenarios: No validation errors', async () => {
+    console.log('\n🧪 Testing all scenarios for errors...')
+
+    const results = []
+
+    for (const scenario of ALL_SCENARIOS) {
+      const seed = await createScenarioSeed(prisma, testUserId, testTenantId, scenario.data)
+
+      try {
+        const result = await convertSeedToProject(seed.id, testUserId)
+        results.push({ scenario: scenario.name, success: true, result })
+      } catch (error) {
+        results.push({ scenario: scenario.name, success: false, error })
+      }
+    }
+
+    // All scenarios should succeed
+    results.forEach(r => {
+      expect(r.success, `Scenario "${r.scenario}" failed`).toBe(true)
+      if (!r.success) {
+        console.error(`❌ ${r.scenario} failed:`, r.error)
+      }
+    })
+
+    console.log(`✅ All ${results.length} scenarios passed without errors`)
+  })
+
+  // ==========================================================================
+  // PERFORMANCE BENCHMARK
+  // ==========================================================================
+
+  test('All scenarios: Performance benchmark', async () => {
+    console.log('\n🧪 Performance benchmark for all scenarios...')
+
+    const benchmarks = []
+
+    for (const scenario of ALL_SCENARIOS) {
+      const seed = await createScenarioSeed(prisma, testUserId, testTenantId, scenario.data)
+
+      const startTime = Date.now()
+      await convertSeedToProject(seed.id, testUserId)
+      const endTime = Date.now()
+
+      const duration = endTime - startTime
+      benchmarks.push({ scenario: scenario.name, duration })
+
+      console.log(`  ${scenario.name}: ${duration}ms`)
+    }
+
+    // Average should be < 30s
+    const avgDuration = benchmarks.reduce((sum, b) => sum + b.duration, 0) / benchmarks.length
+    expect(avgDuration, `Average performance ${(avgDuration / 1000).toFixed(2)}s exceeds 30s`).toBeLessThan(
+      30000
+    )
+
+    // No individual scenario > 60s
+    benchmarks.forEach(b => {
+      expect(
+        b.duration,
+        `Scenario "${b.scenario}" took ${(b.duration / 1000).toFixed(2)}s, exceeding 60s limit`
+      ).toBeLessThan(60000)
+    })
+
+    console.log(`\n📊 Average duration: ${Math.round(avgDuration)}ms`)
+    console.log(`📊 Slowest: ${Math.max(...benchmarks.map(b => b.duration))}ms`)
+    console.log(`📊 Fastest: ${Math.min(...benchmarks.map(b => b.duration))}ms\n`)
   })
 })
