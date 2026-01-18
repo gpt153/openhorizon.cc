@@ -28,6 +28,8 @@ servers:
 tags:
   - name: Authentication
     description: User authentication and authorization
+  - name: Seeds
+    description: Seed generation and elaboration
   - name: Projects
     description: Project management
   - name: Phases
@@ -698,3 +700,81 @@ paths:
       responses:
         '200':
           description: Bulk requests sent
+
+  # Seeds (Elaboration) - See docs/api/openapi-seed-elaboration.yaml for detailed documentation
+  /seeds/{id}/elaborate/start:
+    post:
+      tags: [Seeds]
+      summary: Start elaboration session
+      description: |
+        Start a conversational elaboration session for a seed.
+        See docs/api/openapi-seed-elaboration.yaml for complete documentation.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Session started
+        '404':
+          description: Seed not found
+
+  /seeds/{id}/elaborate/answer:
+    post:
+      tags: [Seeds]
+      summary: Submit answer to current question
+      description: |
+        Submit answer and receive next question.
+        See docs/api/openapi-seed-elaboration.yaml for complete documentation.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [sessionId, answer]
+              properties:
+                sessionId:
+                  type: string
+                answer:
+                  type: string
+      responses:
+        '200':
+          description: Answer processed
+        '400':
+          description: Invalid request
+        '404':
+          description: Seed not found
+
+  /seeds/{id}/elaborate/status:
+    get:
+      tags: [Seeds]
+      summary: Get elaboration progress
+      description: |
+        Get current elaboration status and metadata.
+        See docs/api/openapi-seed-elaboration.yaml for complete documentation.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Elaboration status
+        '404':
+          description: Seed not found
