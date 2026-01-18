@@ -65,6 +65,25 @@ Tests user-level data isolation:
 
 **Note:** Current schema has no organization fields, so tests focus on user-level isolation.
 
+### 8. Seed Elaboration Scenarios (`seed-elaboration-scenarios.spec.ts`)
+Tests complete seed-to-project flow across 5 distinct scenarios:
+- **Scenario 1:** Small project (20 participants, 5 days, €10k, Germany)
+- **Scenario 2:** Large project (60 participants, 14 days, €50k, Spain)
+- **Scenario 3:** Long-distance (30 participants, 10 days, €35k, Morocco)
+- **Scenario 4:** Workshop-heavy (40 participants, 7 days, €25k, Netherlands)
+- **Scenario 5:** Short duration (25 participants, 3 days, €8k, France)
+
+**Validates:**
+- Timeline generation (no overlaps, sequential phases)
+- Budget allocation (sums to 100%)
+- Visa requirements (EU vs non-EU)
+- Checklist completeness
+- Performance (<60s per scenario)
+- Phase structure correctness
+
+**Epic:** 001 - Seed Elaboration Validation
+**Issue:** #177
+
 ## 🚀 Running Tests
 
 ```bash
@@ -86,9 +105,9 @@ npx playwright test --trace on
 
 ## 📊 Test Statistics
 
-- **Test Suites:** 7
-- **Total Tests:** ~45+ test cases
-- **Coverage:** All critical user flows from Epic 003
+- **Test Suites:** 8
+- **Total Tests:** ~55+ test cases
+- **Coverage:** All critical user flows from Epic 003 + Seed Elaboration Validation (Epic 001)
 
 ## 🔧 Configuration
 
